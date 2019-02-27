@@ -1,0 +1,411 @@
+{
+  "mob": {
+    "pruha": {
+      "name": "Pruha",
+      "branch": "mob.pruha",
+      "lp": 50,
+      "str": 18,
+      "chain": 3,
+      "speed": 4.5,
+      "drop": {
+        "money": [
+          "money",
+          100,
+          1
+        ]
+      }
+    },
+    "curua": {
+      "name": "Curua",
+      "branch": "mob.curua",
+      "lp": 115,
+      "str": 22,
+      "chain": 5,
+      "speed": 12,
+      "drop": {
+        "money": [
+          "money",
+          150,
+          1
+        ]
+      }
+    },
+    "leoba": {
+      "name": "Leoba",
+      "branch": "mob.leoba",
+      "lp": 80,
+      "str": 14,
+      "chain": 5,
+      "speed": 7,
+      "drop": {
+        "money": [
+          "money",
+          100,
+          1
+        ]
+      }
+    },
+    "tyhuu": {
+      "name": "Tyhuu",
+      "branch": "mob.tyhuu",
+      "lp": 80,
+      "str": 18,
+      "chain": 9,
+      "speed": 9,
+      "drop": {
+        "money": [
+          "money",
+          100,
+          1
+        ]
+      }
+    },
+    "slime": {
+      "name": "Slime",
+      "branch": "mob.slime",
+      "lp": 50,
+      "str": 10,
+      "chain": 5,
+      "speed": 10,
+      "drop": {
+        "money": [
+          "money",
+          25,
+          1
+        ]
+      }
+    },
+    "goblin": {
+      "name": "Goblin",
+      "branch": "mob.goblin",
+      "lp": 80,
+      "str": 15,
+      "chain": 5,
+      "speed": 10,
+      "drop": {
+        "money": [
+          "money",
+          50,
+          2
+        ]
+      }
+    },
+    "skeleton": {
+      "name": "Skeleton",
+      "branch": "mob.skeleton",
+      "lp": 50,
+      "str": 10,
+      "chain": 7,
+      "speed": 11,
+      "drop": {
+        "money": [
+          "money",
+          40,
+          1
+        ]
+      }
+    },
+    "alpha_wolf": {
+      "name": "Alpha Wolf",
+      "branch": "mob.alpha_wolf",
+      "lp": 50,
+      "str": 9,
+      "chain": 7,
+      "speed": 10,
+      "drop": {
+        "money": [
+          "money",
+          40,
+          1
+        ]
+      }
+    },
+    "rotten_slime": {
+      "name": "Rotten Slime",
+      "branch": "mob.rotten_slime",
+      "lp": 35,
+      "str": 9,
+      "chain": 5,
+      "speed": 10,
+      "drop": {
+        "money": [
+          "money",
+          20,
+          1
+        ]
+      }
+    },
+    "sticky_slime": {
+      "name": "Sticky Slime",
+      "branch": "mob.sticky_slime",
+      "lp": 50,
+      "str": 10,
+      "chain": 6,
+      "speed": 9.5,
+      "drop": {
+        "money": [
+          "money",
+          28,
+          1
+        ]
+      }
+    },
+    "melty_slime": {
+      "name": "Melty Slime",
+      "branch": "mob.melty_slime",
+      "lp": 65,
+      "str": 10,
+      "chain": 6,
+      "speed": 9,
+      "drop": {
+        "money": [
+          "money",
+          45,
+          1
+        ]
+      }
+    },
+    "boner": {
+      "name": "Boner the Fragile",
+      "branch": "mob.boner",
+      "lp": 65,
+      "str": 13,
+      "chain": 7,
+      "speed": 10,
+      "drop": {
+        "money": [
+          "money",
+          50,
+          1
+        ]
+      }
+    },
+    "glutten": {
+      "name": "Glutten de Glutino",
+      "branch": "mob.glutten",
+      "lp": 75,
+      "str": 11,
+      "chain": 6,
+      "speed": 8,
+      "drop": {
+        "money": [
+          "money",
+          50,
+          1
+        ]
+      }
+    },
+    "nago": {
+      "name": "Nago",
+      "branch": "mob.nago",
+      "lp": 100,
+      "str": 18,
+      "chain": 8,
+      "speed": 9,
+      "drop": {
+        "money": [
+          "money",
+          100,
+          1
+        ]
+      }
+    },
+    "vulture": {
+      "name": "Vulture",
+      "branch": "mob.vulture",
+      "lp": 80,
+      "str": 18,
+      "chain": 8,
+      "speed": 6.5,
+      "drop": {
+        "money": [
+          "money",
+          100,
+          1
+        ]
+      }
+    },
+    "happen": {
+      "name": "Happen",
+      "branch": "mob.happen",
+      "lp": 130,
+      "str": 20,
+      "chain": 4,
+      "speed": 4.5,
+      "drop": {
+        "money": [
+          "money",
+          200,
+          1
+        ]
+      }
+    },
+    "avvo": {
+      "name": "Avvo",
+      "branch": "mob.avvo",
+      "lp": 100,
+      "str": 20,
+      "chain": 15,
+      "speed": 8,
+      "drop": {
+        "money": [
+          "money",
+          200,
+          1
+        ]
+      }
+    }
+  },
+  "boss": {
+    "sonti": {
+      "name": "Sonti - Father of Mounts",
+      "branch": "boss.sonti",
+      "lp": 1600,
+      "str": 38,
+      "chain": 20,
+      "speed": 10,
+      "drop": {
+        "money": [
+          "money",
+          6000,
+          1
+        ]
+      }
+    },
+    "thuti": {
+      "name": "Thuti - Mother of Seas",
+      "branch": "boss.thuti",
+      "lp": 1300,
+      "str": 30,
+      "chain": 20,
+      "speed": 7.5,
+      "drop": {
+        "money": [
+          "money",
+          7000,
+          1
+        ]
+      }
+    },
+    "neon": {
+      "name": "Neon - Maiden of the pitches",
+      "branch": "boss.neon",
+      "lp": 600,
+      "str": 25,
+      "chain": 18,
+      "speed": 9,
+      "drop": {
+        "money": [
+          "money",
+          3000,
+          1
+        ]
+      }
+    },
+    "xeon": {
+      "name": "Xeon - Hunter of the pitches",
+      "branch": "boss.xeon",
+      "lp": 900,
+      "str": 25,
+      "chain": 12,
+      "speed": 7.5,
+      "drop": {
+        "money": [
+          "money",
+          4000,
+          1
+        ]
+      }
+    },
+    "zoras": {
+      "name": "Zoras - The Werewolf Lieutenant",
+      "branch": "boss.zoras",
+      "lp": 400,
+      "str": 18,
+      "chain": 7,
+      "speed": 8,
+      "drop": {
+        "money": [
+          "money",
+          2000,
+          1
+        ]
+      }
+    },
+    "skinny": {
+      "name": "Skinny - The Best Skeleton Friend of Dogs",
+      "branch": "boss.skinny",
+      "lp": 300,
+      "str": 14,
+      "chain": 11,
+      "speed": 9,
+      "drop": {
+        "money": [
+          "money",
+          2000,
+          1
+        ]
+      }
+    },   
+    "hugo": {
+      "name": "Hugo - Butcher of the Voltic Woods",
+      "branch": "boss.hugo",
+      "lp": 600,
+      "str": 28,
+      "chain": 18,
+      "speed": 10,
+      "drop": {
+        "money": [
+          "money",
+          6000,
+          1
+        ]
+      }
+    },
+    "ranai": {
+      "name": "Ranai - Undead Pilgrim",
+      "branch": "boss.hepto",
+      "lp": 900,
+      "str": 29,
+      "chain": 15,
+      "speed": 8,
+      "drop": {
+        "money": [
+          "money",
+          6000,
+          1
+        ]
+      }
+    },
+    "auma": {
+      "name": "Auma - Izanagi's dog",
+      "branch": "boss.auma",
+      "lp": 1600,
+      "str": 30,
+      "chain": 19,
+      "speed": 10,
+      "drop": {
+        "money": [
+          "money",
+          8000,
+          1
+        ]
+      }
+    },
+    "hepto": {
+      "name": "Hepto - General of Rampart's Abdundants",
+      "branch": "boss.hepto",
+      "lp": 900,
+      "str": 38,
+      "chain": 22,
+      "speed": 13,
+      "drop": {
+        "money": [
+          "money",
+          8000,
+          1
+        ]
+      }
+    }
+  }
+}

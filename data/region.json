@@ -1,0 +1,128 @@
+{
+  "region.2": {
+    "name": "Batet",
+    "description": "A mixture of alleys and rivers, stiring the scense of rotten fishes and onion. Debris within our shoes, delta within our sight.",
+    "mob": {},
+    "map": [],
+    "info": {
+      "border": [
+        50,
+        50
+      ],
+      "diversity": {
+        "mb17": [1, 49.995, 49.995, 50, 50],
+        "mb18": [1, 49.995, 49.995, 50, 50],
+        "mb0": [10, 0, 0, 50, 50],
+        "mb1": [10, 0, 0, 50, 50],
+        "mb2": [10, 0, 0, 50, 50],
+        "mb3": [10, 0, 0, 50, 50]
+      }},
+    "characteristic": {
+      "cuisine": [
+        "ig0"
+      ],
+      "quest": {}
+    }
+  },
+  "region.1": {
+    "name": "Galode",
+    "description": "Rocks are rumbling, has it been reverberating since the end...",
+    "mob": {},
+    "map": [],
+    "info": {
+      "border": [
+        50,
+        50
+      ],
+      "diversity": {
+        "mb19": [1, 49.995, 49.995, 50, 50],
+        "mb20": [1, 49.995, 49.995, 50, 50],
+        "mb5": [10, 0, 0, 50, 50],
+        "mb8": [10, 0, 0, 50, 50],
+        "mb10": [5, 0, 0, 50, 50]
+      }},
+      "characteristic": {
+        "cuisine": [
+          "ig0",
+          "ig1"
+        ],
+      "quest": {}
+      }
+    },
+  "region.0": {
+    "name": "Vascalon",
+    "description": "Among the fallen walls thawing into dust, among the grim ashes pouring into the artic sky, rise the Remnants...",
+    "mob": {},
+    "map": [],
+    "info": {
+      "border": [
+        50,
+        50
+      ],
+      "diversity": {
+        "mb21": [1, 49.995, 49.995, 50, 50],
+        "mb22": [1, 49.995, 49.995, 50, 50],
+        "mb4": [20, 0, 0, 50, 50],
+        "mb7": [5, 0, 0, 50, 50],
+        "mb9": [5, 0, 0, 50, 50],
+        "mb12": [2, 0, 0, 50, 50]
+    }},
+    "characteristic": {
+      "cuisine": [
+        "ig0"
+      ],
+      "quest": {}
+    }
+  },
+  "region.-1": {
+    "name": "Dumas",
+    "description": "Grass with heels, dirt with hands, people without feet",
+    "mob": {},
+    "map": [],
+    "info": {
+      "border": [
+        50,
+        50
+      ],
+      "diversity": {
+        "mb23": [1, 49.995, 49.995, 50, 50],
+        "mb24": [1, 49.995, 49.995, 50, 50],
+        "mb5": [10, 0, 0, 50, 50],
+        "mb6": [10, 0, 0, 50, 50],
+        "mb11": [10, 0, 0, 50, 50]
+      }
+    },
+    "characteristic": {
+      "cuisine": [
+        "ig0"
+      ]
+    }
+  },
+  "region.-2": {
+    "name": "Ackermet",
+    "description": "Maples oh maples, once a shivering sea of the Fall. The Siegfields came and the Siegfields left, leaving tears and a blood-caked bed of gold.",
+    "mob": {},
+    "map": [],
+    "info": {
+      "border": [
+        50,
+        50
+      ],
+      "diversity": {
+        "mb25": [1, 49.995, 49.995, 50, 50],
+        "mb26": [1, 49.995, 49.995, 50, 50],
+        "mb13": [20, 0, 0, 50, 50],
+        "mb14": [20, 0, 0, 50, 50],
+        "mb16": [2, 0, 0, 50, 50],
+        "mb15": [2, 0, 0, 50, 50]
+      }},
+    "characteristic": {
+      "cuisine": [
+        "ig0",
+        "ig1",
+        "ig2"
+      ],
+      "quest": {}
+    }
+  }
+}

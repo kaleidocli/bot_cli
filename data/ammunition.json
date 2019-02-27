@@ -1,0 +1,67 @@
+{
+  "am0": {
+    "id": "am0",
+    "name": "9x9mm Parabellum",
+    "description": "Parabellum means -for war-",
+    "tags": [
+      "ammunition",
+      "handgun",
+      "ACP"
+    ],
+    "dmg": 50,
+    "speed": 5,
+    "price": 200
+  },
+  "am1": {
+    "id": "am1",
+    "name": "5.56×45mm NATO",
+    "description": "Hmmm...",
+    "tags": [
+      "ammunition",
+      "rifle",
+      "ACP"
+    ],
+    "dmg": 65,
+    "speed": 6,
+    "price": 350
+  },
+  "am2": {
+    "id": "am2",
+    "name": "7.62×39mm",
+    "description": "Hmmm...",
+    "tags": [
+      "ammunition",
+      "machine_gun",
+      "ACP"
+    ],
+    "dmg": 70,
+    "speed": 8,
+    "price": 300
+  },
+  "am3": {
+    "id": "am3",
+    "name": ".338 Lapua Magnum",
+    "description": "Sounds cool heh?",
+    "tags": [
+      "ammunition",
+      "sniper_rifle",
+      "ACP"
+    ],
+    "dmg": 700,
+    "speed": 8,
+    "price": 2000
+  },
+  "am4": {
+    "id": "am4",
+    "name": "12 Gauge",
+    "description": "Quantity beats quality...",
+    "tags": [
+      "ammunition",
+      "shotgun",
+      "ACP"
+    ],
+    "dmg": 1,
+    "speed": 10,
+    "price": 5
+  }
+}

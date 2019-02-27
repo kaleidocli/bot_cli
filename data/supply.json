@@ -1,0 +1,74 @@
+{
+  "it0": {
+    "name": "Tiny Syrum",
+    "id": "it0",
+    "description": "Heal 50 LP",
+    "tags": [
+      "supply",
+      "medical",
+      "heal",
+      "consumable"
+    ],
+    "price": 100
+  },
+  "it1": {
+    "name": "Handy Syrum",
+    "id": "it1",
+    "description": "Heal 200 LP",
+    "tags": [
+      "supply",
+      "medical",
+      "heal",
+      "consumable"
+    ],
+    "price": 350
+  },
+  "it2": {
+    "name": "Massive Syrum",
+    "id": "it2",
+    "description": "Heal 500 LP",
+    "tags": [
+      "supply",
+      "medical",
+      "heal",
+      "consumable"
+    ],
+    "price": 1000
+  },
+  "it3": {
+    "name": "Tiny Chocolate",
+    "id": "it3",
+    "description": "Revive 50 STA",
+    "tags": [
+      "supply",
+      "medical",
+      "revive",
+      "consumable"
+    ],
+    "price": 700
+  },
+  "it4": {
+    "name": "Handy Chocolate",
+    "id": "it4",
+    "description": "Revive 200 STA",
+    "tags": [
+      "supply",
+      "medical",
+      "revive",
+      "consumable"
+    ],
+    "price": 2000
+  },
+  "it5": {
+    "name": "Massive Chocolate",
+    "id": "it5",
+    "description": "Revive 500 STA",
+    "tags": [
+      "supply",
+      "medical",
+      "revive",
+      "consumable"
+    ],
+    "price": 3500
+  }
+}

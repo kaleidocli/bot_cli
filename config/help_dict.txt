@@ -1,0 +1,15 @@
+help = Call the help box. Or use "-help [cmd]" for further info about the cmd.
+settings = Settings.  ||  Syntax: -settings [arg1] [arg2] [argn] |||||||| [hen] >>> [on/off]  --------- Turn hen_MODE on or off.  >>> [-library_name-] -------- Switch to a library
+shutdowm = Shutdown the bot.
+cp_add = Add a specific string and a reply of that string.  ||  Syntax: -cp_add [string] = [reply]
+cp_list = Display a list contains strings and replies you've added.
+cp_del = Delete a string in the cp_list, thus delete the reply paired with it. || Syntax: -cp_del [string]
+join = Make a bot join the voice-channel you're currently in. If it's already in another VC, please disconnect the bot before using <join>. |||| Aliase='--in'
+hen = NSFW images. hen_MODE's required. 4 library: [bdsm], [bestiality], [milking], [mix]. Choose library with -settings cmd.
+nhen = NSFW images. hen_MODE's required. Source from neko with many tags, but quality's lower than -hen. use [-help nhen_tags] to show the available tags.
+nhen_tags = ['feet', 'yuri', 'trap', 'futanari', 'hololewd', 'lewdkemo', 'solog', 'feetg', 'cum', 'erokemo', 'les', 'wallpaper', 'lewdk','ngif', 'meow', 'tickle', 'lewd', 'feed', 'gecg', 'eroyuri', 'eron','cum_jpg', 'bj', 'nsfw_neko_gif', 'solo', 'kemonomimi', 'nsfw_avatar','gasm', 'poke', 'anal', 'slap', 'hentai', 'avatar', 'erofeet', 'holo','keta', 'blowjob', 'pussy', 'tits', 'holoero', 'lizard', 'pussy_jpg','pwankg', 'classic', 'kuni', 'waifu', 'pat', '8ball', 'kiss', 'femdom','neko', 'spank', 'cuddle', 'erok', 'fox_girl', 'boobs', 'Random_hentai_gif','smallboobs', 'hug', 'ero']
+cli = Syntax: -cli [arg] or -cli playpath [<dir>]|||| 3 main features. |||| <1> Play a specific type of audio by a specific argument, from a specific <dir> (Use cmd <dir> for more). |||| <2> Play a voice_line of a character using char_arg, with the formula char_arg="as[char_name]" |||| <3> Act as a normal music play cmd, using <dir> as the source. (Use cmd <dir> for more). |||| specific_arg=[moan, gig, ohaiyo, konichiwa, hen] || char_arg=[astohsaka, asbeli, asillya,...] or char_arg="as[char_name]". E.g. Tohsaka="astohsaka", Illya="asillya". For further more <char_name>, please check dir='bot_voice' in root='audio' via cmd <dir> in mode=path
+yolo = Syntax: -yolo [dir(Optional)] |||| Same features as cmd <cli>, but instead of randomly playing once, it's a loop (in the <dir> given. By default, <dir>='Med/Artista/Coldplay').
+guess = Create a guessing game, with hint. TimesOut=15s.
+dir = Browse the directories. Get <dir>. Use cmd <dir> for how to use and read.
+volume = Adjust the volume (1 - 200). |||| Aliase='--vol'

@@ -1,0 +1,6 @@
+{
+	"shipper": ["Instinct", 900, 35, 25],
+	"sorter": ["Instinct", 3600, 90, 50],
+	"scullion": ["Elementary", 900, 65, 30],
+	"babysitter": ["Elementary", 7200, 200, 50]
+}

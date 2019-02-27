@@ -1,0 +1,26 @@
+{
+  "region.0": {
+    "main": {
+      "qs0": {
+        "requester": "Neinne",        
+        "description": "Slay 10 mobs in the region",
+        "requirement": [
+          "status",
+          "mobs_collection/mob/region.0",
+          10
+        ],
+        "reward": [
+          "status",
+          "perks",
+          1
+        ],
+        "branch": "region.0/quest/main/0"
+      }
+    },
+    "side": {}
+  },
+  "region.-1": {
+    "main": {},
+    "side": {}
+  }
+}

@@ -1,0 +1,3 @@
+﻿độn thổ
+heal
+defend

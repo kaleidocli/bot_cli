@@ -1,0 +1,471 @@
+{
+    "214128381762076672": {
+        "name": "aknalumos",
+        "dob": [
+            24,
+            7,
+            1
+        ],
+        "age": 59,
+        "gender": "m",
+        "height": 192,
+        "weight": 87.6,
+        "config": {
+            "cosmetic": {
+                "current": {
+                    "avatar": "Zoey",
+                    "name": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "partner": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "age": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "money": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "kill": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "death": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "evo": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "guild": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ],
+                    "rank": [
+                        255,
+                        255,
+                        255,
+                        255
+                    ]
+                },
+                "presets": {
+                    "default": {
+                        "avatar": "Zoey",
+                        "name": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "partner": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "age": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "money": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "kill": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "death": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "evo": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "guild": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "rank": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ]
+                    },
+                    "test1": {
+                        "avatar": "Zoey",
+                        "name": [
+                            250,
+                            218,
+                            247,
+                            255
+                        ],
+                        "partner": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "age": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "money": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "kill": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "death": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "evo": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "guild": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ],
+                        "rank": [
+                            255,
+                            255,
+                            255,
+                            255
+                        ]
+                    }
+                }
+            }
+        },
+        "avatars": [
+            "Iris",
+            "Zoey",
+            "Ardena"
+        ],
+        "EVO": 0,
+        "INT": 11,
+        "STA": 80,
+        "MAX_STA": 100,
+        "STR": 1,
+        "LP": 1000,
+        "MAX_LP": 1000,
+        "k/d": [
+            0,
+            0
+        ],
+        "mobs_collection": {
+            "mob": {
+                "region.0": 6
+            },
+            "boss": {}
+        },
+        "guild": {
+            "name": "region.0",
+            "rank": "iron",
+            "quest": {
+                "region.0": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.1": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.2": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.3": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.4": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.5": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.6": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.7": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.8": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.9": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.10": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.11": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.12": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.13": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.14": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.15": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-1": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-2": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-3": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-4": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-5": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-6": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-7": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-8": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-9": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-10": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-11": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-12": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-13": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-14": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                },
+                "region.-15": {
+                    "region_tier": "n/a",
+                    "region_completed_quests": []
+                }
+            },
+            "total_completed_quests": 0
+        },
+        "money": 101192,
+        "perks": 0,
+        "degrees": [
+            "Instinct",
+            "Elementary"
+        ],
+        "arts": {
+            "sword_art": {
+                "chain_attack": 5
+            },
+            "pistol_art": {}
+        },
+        "right_hand": "29",
+        "left_hand": "n/a",
+        "inventory": {
+            "29": {
+                "item_id": "29",
+                "item_code": "ar0",
+                "obj": {},
+                "dict": {
+                    "id": "ar0",
+                    "name": "Wooden Sword",
+                    "description": "A sword made of wood",
+                    "tags": [
+                        "arsenal",
+                        "melee",
+                        "sword",
+                        "physical",
+                        "inconsumable"
+                    ],
+                    "weight": 25,
+                    "defend": 30,
+                    "multiplier": 1,
+                    "str": 1,
+                    "sta": 30,
+                    "speed": 5,
+                    "price": 500
+                }
+            },
+            "30": {
+                "item_id": "30",
+                "item_code": "ar10",
+                "obj": {},
+                "dict": {
+                    "id": "ar10",
+                    "name": "Wooden Shield",
+                    "description": "A shield made of wood",
+                    "tags": [
+                        "arsenal",
+                        "melee",
+                        "medium_shield",
+                        "physical",
+                        "inconsumable"
+                    ],
+                    "weight": 45,
+                    "defend": 80,
+                    "multiplier": 0.5,
+                    "str": 1,
+                    "sta": 30,
+                    "speed": 4,
+                    "price": 500
+                }
+            },
+            "32": {
+                "item_id": "32",
+                "item_code": "ar5",
+                "obj": {},
+                "dict": {
+                    "id": "ar5",
+                    "name": "Glock-17",
+                    "description": "A widely-used pistol.",
+                    "tags": [
+                        "arsenal",
+                        "range_weapon",
+                        "pistol",
+                        "auto",
+                        "inconsumable"
+                    ],
+                    "weight": 25,
+                    "defend": 1,
+                    "round": "am0",
+                    "str": 1,
+                    "int": 3,
+                    "sta": 5,
+                    "accuracy": [
+                        10,
+                        50
+                    ],
+                    "range": [
+                        1,
+                        50
+                    ],
+                    "firing_rate": 3,
+                    "stealth": 5,
+                    "price": 9999
+                }
+            }
+        },
+        "realtime_zone": {
+            "current_place": "region.0",
+            "current_enemy": {
+                "mob": [],
+                "user": []
+            },
+            "current_coord": [
+                0.002,
+                0.003
+            ],
+            "combat": {
+                "handling": "both",
+                "buff": {}
+            },
+            "current_quest": {
+                "branch": "region.0/quest/0",
+                "description": "Null",
+                "requirement": [
+                    "status",
+                    "mobs_collection/mob/region.0",
+                    10
+                ],
+                "reward": [
+                    "status",
+                    "perks",
+                    1
+                ]
+            }
+        }
+    }
+}

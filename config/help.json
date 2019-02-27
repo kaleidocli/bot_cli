@@ -1,0 +1,132 @@
+{
+	"volume": {"description": "Adjust the volume",
+		   "syntax" : "`-volume [1 - 200]`",
+		    "note": "| `1 - 200` - Volume value (1 = 1%)`",
+		    "aliase": "`--vol`"
+		  },
+	"dir": {"description": "**What is <dir>?** It's just how I call the endpoint of a directory. Many commands require <dir> in order to use audio or files, and you can use this command to browse directories for <dir>, and files.\nFor `browsing_mode`, we have two options:\n`path` - Command will return directories only\n`file` - Command will return directories and files they contain",
+		"syntax": "`-dir [root_directory] [browse_mode] [your_path]`",
+		"note": "| `root_directory` - `music`=Music. `audio`=voice clips and meme sounds and stuff.\n| `browse_mode` - path | file \n`your_path` - path",
+		"aliase": "n/a"
+		},
+	"cli": {"description": "**3 main features**\n+ Play a random *sound* or *voice* of a specific keyword (e.g. `moan`, `gig`, `meme error`)\n+ Play a random short speech of a specific given character name plus *as* (e.g. tohsaka=`astohsaka`, illya=`asillya`)\n+ Play audio",
+		"syntax": "`-cli [keyword]=[sub-keyword]` or `-cli playpath [your_path_plus_filename]` e.g. *-cli gig* or *-cli meme=error*",			
+		"note": "| `keyword``sub-keyword` - Keyword is the <dir>, sub-keyword (meme only) is a file's *name* in that <dir>. If you don't know about <dir>, check cmd `dir`'s help.\nKeywords: `gig``hen``moan``ohaiyo``konichiwa` etc.\n| `your_path` - path with file name (e.g. path1\\path2\\a.mp3)",
+		"aliase": "n/a"
+		},
+	"yolo": {"description": "Repeat all audio files in a <dir>",
+		"syntax": "`-yolo <dir>`",
+		"note": "· `<dir>` - Check cmd `dir`'s help for more info",
+		"aliase": "n/a"
+		},
+	"join": {"description": "Summon the bot to the voice channel you're in",
+			 "syntax": "`-join`",
+			 "note": "n/a",
+			 "aliase": "`--in`"			
+		},
+	"leave": {"description": "Shoo the bot off the voice channel",
+			 "syntax": "`-leave`",
+			 "note": "n/a",
+			 "aliase": "`--out`"
+		},
+	"hen": {"description": "NSFW images, with a tiny reaction added so that you can turn image easily.\nThere are four libraries you can choose: [bdsm], [bestiality], [milking], [mix].",
+			 "syntax": "`-hen [tag(Optional)]` or `-hen [default=tag(Optional)]`",
+			 "note": "· If no `tag`'s passed, cli will pick the *default* tag.",
+			 "aliase": "n/a"
+		},
+	"nhen": {"description": "NSFW images, with a tiny reaction added so that you can turn image easily. Tag required",
+			 "syntax": "`-nhen [tag]`",
+			 "note": "· `tag` - Please use the following. `feet`, `yuri`, `trap`, `futanari`, `hololewd`, `lewdkemo`, `solog`, `feetg`, `cum`, `erokemo`, `les`, `wallpaper`, `lewdk`,`ngif`, `meow`, `tickle`, `lewd`, `feed`, `gecg`, `eroyuri`, `eron`,`cum_jpg`, `bj`, `nsfw_neko_gif`, `solo`, `kemonomimi`, `nsfw_avatar`, `gasm`, `poke`, `anal`, `slap`, `hentai`, `avatar`, `erofeet`, `holo`, `keta`, `blowjob`, `pussy`, `tits`, `holoero`, `lizard`, `pussy_jpg`, `pwankg`, `classic`, `kuni`, `waifu`, `pat`, `8ball`, `kiss`, `femdom`, `neko`, `spank`, `cuddle`, `erok`, `fox_girl`, `boobs`, `Random_hentai_gif`,`smallboobs`, `hug`, `ero`",
+			 "aliase": "n/a"
+		},
+	"dhen": {"description": "**Danbooru's NSFWs**. Return an image with given tag, which will be deleted after 60s. Three little reactions is provided:\n:arrow_forward: Switch image\n:page_facing_up: Get the image's tags\n:lock: | :unlock: Freeze the image for 420 secs (7 mins)\nOther Danbooru's relevant commands: `-ddfadd` `-ddfremove` `drelevant`",
+			 "syntax": "`-dhen [tag1(Optional)] [tag2(Optional)]`",
+			 "note": "· `tag1` `tag2` - Spaceless tags (maximum 2). If omitted, cli will use the default tags. You can change default tags by `-ddfadd`, `-ddfremove`",
+			 "aliase": "n/a"
+		},
+	"ddfadd": {"description": "Add tags to the default tags list",
+			 "syntax": "`-ddfadd [tag1(Optional)] [tag2(Optional)]`",
+			 "note": "· `tag1` `tag2` - Spaceless tags (maximum 2). If omitted, cli will show the default tags list",
+			 "aliase": "`-+d`"
+		},
+	"ddfremove": {"description": "Remove tags from the default tags list",
+			 "syntax": "`-ddremove [tag1(Optional)] [tag2(Optional)]`",
+			 "note": "· `tag1` `tag2` - Spaceless tags (maximum 2). If omitted, cli will show the default tags list.",
+			 "aliase": "`--d`"
+		},
+	"drelevant": {"description": "Find tags that are relevant to the given tag",
+			 "syntax": "`-drelevant [tag]`",
+			 "note": "· `tag` - Spaceless tag (maximum 1).",
+			 "aliase": "n/a"
+		},
+	"nsfw": {"description": "So here we are, another NSFW stupid function. I'll make it as short as possible.\nThere are 3 commands: `-hen`, `-nhen` and `-dhen`. Then, what's the difference?\n· `-hen` - Use offline resources, or we can say, *my* resources. I can proudly say this will surely satisfy you all, though the amount's quite limited (~200/lib)\n· `-dhen` - This command, or group of commands (`-help` it for more info), use Danbooru's resources, and we all know its reputation right? Then why wouldn't I go there and fap, you must wonder. Well, you can't turn page on Danbooru, now you can with this. This alone is something, right? The rest I'll leave it to you.\n· `-nhen` - This is the worst, just a bunch of nsfw-ecchi stuff of *kemonomimi*. If you want some vanilla thing, this could make it.",
+			 "syntax": "Just want to add something. In order to use NSFW related cmds, you'll need to enable NSFW_mode, using this `-setting nsfw on`.",
+			 "note": "n/a",
+			 "aliase": "n/a"
+		},
+	"game": {"description": "Yeah you heard it. Games! *Text-based* games, sounds boring heh :joy: Currently we have two simple games commands, `-guess` and `-ttt`.\n+ `-ttt` - Tic tac toe. This is just some homework thing for my teacher so don't put so much expectation on it :joy:\n+ `-guess` - QUIZ GAME! This commands group is divided into three kinds: *All*, *Server-only* and *Creator-only* (yes, me).\n*All* - Everyone can use it, add new ones, remove one's quiz, and view one's quizes [`-guess_all`]\n*Server-only* - Only members of a server can use its quizes, add new ones by *All*-add in __that__ server (using `-guess_add_all`), and remove one's quizes [`-guess_ser`]\n*Creator-only* - Everyone can use it, but no one can edit/remove/view it except me. [`-guess`]",
+			 "syntax": "n/a",
+			 "note": "Points are also provided, but applied only to `-guess`. The rest, meh.",
+			 "aliase": "n/a"
+		},
+	"guess": {"description": "Image quizes or text quizes. \nHints are provided. \nTimeout is 15s. \nReward points, if lose, **minus** one.",
+			 "syntax": "`-guess`",
+			 "note": "Creator-only: `-guess_add [Q] == [A] == [img_link(Optional)]` `-guess_del [id]` `-guess_get [id]` `-guess_edit [id] == [entry] == [fixation]` `-guesses` `-guess_applyall_newentry [entry] == [value]` `-guess_applyall_delentry [entry]`",
+			 "aliase": "`-quiz`"
+		},
+	"guess_all": {"description": "Everyone's image quizes or text quizes. \nHints are provided. \nTimeout is 15s. \nNo reward, no minus.",
+			 "syntax": "`-guess_all`",
+			 "note": "n/a",
+			 "aliase": "n/a"
+		},
+	"guess_ser": {"description": "Server's image quizes or text quizes. \nHints are provided. \nTimeout is 15s. \nNo reward, no minus.",
+			 "syntax": "`-guess_ser`",
+			 "note": "n/a",
+			 "aliase": "n/a"
+		},
+	"guesses_all": {"description": "Return a list of quizes you created and some info.",
+			 "syntax": "`-guesses_all`",
+			 "note": "n/a",
+			 "aliase": "`-quizes`"
+		},
+	"guesses_add_all": {"description": "Return a list of quizes you created and some info.",
+			 "syntax": "`-guesses_all {question] == [answer] == [img_link(Optional)]`",
+			 "note": "· `question` - The question you want to ask\n· `answer` - The answer (not case-sensitive, space allowed)\n· `img_link`: The image's link. Note that `example.com//image1*.png*`, not `example.com//image1`",
+			 "aliase": "n/a"
+		},
+	"setting": {"description": "Adjust settings",
+			 "syntax": "`-setting [entry] [value]`",
+			 "note": "· Entries:\n--`nsfw`: `on`//`off`",
+			 "aliase": "n/a"
+		},
+	"settings": {"description": "View all settings and their values",
+			 "syntax": "`-settings`",
+			 "note": "n/a",
+			 "aliase": "n/a"
+		},
+	"custom_speech": {"description": "**Custom speech**... \nLong story short, it's a tagging system without command. You type 'hello', Cli responds 'yo dude'. You can set how Cli responds, delete the entry/response pair and view a list of entry/response pair.\nRemember, these are server-wide values, so you cannot set entry 'hello' in server A then use it in server B.",
+			 "syntax": "`-cp_add` `-cp_del` `-cp_list` (`-help` for more info)",
+			 "note": "n/a",
+			 "aliase": "n/a"
+		},
+	"cp_add": {"description": "Add a new pair of entry and response",
+			 "syntax": "`-cp_add [entry] == [respose]`",
+			 "note": "n/a",
+			 "aliase": "n/a"
+		},
+	"cp_del": {"description": "Delete an entry along with its response",
+			 "syntax": "`-cp_del [entry]`",
+			 "note": "n/a",
+			 "aliase": "n/a"
+		},
+	"cp_list": {"description": "View all entries/responses of the server",
+			 "syntax": "`-cp_list`",
+			 "note": "n/a",
+			 "aliase": "n/a"
+		}
+		
+		
+		
+		
+
+}

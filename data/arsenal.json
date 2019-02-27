@@ -1,0 +1,299 @@
+{
+  "ar0": {
+    "id": "ar0",
+    "name": "Wooden Sword",
+    "description": "A sword made of wood",
+    "tags": [
+      "arsenal",
+      "melee",
+      "sword",
+      "physical",
+      "inconsumable"
+    ],
+    "weight": 25,
+    "defend": 30,
+    "multiplier": 1,
+    "str": 1,
+    "sta": 30,
+    "speed": 5,
+    "price": 500
+  },
+  "ar1": {
+    "id": "ar1",
+    "name": "Wooden Scimitar",
+    "description": "A scimitar made of wood",
+    "tags": [
+      "arsenal",
+      "melee",
+      "scimitar",
+      "physical",
+      "inconsumable"
+    ],
+    "weight": 25,
+    "defend": 25,
+    "multiplier": 1.2,
+    "str": 1,
+    "sta": 20,
+    "speed": 4.2,
+    "price": 500
+  },
+  "ar2": {
+    "id": "ar2",
+    "name": "Stone Axe",
+    "description": "An axe made of stone",
+    "tags": [
+      "arsenal",
+      "melee",
+      "axe",
+      "physical",
+      "inconsumable"
+    ],
+    "weight": 35,
+    "defend": 40,
+    "multiplier": 2,
+    "str": 1,
+    "sta": 65,
+    "speed": 6.5,
+    "price": 500
+  },
+  "ar3": {
+    "id": "ar3",
+    "name": "Wooden Spear",
+    "description": "A spear made of wood",
+    "tags": [
+      "arsenal",
+      "melee",
+      "spear",
+      "physical",
+      "inconsumable"
+    ],
+    "weight": 20,
+    "defend": 20,
+    "multiplier": 1,
+    "str": 1,
+    "sta": 40,
+    "speed": 3.75,
+    "price": 500
+  },
+  "ar4": {
+    "id": "ar4",
+    "name": "Wooden Knife",
+    "description": "A sword made of wood",
+    "tags": [
+      "arsenal",
+      "melee",
+      "knife",
+      "physical",
+      "inconsumable"
+    ],
+    "weight": 10,
+    "defend": 10,
+    "multiplier": 0.5,
+    "str": 1,
+    "sta": 10,
+    "speed": 2,
+    "price": 500
+  },
+  "ar5": {
+    "id": "ar5",
+    "name": "Glock-17",
+    "description": "A widely-used pistol.",
+    "tags": [
+      "arsenal",
+      "range_weapon",
+      "pistol",
+      "auto",
+      "inconsumable"
+    ],
+    "weight": 25,
+    "defend": 1,
+    "round": "am0",
+    "str": 1,
+    "int": 3,
+    "sta": 5,
+    "accuracy": [
+      10,
+      50
+    ],
+    "range": [
+      1,
+      50
+    ],
+    "firing_rate": 3,
+    "stealth": 5,
+    "price": 9999
+  },
+  "ar6": {
+    "id": "ar6",
+    "name": "M16A4",
+    "description": "A rifle for mid-range combat.",
+    "tags": [
+      "arsenal",
+      "range_weapon",
+      "rifle",
+      "auto",
+      "inconsumable"
+    ],
+    "weight": 40,
+    "defend": 10,
+    "round": "am1",
+    "str": 2,
+    "int": 5,
+    "sta": 10,
+    "accuracy": [
+      4,
+      50
+    ],
+    "range": [
+      10,
+      150
+    ],
+    "firing_rate": 8,
+    "stealth": 4,
+    "price": 35000
+  },
+  "ar7": {
+    "id": "ar7",
+    "name": "RPK",
+    "description": "RPG? No, Ruchnoy Pulemyot Kalashnikova",
+    "tags": [
+      "arsenal",
+      "range_weapon",
+      "machine_gun",
+      "auto",
+      "inconsumable"
+    ],
+    "weight": 55,
+    "defend": 30,
+    "round": "am2",
+    "str": 3,
+    "int": 4,
+    "sta": 10,
+    "accuracy": [
+      10,
+      50
+    ],
+    "range": [
+      50,
+      100
+    ],
+    "firing_rate": 20,
+    "stealth": 2,
+    "price": 35999
+  },
+  "ar8": {
+    "id": "ar8",
+    "name": "AWM - Arctic Warfare Magnum",
+    "description": "Classic is better, yeah?",
+    "tags": [
+      "arsenal",
+      "range_weapon",
+      "sniper_rifle",
+      "bolt_action",
+      "inconsumable"
+    ],
+    "weight": 50,
+    "defend": 10,
+    "round": "am3",
+    "str": 2,
+    "int": 9,
+    "sta": 80,
+    "accuracy": [
+      3,
+      1000
+    ],
+    "range": [
+      500,
+      1500
+    ],
+    "firing_rate": 1,
+    "stealth": 50,
+    "price": 22599
+  },
+  "ar9": {
+    "id": "ar9",
+    "name": "Mossberg 590A1",
+    "description": "Duh",
+    "tags": [
+      "arsenal",
+      "range_weapon",
+      "shotgun",
+      "pump_action",
+      "inconsumable"
+    ],
+    "weight": 40,
+    "defend": 20,
+    "round": "am4",
+    "str": 2,
+    "int": 3,
+    "sta": 10,
+    "accuracy": [
+      1,
+      2
+    ],
+    "range": [
+      1,
+      18
+    ],
+    "firing_rate": 50,
+    "stealth": 1,
+    "price": 22599
+  },
+  "ar10": {
+    "id": "ar10",
+    "name": "Wooden Shield",
+    "description": "A shield made of wood",
+    "tags": [
+      "arsenal",
+      "melee",
+      "medium_shield",
+      "physical",
+      "inconsumable"
+    ],
+    "weight": 45,
+    "defend": 80,
+    "multiplier": 0.5,
+    "str": 1,
+    "sta": 30,
+    "speed": 4,
+    "price": 500
+  },
+  "ar11": {
+    "id": "ar11",
+    "name": "Wooden Round Shield",
+    "description": "Tiny shield made of wood",
+    "tags": [
+      "arsenal",
+      "melee",
+      "small_shield",
+      "physical",
+      "inconsumable"
+    ],
+    "weight": 25,
+    "defend": 50,
+    "multiplier": 0.5,
+    "str": 1,
+    "sta": 10,
+    "speed": 2,
+    "price": 500
+  },
+  "ar12": {
+    "id": "ar12",
+    "name": "Wooden Wall Shield",
+    "description": "Big-ass shield made of wood",
+    "tags": [
+      "arsenal",
+      "melee",
+      "great_shield",
+      "physical",
+      "inconsumable"
+    ],
+    "weight": 75,
+    "defend": 100,
+    "multiplier": 1,
+    "str": 2,
+    "sta": 50,
+    "speed": 3,
+    "price": 500
+  }
+}

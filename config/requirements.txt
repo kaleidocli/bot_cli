@@ -1,0 +1,5 @@
+nltk
+nekos
+imgurpython
+pybooru
+requests

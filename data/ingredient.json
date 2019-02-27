@@ -1,0 +1,23 @@
+{
+  "ig0": {
+    "name": "Bread <:pixel_bread:508282709433647165>",
+    "id": "ig0",
+    "description": "Soaked in the hot fluid of the White Flame, among the reinforced brick of Aulnoy, this malicious bunch of formed flour will make your stamina goes up by 10",
+    "tags": ["ingredient", "cuisine", "consumable", "food"],
+    "price": 15
+  },
+  "ig1": {
+    "name": "Sandwich <:sandwich:508238959944400907>",
+    "id": "ig1",
+    "description": "Hamburger at its best. Delicacy or not, depends on none of the ingredient but the taste of the maker. Eat however you please, 10 STA is always a guarantee",
+    "tags": ["ingredient", "cuisine", "consumable", "food"],
+    "price": 15
+  },
+  "ig2": {
+    "name": "Ramen :ramen:",
+    "id": "ig2",
+    "description": "Somewhat a remaining if the long-lost Old World, though could never be replicated perfectly. Has the Siegfield not tried exterminating the dish, it'd have been better than just 30 STA...",
+    "tags": ["ingredient", "cuisine", "consumable", "food"],
+    "price": 55
+  }
+} 
