@@ -1404,7 +1404,7 @@ Definition? Mechanism? Lore? Yaaa```
             STR, INTT, STA = await self.quefe(f"SELECT STR, INTT, STA FROM personal_info WHERE id='{ctx.author.id}';")
 
             # Get hunt limitation
-            try: 
+            try:
                 limit = int(raw[0])
                 if limit >= STA: limit = STA - 1
             except (IndexError, ValueError): limit = STA - 1
@@ -1413,6 +1413,7 @@ Definition? Mechanism? Lore? Yaaa```
 
             # Get animals based on INTT
             anis = await self.quefe(f"SELECT ani_code, str, sta, aggro, rewards, reward_query FROM model_animal WHERE intt<={INTT};", type='all')
+
 
             # Reward generating
             rewards = '\n'; reward_query = ''
@@ -3400,12 +3401,11 @@ Definition? Mechanism? Lore? Yaaa```
                 # Biome get
                 biome = random.choice(r_biome.split(' - '))
 
-
                 def UMCc_check(m):
                     return m.channel == ctx.channel and m.author == ctx.author
 
                 # NAME
-                msg = await ctx.send(":crown: Shall speak your wish, the name is what?\n:bell: Timeout=30s")
+                msg = await ctx.send(":crown: Shall speak your wish, the name is asked?\n||:bell: Timeout=30s · Please give a name||")
                 try: 
                     resp = await self.client.wait_for('message', timeout=30, check=UMCc_check)
                     l_name = resp.content
@@ -3509,94 +3509,121 @@ Definition? Mechanism? Lore? Yaaa```
                 output_buffer = await magik()
                 await ctx.send(file=discord.File(fp=output_buffer, filename='stock.png'))
 
+            else:
+                try: land_id = int(raw[0])
+                except ValueError: await ctx.send("<:osit:544356212846886924> Invalid land's id!"); return
+
+                if raw[1] == 'description':
+                    try: desc = await self.inj_filter(' '.join(raw[2:18]))
+                    except IndexError: await ctx.send("<:osit:544356212846886924> Missing content of description!"); return
+
+                    await _cursor.execute(f"UPDATE pi_land SET description='{desc}' WHERE land_id={land_id} AND user_id='{ctx.author.id}';")
+                    await ctx.send(":white_check_mark: Done")
+
+                elif raw[1] == 'currency':
+                    try: currency = await self.inj_filter(' '.join(raw[2:6]))
+                    except IndexError: await ctx.send("<:osit:544356212846886924> Missing currency name!"); return
+
+                    await _cursor.execute(f"UPDATE pi_land SET currency='{currency}' WHERE land_id={land_id} AND user_id='{ctx.author.id}';")
+                    await ctx.send(":white_check_mark: Done")
+
+                elif raw[1] in ['image', 'illustration']:
+                    try:
+                        illulink = await self.illulink_check(' '.join(raw[2:]))
+                        if not illulink: await ctx.send("<:osit:544356212846886924> Invalid link!"); return
+                    except IndexError: await ctx.send("<:osit:544356212846886924> Missing link!"); return
+
+                    await _cursor.execute(f"UPDATE pi_land SET illulink='{illulink}' WHERE land_id={land_id} AND user_id='{ctx.author.id}';")
+                    await ctx.send(":white_check_mark: Done")
+
         except IndexError:
-            # User's info
-            cur_PLACE, money, merit = await self.quefe(f"SELECT cur_PLACE, money, merit FROM personal_info WHERE id='{ctx.author.id}';")
+            try: region = f"AND region='{args[0]}'"
+            except IndexError: region = ''
 
-            # Info
-            total_lands = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}';")
-            lands = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND region='{cur_PLACE}';")
-            dem = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND government='DEMOCRACY';")
-            fas = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND government='FASCISM';")
-            com = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND government='COMMUNISM';")
+            lands = await self.quefe(f"SELECT land_id, name, description, biome, region, currency, government, population, treasury, resource, faith, v_plot, v_plot_total, v_productive, v_HAPPY, v_HEALTH, v_CULTURE, illulink, cur_population FROM pi_land WHERE user_id='{ctx.author.id}' {region};", type='all')
 
-            await ctx.send(f":crown: **{ctx.author.name.upper()}**'s\n════╦═════════════\n**Local**  ║  **{lands}**  lands\n**Total**  ║  **{total_lands}**  lands\n`DEMOCRACY`  ║   **{dem}**  lands\n`FASCISM`      ║   **{fas}**  lands\n`COMMUNISM`  ║   **{com}**  lands\n═══════╩══════════", delete_after=20)
-            
+            if not lands: await ctx.send(":crown: You have no lands :>")
+
+            def makeembed(curp, pages, currentpage):
+                land = lands[curp]
+
+                reembed = discord.Embed(title = f":crown: `{land[6]}` · `{land[0]}` | **{land[1].capitalize()}**", description = f"""```dsconfig
+        {land[2]}```""", colour = discord.Colour(0x011C3A))
+                reembed.add_field(name=":scales: Property", value=f"╟`Region` · **{land[4]}**\n╟`Population` · {land[18]}/**{land[7]}**\n╟`Area` · {land[11]}/**{land[12]}**")
+                reembed.add_field(name=":amphora: Resource", value=f"╟`Treasury` · **{land[8]} {land[5]}**\n╟`Resource` · **{land[9]}**\n╟`Faith` · **{land[10]}**")
+                reembed.add_field(name=":innocent: Life", value=f"╟`HEALTH` · **{land[15]}**⠀⠀⠀⠀⠀`HAPPY` · **{land[14]}**\n╟`CULTURE` · **{land[16]}**⠀⠀⠀⠀⠀⠀`Productive` · **{land[13]}**")
+                reembed.set_footer(text=f"═════╡{len(lands)}╞══╡{currentpage}/{pages}╞═════")
+                reembed.set_image(url=land[17])
+                reembed.set_thumbnail(url=self.biome[land[3]])
+
+                return reembed
+
+            async def attachreaction(msg):
+                await msg.add_reaction("\U000023ee")    #Top-left
+                await msg.add_reaction("\U00002b05")    #Left
+                await msg.add_reaction("\U000027a1")    #Right
+                await msg.add_reaction("\U000023ed")    #Top-right
+
+            pages = len(lands)
+            currentpage = 1
+            cursor = 0
+
+            emli = []
+            for curp in range(pages):
+                myembed = makeembed(curp, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
+
+            if pages > 1: 
+                msg = await ctx.send(embed=emli[cursor])
+                await attachreaction(msg)
+            else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
+
+            def UM_check(reaction, user):
+                return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+            while True:
+                try:    
+                    reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                        cursor += 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U00002b05" and cursor > 0:
+                        cursor -= 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ee" and cursor != 0:
+                        cursor = 0
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                        cursor = pages - 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                except asyncio.TimeoutError:
+                    await msg.delete(); return
+
     @commands.command()
     @commands.cooldown(1, 3, type=BucketType.user)
     async def lands(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
-        try: region = f"AND region='{args[0]}'"
-        except IndexError: region = ''
+        # User's info
+        cur_PLACE = await self.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
 
-        lands = await self.quefe(f"SELECT land_id, name, description, biome, region, currency, government, population, treasury, resource, faith, v_plot, v_plot_total, v_productive, v_HAPPY, v_HEALTH, v_CULTURE, illulink, cur_population FROM pi_land WHERE user_id='{ctx.author.id}' {region};", type='all')
+        # Info
+        total_lands = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}';")
+        lands = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND region='{cur_PLACE[0]}';")
+        dem = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND government='DEMOCRACY';")
+        fas = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND government='FASCISM';")
+        com = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND government='COMMUNISM';")
 
-        if not lands: await ctx.send(":crown: You have no lands :>")
-
-        def makeembed(curp, pages, currentpage):
-            land = lands[curp]
-
-            reembed = discord.Embed(title = f":crown: `{land[6]}` · `{land[0]}` | **{land[1].capitalize()}**", description = f"""```dsconfig
-    {land[2]}```""", colour = discord.Colour(0x011C3A))
-            reembed.add_field(name=":scales: Property", value=f"╟`Region` · **{land[4]}**\n╟`Population` · {land[18]}/**{land[7]}**\n╟`Area` · {land[11]}/**{land[12]}**")
-            reembed.add_field(name=":amphora: Resource", value=f"╟`Treasury` · **{land[8]} {land[5]}**\n╟`Resource` · **{land[9]}**\n╟`Faith` · **{land[10]}**")
-            reembed.add_field(name=":innocent: Life", value=f"╟`HEALTH` · **{land[15]}**⠀⠀⠀⠀⠀`HAPPY` · **{land[14]}**\n╟`CULTURE` · **{land[16]}**⠀⠀⠀⠀⠀⠀`Productive` · **{land[13]}**")
-            reembed.set_footer(text=f"═════╡{len(lands)}╞══╡{currentpage}/{pages}╞═════")
-            reembed.set_image(url=land[17])
-            reembed.set_thumbnail(url=self.biome[land[3]])
-
-            return reembed
-
-        async def attachreaction(msg):
-            await msg.add_reaction("\U000023ee")    #Top-left
-            await msg.add_reaction("\U00002b05")    #Left
-            await msg.add_reaction("\U000027a1")    #Right
-            await msg.add_reaction("\U000023ed")    #Top-right
-
-        pages = len(lands)
-        currentpage = 1
-        cursor = 0
-
-        emli = []
-        for curp in range(pages):
-            myembed = makeembed(curp, pages, currentpage)
-            emli.append(myembed)
-            currentpage += 1
-
-        if pages > 1: 
-            msg = await ctx.send(embed=emli[cursor])
-            await attachreaction(msg)
-        else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
-
-        def UM_check(reaction, user):
-            return user.id == ctx.message.author.id and reaction.message.id == msg.id
-
-        while True:
-            try:    
-                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
-                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                    cursor += 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U00002b05" and cursor > 0:
-                    cursor -= 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ee" and cursor != 0:
-                    cursor = 0
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                    cursor = pages - 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-            except asyncio.TimeoutError:
-                await msg.delete(); return
+        await ctx.send(f":crown: **{ctx.author.name.upper()}**'s\n════╦═════════════\n**Local**  ║  **{lands}**  lands\n**Total**  ║  **{total_lands}**  lands\n`DEMOCRACY`  ║   **{dem}**  lands\n`FASCISM`      ║   **{fas}**  lands\n`COMMUNISM`  ║   **{com}**  lands\n═══════╩══════════", delete_after=20)
 
     @commands.command()
     @commands.cooldown(1, 300, type=BucketType.user)
@@ -3678,93 +3705,12 @@ Definition? Mechanism? Lore? Yaaa```
         if gov == 'DEMOCRACY': resource = round(resource/5)
         else: resource = round(resource/10)
 
-        def UMCc_check(m):
-            return m.channel == ctx.channel and m.author == ctx.author and m.content == 'shrink confirm'
-
         # NAME
-        msg = await ctx.send(f":crown: Selling **{quantity}** plots in `{raw[0]}`|**{name}** of `{region}`:\n╟`Original price` · <:36pxGold:548661444133126185> **{temppr}**/plot\n=====================\n╟`Final price` · <:36pxGold:548661444133126185> **{final_price}**\n╟`Resource lost` · {resource}\n||:bell: {ctx.author.mention}, Timout=20s, Key=`shrink confirm`||")
-        try: 
-            await self.client.wait_for('message', timeout=20, check=UMCc_check)
-            await msg.delete()
-        except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timeout!"); await msg.delete(); return
-
-
-
-        await ctx.send(f":crown: Your land - `{raw[0]}`|**{name}** - has shrinked **{quantity} plots!**")
+        await ctx.send(f":crown: Selling **{quantity}** plots in `{raw[0]}`|**{name}** of `{region}`:\n╟`Original price` · <:36pxGold:548661444133126185> **{temppr}**/plot\n=====================\n╟`Receive` · <:36pxGold:548661444133126185> **{final_price}**\n╟`Resource lost` · {resource}")
 
         await _cursor.execute(f"UPDATE pi_land SET v_plot=v_plot-{quantity}, v_plot_total=v_plot_total-{quantity}, treasury=treasury-{final_price}, resource=resource-{resource} WHERE land_id='{raw[0]}' AND user_id='{ctx.author.id}'; UPDATE environ SET land_slot=land_slot-{quantity} WHERE environ_code='{region}';")
 
 
-
-
-
-    @commands.command(aliases=['lbd'])
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def landboard(self, ctx, *args):
-            if not await self.ava_scan(ctx.message, type='life_check'): return
-
-            cur_PLACE = await self.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';"); cur_PLACE = cur_PLACE[0]
-            r_name, r_plprice = await self.quefe(f"SELECT name, plot_price FROM environ WHERE environ_code='{cur_PLACE}';")
-
-            await ctx.trigger_typing()
-            # Time
-            taim = await self.client.loop.run_in_executor(None, self.time_get)                  # year, month, day, hour, minute        
-
-            resus = []
-            for t_cursor in [-1, -2, -3, -4, -5]:
-                tatem = list(taim)
-                tatem[2] += t_cursor
-
-                resu = await self.realty_calc(r_plprice, tatem, [-2, -1, 0, 1, 2])
-                resus.append(resu)
-            maxar = max(resus)
-            resus.reverse()
-
-            async def magik():
-                # Barring
-                bar_box = Image.new('RGBA', (523, 446), (255, 255, 255, 0))
-                count = 70
-                print(resus)
-                bar = self.prote_lib['stock_bar'][0]
-
-                bg = copy.deepcopy(self.prote_lib['bg_stock'][0])
-
-                fnt_region = self.prote_lib['font']['stock_region']
-                fnt_bar = self.prote_lib['font']['stock_region_bar']
-                fnt_name = self.prote_lib['font']['stock_region_name']
-
-                region_box = Image.new('RGBA', bg.size, (255, 255, 255, 0))
-
-                stonu = ImageDraw.Draw(bg)
-
-                for resu in resus:
-                    verti_lim = bar_box.width - round(bar_box.size[0] / maxar * resu)
-                    print(verti_lim, maxar, bar_box.width, round(bar_box.size[0] / maxar * resu))
-                    if (verti_lim - bar_box.width) > -100: verti_lim = bar_box.width - 125
-
-                    bar_box.alpha_composite(bar, dest=(0, count), source=(verti_lim, 0))
-                    stonu_X = bg.width - verti_lim - 225
-                    if stonu_X <= 234 + 10: stonu_X = 254
-                    stonu.text((stonu_X, count - 5), f"$ {resu}", font=fnt_bar, fill=(134, 73, 37, 225))
-                    count += 70
-
-                rb = ImageDraw.Draw(region_box)
-
-                rb.text((region_box.width/4, 0), f"{cur_PLACE}", font=fnt_region, fill=(134, 73, 37, 225))
-                rb.text((region_box.width/4 + 20, 20), f"{r_name.upper()}", font=fnt_name, fill=(134, 73, 37, 200))
-
-                region_box = region_box.rotate(90)
-
-                bg.alpha_composite(region_box, dest=(0, 0), source=(70, 0))
-                bg.alpha_composite(bar_box, dest=(234, 0), source=(0, 0))
-
-                output_buffer = BytesIO()
-                bg.save(output_buffer, 'png')
-                output_buffer.seek(0)
-                return output_buffer
-            
-            output_buffer = await magik()
-            await ctx.send(file=discord.File(fp=output_buffer, filename='stock.png'))
 
     @commands.command(aliases=['est'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -3799,51 +3745,132 @@ Definition? Mechanism? Lore? Yaaa```
 
         await _cursor.execute(f"INSERT INTO pi_unit VALUES (0, {raw[0]}, '{u_name}', 'Silence...', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''); UPDATE pi_land SET treasury=treasury-{cost}, faith=faith-{faith_cost} WHERE land_id='{raw[0]}' AND user_id='{ctx.author.id}';")
         await ctx.send(f":crown: Niem! Best salute to **{u_name}**!")       
+        """
+            @commands.command()
+            @commands.cooldown(1, 10, type=BucketType.user)
+            async def unit(self, ctx, *args):
+                if not await self.ava_scan(ctx.message, type='life_check'): return
+                units = []
+                lands = await self.quefe(f"SELECT region, land_id, name FROM pi_land WHERE user_id='{ctx.author.id}';", type='all')
+                for land in lands:
+                    aa = await self.quefe(f"SELECT unit_id, name, entity, evo FROM pi_unit WHERE land_id={land[1]};", type='all')
+                    for a in aa:
+                        if await _cursor.execute(f"SELECT * FROM pi_order WHERE unit_id='{a[0]}';"): units.append(list(a) + list(land) + ['**`ACTIVE`**'])
+                        else: units.append(list(a) + list(land) + ['`PASSIVE`'])
+
+                def makeembed(top, least, pages, currentpage):
+                    line = '\n'
+
+                    for unit in units[top:least]:
+                        line = line + f"`{unit[4]}` ∙ `{unit[0]}` | **{unit[1].capitalize()}** of **{unit[6]}**\n╟`Status` · {unit[-1]}\n╟`EVO` · **{unit[3]}**⠀⠀`Entity` · **{unit[2]}**\n\n"
+
+                    reembed = discord.Embed(title = f":crown: **{ctx.author.name.upper()}**'s Units", colour = discord.Colour(0x011C3A), description=line)
+                    reembed.set_footer(text=f"═════╡{len(lands)}╞══╡{currentpage}/{pages}╞═════")
+                    return reembed
+                    #else:
+                    #    await ctx.send("*Nothing but dust here...*")
+                
+                async def attachreaction(msg):
+                    await msg.add_reaction("\U000023ee")    #Top-left
+                    await msg.add_reaction("\U00002b05")    #Left
+                    await msg.add_reaction("\U000027a1")    #Right
+                    await msg.add_reaction("\U000023ed")    #Top-right
+
+                pages = len(units)//4
+                if len(units)%4 != 0: pages += 1
+                currentpage = 1
+                cursor = 0
+
+                emli = []
+                for curp in range(pages):
+                    myembed = makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
+                    emli.append(myembed)
+                    currentpage += 1
+
+                if pages > 1: 
+                    await attachreaction(msg)
+                    msg = await ctx.send(embed=emli[cursor])
+                else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
+
+                def UM_check(reaction, user):
+                    return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+                while True:
+                    try:    
+                        reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                            cursor += 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U00002b05" and cursor > 0:
+                            cursor -= 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U000023ee" and cursor != 0:
+                            cursor = 0
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                            cursor = pages - 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                    except asyncio.TimeoutError:
+                        await msg.delete(); return
+        """
 
     @commands.command()
     @commands.cooldown(1, 10, type=BucketType.user)
     async def unit(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
-        units = []
-        lands = await self.quefe(f"SELECT region, land_id, name FROM pi_land WHERE user_id='{ctx.author.id}';", type='all')
+
+        # Land check
+        try: land_cq = f" AND land_id={int(args[0])}"
+        except (IndexError, ValueError): land_cq = ''
+
+        lands = await self.quefe(f"SELECT land_id, name FROM pi_land WHERE user_id='{ctx.author.id}' {land_cq};", type='all')
+
+        troops = []
         for land in lands:
-            aa = await self.quefe(f"SELECT unit_id, name, entity, evo FROM pi_unit WHERE land_id={land[1]};", type='all')
-            for a in aa:
-                if await _cursor.execute(f"SELECT * FROM pi_order WHERE unit_id='{a[0]}';"): units.append(list(a) + list(land) + ['**`ACTIVE`**'])
-                else: units.append(list(a) + list(land) + ['`PASSIVE`'])
+            troops.append(await self.quefe(f"SELECT v_treasury, v_resource, v_faith, unit_id, name, description, entity, str, intt, sta, speed, stealth, as_NAVAL, as_AIR, as_LAND, as_MIRACLE, as_FAITH, as_ARCH, as_BIO, as_TECH, illulink, '{land[0]}', '{land[1]}', max_sta FROM pi_unit WHERE land_id={land[0]};", type='all'))
+        troops = troops[0]
 
-        def makeembed(top, least, pages, currentpage):
-            line = '\n'
+        def makeembed(curp, pages, currentpage):
+            troop = troops[curp]
 
-            for unit in units[top:least]:
-                line = line + f"""`{unit[4]}` ∙ `{unit[0]}` | **{unit[1].capitalize()}** of **{unit[6]}**\n╟`Status` · {unit[-1]}\n╟`EVO` · **{unit[3]}**⠀⠀`Entity` · **{unit[2]}**\n\n"""
+            reembed = discord.Embed(title = f"""`{troop[3]}` | **{troop[4].upper()}**
+        ━━━━━━ of land `{troop[21]}` | {troop[22]}""", description = f"""```dsconfig
+    {troop[5]}```""", colour = discord.Colour(0x011C3A))
+            reembed.add_field(name=":label: Value", value=f"╟`Entity` · **{troop[6]}**\n╟`Treasury` · **{troop[0]}**\n╟`Resource` · **{troop[1]}**\n╟`Faith` · **{troop[2]}**")
+            reembed.add_field(name=":crossed_swords: Status", value=f"╟`STR` · **{troop[7]}**\n╟`INT` · **{troop[8]}**\n╟`STA` · **{troop[9]}**/**{troop[23]}**\n╟`SPEED` · **{troop[10]}**\n╟`STEALTH` · **{troop[11]}**")
+            reembed.add_field(name=":bookmark: Aspect", value=f"╟`Naval`**`{troop[12]}`**⠀·⠀`Air`**`{troop[13]}`**⠀·⠀`Land`**`{troop[14]}`**⠀·⠀`Miracle`**`{troop[15]}`**\n╟`Faith`**`{troop[16]}`**⠀·⠀`Architect`**`{troop[17]}`**⠀·⠀`Bio`**`{troop[18]}`**⠀·⠀`Tech`**`{troop[19]}`**")
+            reembed.set_footer(text=f"═════╡{len(troops)}╞══╡{currentpage}/{pages}╞═════")
+            reembed.set_image(url=troop[20])
 
-            reembed = discord.Embed(title = f":crown: **{ctx.author.name.upper()}**'s Units", colour = discord.Colour(0x011C3A), description=line)
-            reembed.set_footer(text=f"═════╡{len(lands)}╞══╡{currentpage}/{pages}╞═════")
             return reembed
-            #else:
-            #    await ctx.send("*Nothing but dust here...*")
-        
+
         async def attachreaction(msg):
             await msg.add_reaction("\U000023ee")    #Top-left
             await msg.add_reaction("\U00002b05")    #Left
             await msg.add_reaction("\U000027a1")    #Right
             await msg.add_reaction("\U000023ed")    #Top-right
 
-        pages = len(units)//4
-        if len(units)%4 != 0: pages += 1
+        pages = len(troops)
         currentpage = 1
         cursor = 0
 
         emli = []
         for curp in range(pages):
-            myembed = makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
+            myembed = makeembed(curp, pages, currentpage)
             emli.append(myembed)
             currentpage += 1
 
         if pages > 1: 
-            await attachreaction(msg)
             msg = await ctx.send(embed=emli[cursor])
+            await attachreaction(msg)
         else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
 
         def UM_check(reaction, user):
@@ -3887,7 +3914,7 @@ Definition? Mechanism? Lore? Yaaa```
 
             reembed = discord.Embed(title = f"`{troop[3]}` | **{troop[4].upper()}**", description = f"""```dsconfig
     {troop[5]}```""", colour = discord.Colour(0x011C3A))
-            reembed.add_field(name=":label: Value", value=f"╟`Quantity` · **{troop[6]}**\n╟`Treasury` · **{troop[0]}**\n╟`Resource` · **{troop[1]}**\n╟`Faith` · **{troop[2]}**")
+            reembed.add_field(name=":label: Value", value=f"╟`Entity` · **{troop[6]}**\n╟`Treasury` · **{troop[0]}**\n╟`Resource` · **{troop[1]}**\n╟`Faith` · **{troop[2]}**")
             reembed.add_field(name=":crossed_swords: Status", value=f"╟`STR` · **{troop[7]}**\n╟`INT` · **{troop[8]}**\n╟`STA` · **{troop[9]}**\n╟`SPEED` · **{troop[10]}**\n╟`STEALTH` · **{troop[11]}**")
             reembed.add_field(name=":bookmark: Aspect", value=f"╟`Naval`**`{troop[12]}`**⠀·⠀`Air`**`{troop[13]}`**⠀·⠀`Land`**`{troop[14]}`**⠀·⠀`Miracle`**`{troop[15]}`**\n╟`Faith`**`{troop[16]}`**⠀·⠀`Architect`**`{troop[17]}`**⠀·⠀`Bio`**`{troop[18]}`**⠀·⠀`Tech`**`{troop[19]}`**")
             reembed.set_footer(text=f"═════╡{len(troops)}╞══╡{currentpage}/{pages}╞═════")
@@ -3944,6 +3971,49 @@ Definition? Mechanism? Lore? Yaaa```
                     except discordErrors.Forbidden: pass
             except asyncio.TimeoutError:
                 await msg.delete(); return
+
+    @commands.command()
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def union(self, ctx, *args):
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+        
+        # UNIT info
+        try: u1_id = int(args[0])
+        except IndexError: await ctx.send("<:osit:544356212846886924> Missing *first* unit's id"); return
+        except ValueError: await ctx.send("<:osit:544356212846886924> Invalid unit's id!"); return
+
+        try: u2_id = int(args[1])
+        except IndexError: await ctx.send("<:osit:544356212846886924> Missing *second* unit's id"); return
+        except ValueError: await ctx.send("<:osit:544356212846886924> Invalid unit's id!"); return
+
+        # LAND list
+        lands = await self.quefe(f"SELECT land_id FROM pi_land WHERE user_id='{ctx.author.id}';", type='all')
+        try: lands = lands[0]
+        except IndexError: await ctx.send("<:osit:544356212846886924> You have no land"); return
+        lands_1 = ', '.join(lands)
+        lands_2 = f" AND m.land_id IN ({lands_1})"
+        lands_1 = f" AND p.land_id IN ({lands_2})"
+
+        def UMCc_check(m):
+            return m.channel == ctx.channel and m.author == ctx.author and m.content == 'union confirm'
+
+        # NAME
+        await ctx.send(f":crown: {ctx.author.mention} requrest to union unit `{u2_id}` to unit `{u1_id}`, which will disband the prior. Proceed?\n||:bell: Timeout=15s · Key=`union confirm`||")
+        try: 
+            await self.client.wait_for('message', timeout=15, check=UMCc_check)
+        except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request times out!"); return
+
+
+        # UNION
+        a = await _cursor.execute(f"""UPDATE pi_unit p INNER JOIN pi_unit m ON m.unit_id={u2_id} {lands_2}
+                                        SET p.entity=p.entity+quantity_in*m.entity, p.max_entity=p.max_entity+quantity_in*m.entity, p.evo=p.evo+m.evo, p.str=p.str+m.str, p.intt=p.intt+m.intt, p.sta=p.sta+m.sta, p.speed=p.speed+m.speed, p.stealth=p.stealth+m.stealth, p.as_NAVAL=p.as_NAVAL+m.as_NAVAL, p.as_AIR=p.as_AIR+m.as_AIR, p.as_LAND=p.as_LAND+m.as_LAND, p.as_MIRACLE=p.as_MIRACLE+m.as_MIRACLE, p.as_FAITH=p.as_FAITH+m.as_FAITH, p.as_ARCH=p.as_ARCH+m.as_ARCH, p.as_BIO=p.as_BIO+m.as_BIO, p.as_TECH=p.as_TECH+m.as_TECH, p.v_treasury=p.v_treasury+m.v_treasury, p.v_resource=p.v_resource+m.v_resource, p.v_faith=p.v_faith+m.v_faith, p.v_plot=p.v_plot+m.v_plot
+                                        WHERE p.unit_id={u1_id} {lands_1};""")
+
+        if not a: await ctx.send("<:osit:544356212846886924> You don't own one of those units!"); return
+
+        await _cursor.execute(f"DELETE FROM pi_unit WHERE unit_id={u2_id};")
+
+        await ctx.send(":crown: The deed is done. Result can be checked!")
 
     @commands.command()
     @commands.cooldown(1, 15, type=BucketType.user)
@@ -4050,7 +4120,8 @@ Definition? Mechanism? Lore? Yaaa```
 
         # =========== PREPARE 2 ===========
         limit = round(o_dura/10)
-        duration = round((o_dura/cost_entity*o_enr)/1000)
+        try: duration = round((o_dura/cost_entity*o_enr)/1000)
+        except ZeroDivisionError: duration = round((o_dura*o_enr)/1000)
         duration += round((l_productive/1000*(1000 - l_productive)) + duration/(asp + 1))
         dis_sta = o_ursta - u_sta
         if dis_sta > 5000: await ctx.send("<:osit:544356212846886924> Your unit. Needs. Rest."); return
@@ -4207,48 +4278,6 @@ Definition? Mechanism? Lore? Yaaa```
 
         a = await _cursor.execute(f"{reward_query} DELETE FROM pi_order WHERE order_id={args[0]}")
         print(a)
-
-    @commands.command()
-    @commands.cooldown(1, 30, type=BucketType.user)
-    async def train(self, ctx, *args):
-        if not await self.ava_scan(ctx.message, type='life_check'): return
-        raw = list(args)
-
-        # Info
-        try: force_code = raw[0]
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing force's code!"); return
-
-        try: unit_id = raw[1]
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing unit's id!"); return
-
-        try: quantity = raw[2]
-        except IndexError: quantity = 1
-
-        land_id = await self.quefe(f"SELECT land_id FROM pi_unit WHERE unit_id='{unit_id}';")
-
-        try: treasury, resource, faith, currency, cur_population = await self.quefe(f"SELECT treasury, resource, faith, currency, cur_population FROM pi_land WHERE land_id='{land_id[0]}' AND user_id='{ctx.author.id}';")
-        except TypeError: await ctx.send("<:osit:544356212846886924> You don't own this unit"); return
-
-        try: v_treasury, v_resource, v_faith, f_name, troops, strr, intt, sta, speed, stealth, as_NAVAL, as_AIR, as_LAND, as_MIRACLE, as_FAITH, as_ARCH, as_BIO, as_TECH = await self.quefe(f"SELECT v_treasury, v_resource, v_faith, name, entity, str, intt, sta, speed, stealth, as_NAVAL, as_AIR, as_LAND, as_MIRACLE, as_FAITH, as_ARCH, as_BIO, as_TECH FROM model_unit WHERE unit_code='{force_code}';")
-        except TypeError: await ctx.send("<:osit:544356212846886924> Force code not found!"); return
-
-        # Preparing
-        if treasury < v_treasury: await ctx.send(f"<:osit:544356212846886924> Your land's **treasury** must be higher than **{v_treasury} {currency}**"); return
-        elif resource < v_resource: await ctx.send(f"<:osit:544356212846886924> Your land's **resource** must be higher than **{v_resource}**"); return
-        elif faith < v_faith: await ctx.send(f"<:osit:544356212846886924> Your land's **faith** must be higher than **{v_faith}**"); return
-        elif cur_population < troops: await ctx.send(f"<:osit:544356212846886924> Your land's **unemployed population** must be higher than **{troops}**"); return
-        
-        msg = await ctx.send(f":crown: **{v_treasury} {currency}**, **{v_resource}** resource and **{v_faith}** faith, they're the cost for `{quantity}` `{force_code}`|**{f_name}**.\n:bell: React to proceed. (Timeout=20s)", delete_after=21)
-        await msg.add_reaction("\U00002705")
-        def RUM_check(reaction, user):
-            return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) == '\U00002705'
-        try:
-            await self.client.wait_for('reaction_add', check=RUM_check, timeout=20)
-            await ctx.send(":white_check_mark: Done")
-        except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timeout"); return
-
-        await _cursor.execute(f"UPDATE pi_unit SET troops=troops+{troops}, str=str+{strr}, intt=intt+{intt}, max_sta=max_sta+{sta}, sta=max_sta, speed=speed+{speed}, stealth=stealth+{stealth}, as_NAVAL=as_NAVAL+{as_NAVAL}, as_AIR=as_AIR+{as_AIR}, as_LAND=as_LAND+{as_LAND}, as_MIRACLE=as_MIRACLE+{as_MIRACLE}, as_FAITH=as_FAITH+{as_FAITH}, as_ARCH=as_ARCH+{as_ARCH}, as_BIO=as_BIO+{as_BIO}, as_TECH=as_TECH+{as_TECH} WHERE unit_id='{unit_id}'; UPDATE pi_land SET treasury=treasury-{v_treasury}, resource=resource-{v_resource}, faith=faith-{v_faith}, cur_population=cur_population-{troops} WHERE land_id='{land_id[0]}';")
-
 
 
 
@@ -5954,6 +5983,14 @@ Definition? Mechanism? Lore? Yaaa```
             temp.append(init_price)
         print("RAW Realty Sess", temp)
         return int(np.mean(temp))
+
+    async def illulink_check(self, illulink):
+        temp = discord.Embed()
+        try:
+            temp.set_image(url=illulink)
+            return illulink
+        except discordErrors.HTTPException: return False
+
 
 
 
