@@ -21,6 +21,7 @@ import psutil
 
 help_dict = {}
 ava_dict = {}
+bulb = True
 char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U0001f1e9', 'e': '\U0001f1ea', 'f': '\U0001f1eb', 'g': '\U0001f1ec', 'h': '\U0001f1ed', 'i': '\U0001f1ee', 'j': '\U0001f1ef', 'k': '\U0001f1f0',
             'l': '\U0001f1f1', 'm': '\U0001f1f2', 'n': '\U0001f1f3', 'o': '\U0001f1f4', 'p': '\U0001f1f5', 'q': '\U0001f1f6', 'r': '\U0001f1f7', 's': '\U0001f1f8', 't': '\U0001f1f9', 'u': '\U0001f1fa', 'v': '\U0001f1fb', 'w': '\U0001f1fc', 'x': '\U0001f1fd', 'y': '\U0001f1fe', 'z': '\U0001f1ff'}
 
@@ -29,7 +30,7 @@ extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cog
 TOKEN = 'NDQ5Mjc4ODExMzY5MTExNTUz.Dl2k3A.pGUlnO4HDB2xCH31iXa3uTUJxqA'
 #TOKEN = 'NDQ2NDMxODcyNTQ1ODQ5MzU0.Dm4nJQ.KXmpoZjn47UMNoPSsT34hq_NiQo'                    #thebluecat
 
-prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli '} # {Guild: [list, of, prefixes]}
+prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
 async def get_pref(bot, message):
     if not message.guild:  # dms
         return ">"
@@ -55,7 +56,7 @@ def check_id():
 async def help(ctx, *args):
     global help_dict
     raw = list(args)
-    
+
     try: prefix = prefixes[ctx.guild.id]
     except KeyError: prefix = '>'
 
@@ -99,6 +100,21 @@ async def statas(ctx, *args):
     temb = discord.Embed(title=f"<a:ramspin:547325170726207499> {bytes2human(mem.used)}/{bytes2human(mem.total)} ({round(mem.used/mem.total*100)}%)", colour = discord.Colour(0xB1F1FA))
 
     await ctx.send(embed=temb)
+
+@client.command()
+@check_id()
+async def megaturn(ctx, *args):
+    global bulb
+    try:
+        if args[0].lower() == 'on':
+            if bulb: await ctx.send(":warning: Already **ON**!"); return
+            bulb = True
+            await ctx.send(":bell: Bot is **ON**!"); return
+        elif args[0].lower() == 'off':
+            if not bulb: await ctx.send(":warning: Already **OFF**!"); return
+            bulb = False
+            await ctx.send(":no_bell: Bot is now **OFF**!"); return           
+    except IndexError: pass
 
 @client.command()
 async def invite(ctx):
@@ -489,9 +505,17 @@ def reload(ext):
 
 @client.event
 async def on_message(message):
+    global bulb; global prefixes
+
     if message.author == client.user:
         return
     if message.author.bot: return
+
+    if not bulb:
+        try:
+            if not message.content.startswith(f'{prefixes[message.guild.id]}megaturn'): return
+        except KeyError:
+            if not message.content.startswith(f'>megaturn'): return
     await client.process_commands(message)
 
 #Generate random file's name from the path

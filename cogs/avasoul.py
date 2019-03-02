@@ -173,7 +173,11 @@ class avasoul:
         id = str(ctx.message.author.id); name = ctx.message.author.name
 
         # Create a living entity (creator-only)
-        if args and str(ctx.message.author.id) == '214128381762076672': id = ' '.join(args); name = id
+        if args:
+            if str(ctx.message.author.id) == '214128381762076672':
+                try: id = str(ctx.message.mentions[0].id); name = ctx.message.mentions[0].name
+                except IndexError: id = ' '.join(args); name = id
+            else: await ctx.send(":no_entry_sign: You wish :>"); return
 
         resu = await self.quefe(f"SELECT stats FROM personal_info WHERE id='{id}'")
         try:
@@ -185,8 +189,7 @@ class avasoul:
         year, month, day, hour, minute = await self.client.loop.run_in_executor(None, self.time_get)
 
         if not resu:
-            ava['name'] = name[0:20].replace("'", '')
-            ava['name'] = ava['name'].replace("\"", '')
+            ava['name'] = await self.inj_filter(name[0:20])
             ava['dob'] = f"{day} - {month} - {year}"
             ava['age'] = 0
             ava['gender'] = random.choice(['m', 'f'])
@@ -255,7 +258,7 @@ class avasoul:
             # Arts
             await _cursor.execute(f"INSERT INTO pi_arts VALUES ('{ctx.author.id}', 'sword', 'chain_attack', 5)")
             # Inventory     |      Add fist as a default weapon
-            await _cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{ctx.author.id}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, quantity, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_item WHERE item_code='ar13';")
+            await _cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'it13', 1);")
             #self.ava_dict[id] = ava 
             await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully incarnated. **Welcome to this world!**\n· You are currently logged out. Use `teleport 1 1` to log in. Then you may check our profile by `profile`.\n· Info? `help`. Concepts? `concept`")
         else:
@@ -269,6 +272,7 @@ class avasoul:
                     DELETE FROM cosmetic_preset WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_arts WHERE user_id='{ctx.author.id}';
                     UPDATE pi_inventory SET existence='BAD' WHERE user_id='{ctx.author.id}';
+                    UPDATE pi_land SET user_id='BAD' WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_bank WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_avatars WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_hunt WHERE user_id='{ctx.author.id}';
@@ -351,7 +355,7 @@ class avasoul:
         async def magiking(ctx):
 
             # Info get
-            age, evo, kill, death, money, name, partner = await self.quefe(f"SELECT age, evo, kills, deaths, money, name, partner FROM personal_info WHERE id='{user_id}';")
+            age, evo, kill, death, money, name, partner = await self.quefe(f"SELECT age, evo, kills, deaths, money, name, (SELECT name FROM personal_info WHERE id=partner) FROM personal_info WHERE id='{user_id}';")
             guild_region, rank = await self.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{user_id}';")
             g_region_name = await self.quefe(f"SELECT name FROM environ WHERE environ_code='{guild_region}';"); g_region_name = g_region_name[0]
 
@@ -1593,7 +1597,12 @@ Definition? Mechanism? Lore? Yaaa```
         raw = list(args)
         try:
             # Get goods
-            goods, environ_name = await self.quefe(f"SELECT goods, name FROM environ WHERE environ_code='{cur_PLACE}';")
+            ## Regions
+            try: goods, environ_name = await self.quefe(f"SELECT goods, name FROM environ WHERE environ_code='{cur_PLACE}';")
+            ## Lands
+            except TypeError:
+                goods, environ_name = await self.quefe(f"SELECT goods, name FROM pi_land WHERE land_code='{cur_PLACE}';")
+                if not goods: await ctx.send(f"There's not been goods through here, it seems..."); return
             goods = goods.replace(' - ', "', '")
             # Get info
             try:
@@ -3366,7 +3375,61 @@ Definition? Mechanism? Lore? Yaaa```
         await msg.edit(content=line_yes)
 
         # Add partner
-        await _cursor.execute(f"UPDATE personal_info SET partner='{target.id}' WHERE id='{str(ctx.message.author.id)}'; UPDATE personal_info SET partner='{str(ctx.message.author.id)}' WHERE id='{target.id}';")
+        await _cursor.execute(f"UPDATE personal_info SET partner='{target.id}' WHERE id='{ctx.author.id}'; UPDATE personal_info SET partner='{str(ctx.message.author.id)}' WHERE id='{target.id}';")
+
+    @commands.command()
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def divorce(self, ctx, *args):
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+
+        partner = await self.quefe(f"SELECT partner, (SELECT name FROM personal_info WHERE id=partner) FROM personal_info WHERE id='{ctx.author.id}';")
+        if partner[0] == 'n/a': await ctx.send("<:osit:544356212846886924> As if you have a partner :P"); return
+
+        def UMCc_check(m):
+            return m.channel == ctx.channel and m.author == ctx.author and m.content == "let's fcking divorce"
+
+        # NAME
+        await ctx.send(f":broken_heart: Divorce with **{partner[1]}**?\n||:bell: Timeout=15s · Key=`let's fcking divorce`||")
+        try: 
+            await self.client.wait_for('message', timeout=15, check=UMCc_check)
+        except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request times out!"); return
+
+        await _cursor.execute(f"UPDATE personal_info SET partner='n/a' WHERE id IN ('{ctx.author.id}', '{partner[0]}');")
+        await ctx.send(":broken_heart: You are now strangers, to each other.")
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def like(self, ctx, *args):
+        cmd_tag = 'like'
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+        if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:508437298808094742> You cannot award more merits at the moment, **{ctx.author.name}**."): return
+
+        # Get target
+        try: target = ctx.message.mentions[0]
+        except (IndexError, TypeError): await ctx.send(f"<:osit:544356212846886924> Missing the receiver, **{ctx.author.name}**"); return
+
+        if await _cursor.execute(f"UPDATE personal_info SET merit=merit+1 WHERE id='{target.id}';") == 0:
+            await ctx.send(f"<:osit:544356212846886924> User has not incarnated, **{ctx.author.name}**!"); return
+
+        await ctx.send(f"<:4_:544354428396896276> **{ctx.author.name}** has given {target.mention} a merit!")
+        await self.client.loop.run_in_executor(None, partial(redio.set, f'{cmd_tag}{ctx.author.id}', 'like', ex=86400, nx=True))
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def dislike(self, ctx, *args):
+        cmd_tag = 'dislike'
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+        if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:508437298808094742> You cannot negate more merits at the moment, **{ctx.author.name}**."): return
+
+        # Get target
+        try: target = ctx.message.mentions[0]
+        except (IndexError, TypeError): await ctx.send(f"<:osit:544356212846886924> Missing the target, **{ctx.author.name}**"); return
+
+        if await _cursor.execute(f"UPDATE personal_info SET merit=merit-1 WHERE id='{target.id}';") == 0:
+            await ctx.send(f"<:osit:544356212846886924> User has not incarnated, **{ctx.author.name}**!"); return
+
+        await ctx.send(f"<:argh:544354429302865932> **{ctx.author.name}** has humiliate {target.mention}!")
+        await self.client.loop.run_in_executor(None, partial(redio.set, f'{cmd_tag}{ctx.author.id}', 'dislike', ex=86400, nx=True))
 
 
 
@@ -3374,28 +3437,30 @@ Definition? Mechanism? Lore? Yaaa```
 # ================ KINGDOM =================
 
     @commands.command(aliases=['kingdom'])
-    @commands.cooldown(1, 3, type=BucketType.user)
+    @commands.cooldown(1, 10, type=BucketType.user)
     async def land(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
         raw = list(args)
 
         try:
-            if raw[0] in ['create', 'found']:
+            if raw[0] == 'create':
                 # User's info
                 cur_PLACE, money, merit = await self.quefe(f"SELECT cur_PLACE, money, merit FROM personal_info WHERE id='{ctx.author.id}';")
 
-                lands_quantity = await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND region='{cur_PLACE}';")
-                try: money_lim = round(10000+(10000/(lands_quantity/10)))
-                except ZeroDivisionError: money_lim = 10000
-                merit_lim = 10*(lands_quantity+1)
-                if not merit_lim: merit_lim = 20
+                if await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND region='{cur_PLACE}';"): await ctx.send("<:osit:544356212846886924> You can only have 1 land per region"); return
+                #try: money_lim = round(10000+(10000/(lands_quantity/10)))
+                #except ZeroDivisionError: money_lim = 10000
+                #merit_lim = 10*(lands_quantity+1)
+                #if not merit_lim: merit_lim = 20
+                money_lim = 10000
+                merit_lim = 20
 
                 # Region's info
                 land_slot, r_biome, r_name = await self.quefe(f"SELECT land_slot, biome, name FROM environ WHERE environ_code='{cur_PLACE}';")
 
                 # Checks
-                if money < money_lim: await ctx.send(f":crown: You need at least **<:36pxGold:548661444133126185>{money_lim}** to get your {lands_quantity+1}th land in `{cur_PLACE}`|**{r_name}**"); return
-                elif merit < merit_lim: await ctx.send(f":crown: You need at least **{merit_lim} merits** to get your {lands_quantity+1}th land in `{cur_PLACE}`|**{r_name}**"); return
+                if money < money_lim: await ctx.send(f":crown: You need at least **<:36pxGold:548661444133126185>{money_lim}** to found a land in `{cur_PLACE}`|**{r_name}**"); return
+                elif merit < merit_lim: await ctx.send(f":crown: You need at least **{merit_lim} merits** to found a land in `{cur_PLACE}`|**{r_name}**"); return
                 elif land_slot == 0: await ctx.send(f":crown: All slots are full in `{cur_PLACE}`|**{r_name}**. You may try to buy from other players."); return
 
                 # Biome get
@@ -3442,7 +3507,9 @@ Definition? Mechanism? Lore? Yaaa```
                     await ctx.send(f":crown: Looks like you're not a decisive person heh? Come back later.")
                     await msg.delete(); return
 
-                await _cursor.execute(f"INSERT INTO pi_land VALUES (0, '{ctx.author.id}', '{cur_PLACE}', '{biome}', '{l_name}', 'Property of {ctx.author.name}', '{l_gov}', 'lel', 1, 1, {money_lim}, 1000, {govs[l_gov][2]}, 1, 1, 1000, {govs[l_gov][0]}, {govs[l_gov][1]}, 1000); UPDATE personal_info SET money=money-{money_lim} WHERE id='{ctx.author.id}';")
+                latest = await self.quefe(f"SELECT land_id FROM pi_land ORDER BY land_id DESC LIMIT 1;")
+
+                await _cursor.execute(f"INSERT INTO pi_land VALUES ({latest[0]+1}, 'land.{latest[0]+1}', '{ctx.author.id}', '{cur_PLACE}', '{biome}', '{l_name}', 'Property of {ctx.author.name}', '{l_gov}', 'lel', 1, 1, {money_lim}, 1000, {govs[l_gov][2]}, 1, 1, 1000, {govs[l_gov][0]}, {govs[l_gov][1]}, 1000, 0, 0, 0.01, 0.01, '', '',''); UPDATE personal_info SET money=money-{money_lim} WHERE id='{ctx.author.id}'; INSERT INTO pi_tax VALUES ('land.{latest[0]+1}', 50, 50, 50, 50)")
                 await ctx.send(':crown: Bless you on the road to glory...')
       
             elif raw[0] in ['chart', 'board']:
@@ -3510,21 +3577,20 @@ Definition? Mechanism? Lore? Yaaa```
                 await ctx.send(file=discord.File(fp=output_buffer, filename='stock.png'))
 
             else:
-                try: land_id = int(raw[0])
-                except ValueError: await ctx.send("<:osit:544356212846886924> Invalid land's id!"); return
+                land_code = raw[0]
 
                 if raw[1] == 'description':
                     try: desc = await self.inj_filter(' '.join(raw[2:18]))
                     except IndexError: await ctx.send("<:osit:544356212846886924> Missing content of description!"); return
 
-                    await _cursor.execute(f"UPDATE pi_land SET description='{desc}' WHERE land_id={land_id} AND user_id='{ctx.author.id}';")
+                    await _cursor.execute(f"UPDATE pi_land SET description='{desc}' WHERE land_code='{land_code}' AND user_id='{ctx.author.id}';")
                     await ctx.send(":white_check_mark: Done")
 
                 elif raw[1] == 'currency':
                     try: currency = await self.inj_filter(' '.join(raw[2:6]))
                     except IndexError: await ctx.send("<:osit:544356212846886924> Missing currency name!"); return
 
-                    await _cursor.execute(f"UPDATE pi_land SET currency='{currency}' WHERE land_id={land_id} AND user_id='{ctx.author.id}';")
+                    await _cursor.execute(f"UPDATE pi_land SET currency='{currency}' WHERE land_code='{land_code}' AND user_id='{ctx.author.id}';")
                     await ctx.send(":white_check_mark: Done")
 
                 elif raw[1] in ['image', 'illustration']:
@@ -3533,14 +3599,17 @@ Definition? Mechanism? Lore? Yaaa```
                         if not illulink: await ctx.send("<:osit:544356212846886924> Invalid link!"); return
                     except IndexError: await ctx.send("<:osit:544356212846886924> Missing link!"); return
 
-                    await _cursor.execute(f"UPDATE pi_land SET illulink='{illulink}' WHERE land_id={land_id} AND user_id='{ctx.author.id}';")
+                    await _cursor.execute(f"UPDATE pi_land SET illulink='{illulink}' WHERE land_code='{land_code}' AND user_id='{ctx.author.id}';")
                     await ctx.send(":white_check_mark: Done")
 
         except IndexError:
             try: region = f"AND region='{args[0]}'"
             except IndexError: region = ''
 
-            lands = await self.quefe(f"SELECT land_id, name, description, biome, region, currency, government, population, treasury, resource, faith, v_plot, v_plot_total, v_productive, v_HAPPY, v_HEALTH, v_CULTURE, illulink, cur_population FROM pi_land WHERE user_id='{ctx.author.id}' {region};", type='all')
+            # TAXXXXXXXXXXX
+            await _cursor.execute(f"UPDATE pi_land pl INNER JOIN pi_tax px ON px.land_code=pl.land_code SET pl.treasury=pl.treasury+pl.GDP/100*px.tax_treasury*(SELECT DATEDIFF(NOW(), px.last_point)), pl.resource=pl.resource+pl.GDP/100*px.tax_resource*(SELECT DATEDIFF(NOW(), px.last_point)), pl.v_HAPPY=pl.v_HAPPY+pl.GDE/100*px.tax_HAPPY*(SELECT DATEDIFF(NOW(), px.last_point)), pl.faith=pl.faith+pl.GDE/100*px.tax_faith*(SELECT DATEDIFF(NOW(), px.last_point)), px.last_point=NOW() WHERE pl.user_id='{ctx.author.id}'")
+
+            lands = await self.quefe(f"SELECT land_code, name, description, biome, region, currency, government, population, treasury, resource, faith, v_plot, v_plot_total, v_productive, v_HAPPY, v_HEALTH, v_CULTURE, illulink, border_X, border_Y, GDP, GDE FROM pi_land WHERE user_id='{ctx.author.id}' {region};", type='all')
 
             if not lands: await ctx.send(":crown: You have no lands :>")
 
@@ -3549,8 +3618,8 @@ Definition? Mechanism? Lore? Yaaa```
 
                 reembed = discord.Embed(title = f":crown: `{land[6]}` · `{land[0]}` | **{land[1].capitalize()}**", description = f"""```dsconfig
         {land[2]}```""", colour = discord.Colour(0x011C3A))
-                reembed.add_field(name=":scales: Property", value=f"╟`Region` · **{land[4]}**\n╟`Population` · {land[18]}/**{land[7]}**\n╟`Area` · {land[11]}/**{land[12]}**")
-                reembed.add_field(name=":amphora: Resource", value=f"╟`Treasury` · **{land[8]} {land[5]}**\n╟`Resource` · **{land[9]}**\n╟`Faith` · **{land[10]}**")
+                reembed.add_field(name=":scales: Property", value=f"╟`Region` · **{land[4]}**\n╟`Population` · **{land[7]}**\n╟`Plots` · {land[11]}/**{land[12]}**\n╟`Area` · **`{land[18]:.2f} x {land[19]:.2f}`**")
+                reembed.add_field(name=":amphora: Resource", value=f"╟`Treasury` · **{land[8]} {land[5]}**\n╟`Resource` · **{land[9]}**\n╟`Faith` · **{land[10]}**\n╟`GDP` · **{land[20]}**\n╟`GDE` · **{land[21]}**")
                 reembed.add_field(name=":innocent: Life", value=f"╟`HEALTH` · **{land[15]}**⠀⠀⠀⠀⠀`HAPPY` · **{land[14]}**\n╟`CULTURE` · **{land[16]}**⠀⠀⠀⠀⠀⠀`Productive` · **{land[13]}**")
                 reembed.set_footer(text=f"═════╡{len(lands)}╞══╡{currentpage}/{pages}╞═════")
                 reembed.set_image(url=land[17])
@@ -3609,7 +3678,7 @@ Definition? Mechanism? Lore? Yaaa```
                     await msg.delete(); return
 
     @commands.command()
-    @commands.cooldown(1, 3, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def lands(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
@@ -3635,9 +3704,8 @@ Definition? Mechanism? Lore? Yaaa```
         charm = await self.quefe(f"SELECT charm FROM personal_info WHERE id='{ctx.author.id}';")
 
         # Land's info
-        try: gov, plot_total, treasury, name, resource, region = await self.quefe(f"SELECT government, v_plot_total, treasury, name, resource, region FROM pi_land WHERE user_id='{ctx.author.id}' AND land_id={int(raw[0])};")
-        except ValueError: await ctx.send("<:osit:544356212846886924> Invalid land's id"); return
-        except IndexError: await ctx.send("<:osit:544356212846886924> Missing land's id"); return
+        try: gov, plot_total, treasury, name, resource, region = await self.quefe(f"SELECT government, v_plot_total, treasury, name, resource, region FROM pi_land WHERE user_id='{ctx.author.id}' AND land_code='{raw[0]}';")
+        except IndexError: await ctx.send("<:osit:544356212846886924> Missing land's code"); return
         except TypeError: await ctx.send(f"<:osit:544356212846886924> You don't own this land, {ctx.author.name}"); return
         
         # Get init price
@@ -3673,7 +3741,8 @@ Definition? Mechanism? Lore? Yaaa```
 
         #await ctx.send(f":crown: Your land - `{raw[0]}`|**{name}** - has expanded **{quantity} plots!**")
 
-        await _cursor.execute(f"UPDATE pi_land SET v_plot=v_plot+{quantity}, v_plot_total=v_plot_total+{quantity}, treasury=treasury-{final_price}, resource=resource+{resource} WHERE land_id='{raw[0]}' AND user_id='{ctx.author.id}'; UPDATE environ SET land_slot=land_slot-{quantity} WHERE environ_code='{region}';")
+        border = random.choice(['border_X', 'border_Y'])
+        await _cursor.execute(f"UPDATE pi_land SET v_plot=v_plot+{quantity}, v_plot_total=v_plot_total+{quantity}, treasury=treasury-{final_price}, resource=resource+{resource}, {border}={border}+{0.01*quantity} WHERE land_code='{raw[0]}' AND user_id='{ctx.author.id}'; UPDATE environ SET land_slot=land_slot-{quantity} WHERE environ_code='{region}';")
 
     @commands.command()
     @commands.cooldown(1, 600, type=BucketType.user)
@@ -3682,7 +3751,7 @@ Definition? Mechanism? Lore? Yaaa```
         raw = list(args)
 
         # Land's info
-        try: gov, name, resource, region = await self.quefe(f"SELECT government, name, resource, region FROM pi_land WHERE user_id='{ctx.author.id}' AND land_id={int(raw[0])};")
+        try: gov, name, resource, region = await self.quefe(f"SELECT government, name, resource, region FROM pi_land WHERE user_id='{ctx.author.id}' AND land_code='{raw[0]}';")
         except ValueError: await ctx.send("<:osit:544356212846886924> Invalid land's id"); return
         except IndexError: await ctx.send("<:osit:544356212846886924> Missing land's id"); return
         except TypeError: await ctx.send(f"<:osit:544356212846886924> You don't own this land, {ctx.author.name}"); return
@@ -3708,119 +3777,9 @@ Definition? Mechanism? Lore? Yaaa```
         # NAME
         await ctx.send(f":crown: Selling **{quantity}** plots in `{raw[0]}`|**{name}** of `{region}`:\n╟`Original price` · <:36pxGold:548661444133126185> **{temppr}**/plot\n=====================\n╟`Receive` · <:36pxGold:548661444133126185> **{final_price}**\n╟`Resource lost` · {resource}")
 
-        await _cursor.execute(f"UPDATE pi_land SET v_plot=v_plot-{quantity}, v_plot_total=v_plot_total-{quantity}, treasury=treasury-{final_price}, resource=resource-{resource} WHERE land_id='{raw[0]}' AND user_id='{ctx.author.id}'; UPDATE environ SET land_slot=land_slot-{quantity} WHERE environ_code='{region}';")
+        await _cursor.execute(f"UPDATE pi_land SET v_plot=v_plot-{quantity}, v_plot_total=v_plot_total-{quantity}, treasury=treasury-{final_price}, resource=resource-{resource} WHERE land_code='{raw[0]}' AND user_id='{ctx.author.id}'; UPDATE environ SET land_slot=land_slot-{quantity} WHERE environ_code='{region}';")
 
 
-
-    @commands.command(aliases=['est'])
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def establish(self, ctx, *args):
-        if not await self.ava_scan(ctx.message, type='life_check'): return
-        raw = list(args)
-
-        # Info get
-        try: treasury, faith, currency = await self.quefe(f"SELECT treasury, faith, currency FROM pi_land WHERE land_id='{raw[0]}' AND user_id='{ctx.author.id}';")
-        except IndexError: await ctx.send("<:osit:544356212846886924> Missing land id!"); return
-        except TypeError: await ctx.send("<:osit:544356212846886924> You do not own this land!"); return
-
-        try: u_name = await self.inj_filter(' '.join(raw[1:]))
-        except IndexError: u_name = f'Unit of {ctx.author.name}'
-
-        units = await _cursor.execute(f"SELECT unit_id FROM pi_unit WHERE land_id='{raw[0]}';")
-        cost = 1000*(units+1)
-
-        # Preparing
-        if faith < 20: await ctx.send(":crown: Your land's **faith** must be higher than **20**!"); return
-        elif treasury < cost: await ctx.send(f":crown: Your land's **treasury** must be higher than **3000 {currency}**!"); return
-        faith_cost = faith/4
-
-        msg = await ctx.send(f":crown: **{cost} {currency}** and **{faith_cost} FAITH** are the cost. A {units+1}th unit is the reward.\n:bell: Proceed? (Timeout=20s)", delete_after=20)
-        await msg.add_reaction('\U00002705')
-        def RUM_check(reaction, user):
-            return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) == '\U00002705'
-
-        try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=20)
-        except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request time out"); return
-
-
-        await _cursor.execute(f"INSERT INTO pi_unit VALUES (0, {raw[0]}, '{u_name}', 'Silence...', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''); UPDATE pi_land SET treasury=treasury-{cost}, faith=faith-{faith_cost} WHERE land_id='{raw[0]}' AND user_id='{ctx.author.id}';")
-        await ctx.send(f":crown: Niem! Best salute to **{u_name}**!")       
-        """
-            @commands.command()
-            @commands.cooldown(1, 10, type=BucketType.user)
-            async def unit(self, ctx, *args):
-                if not await self.ava_scan(ctx.message, type='life_check'): return
-                units = []
-                lands = await self.quefe(f"SELECT region, land_id, name FROM pi_land WHERE user_id='{ctx.author.id}';", type='all')
-                for land in lands:
-                    aa = await self.quefe(f"SELECT unit_id, name, entity, evo FROM pi_unit WHERE land_id={land[1]};", type='all')
-                    for a in aa:
-                        if await _cursor.execute(f"SELECT * FROM pi_order WHERE unit_id='{a[0]}';"): units.append(list(a) + list(land) + ['**`ACTIVE`**'])
-                        else: units.append(list(a) + list(land) + ['`PASSIVE`'])
-
-                def makeembed(top, least, pages, currentpage):
-                    line = '\n'
-
-                    for unit in units[top:least]:
-                        line = line + f"`{unit[4]}` ∙ `{unit[0]}` | **{unit[1].capitalize()}** of **{unit[6]}**\n╟`Status` · {unit[-1]}\n╟`EVO` · **{unit[3]}**⠀⠀`Entity` · **{unit[2]}**\n\n"
-
-                    reembed = discord.Embed(title = f":crown: **{ctx.author.name.upper()}**'s Units", colour = discord.Colour(0x011C3A), description=line)
-                    reembed.set_footer(text=f"═════╡{len(lands)}╞══╡{currentpage}/{pages}╞═════")
-                    return reembed
-                    #else:
-                    #    await ctx.send("*Nothing but dust here...*")
-                
-                async def attachreaction(msg):
-                    await msg.add_reaction("\U000023ee")    #Top-left
-                    await msg.add_reaction("\U00002b05")    #Left
-                    await msg.add_reaction("\U000027a1")    #Right
-                    await msg.add_reaction("\U000023ed")    #Top-right
-
-                pages = len(units)//4
-                if len(units)%4 != 0: pages += 1
-                currentpage = 1
-                cursor = 0
-
-                emli = []
-                for curp in range(pages):
-                    myembed = makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
-                    emli.append(myembed)
-                    currentpage += 1
-
-                if pages > 1: 
-                    await attachreaction(msg)
-                    msg = await ctx.send(embed=emli[cursor])
-                else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
-
-                def UM_check(reaction, user):
-                    return user.id == ctx.message.author.id and reaction.message.id == msg.id
-
-                while True:
-                    try:    
-                        reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
-                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                            cursor += 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U00002b05" and cursor > 0:
-                            cursor -= 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ee" and cursor != 0:
-                            cursor = 0
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                            cursor = pages - 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                    except asyncio.TimeoutError:
-                        await msg.delete(); return
-        """
 
     @commands.command()
     @commands.cooldown(1, 10, type=BucketType.user)
@@ -3828,14 +3787,14 @@ Definition? Mechanism? Lore? Yaaa```
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
         # Land check
-        try: land_cq = f" AND land_id={int(args[0])}"
+        try: land_cq = f" AND land_code='{args[0]}'"
         except (IndexError, ValueError): land_cq = ''
 
-        lands = await self.quefe(f"SELECT land_id, name FROM pi_land WHERE user_id='{ctx.author.id}' {land_cq};", type='all')
+        lands = await self.quefe(f"SELECT land_code, name FROM pi_land WHERE user_id='{ctx.author.id}' {land_cq};", type='all')
 
         troops = []
         for land in lands:
-            troops.append(await self.quefe(f"SELECT v_treasury, v_resource, v_faith, unit_id, name, description, entity, str, intt, sta, speed, stealth, as_NAVAL, as_AIR, as_LAND, as_MIRACLE, as_FAITH, as_ARCH, as_BIO, as_TECH, illulink, '{land[0]}', '{land[1]}', max_sta FROM pi_unit WHERE land_id={land[0]};", type='all'))
+            troops.append(await self.quefe(f"SELECT v_treasury, v_resource, v_faith, unit_id, name, description, entity, str, intt, sta, speed, stealth, as_NAVAL, as_AIR, as_LAND, as_MIRACLE, as_FAITH, as_ARCH, as_BIO, as_TECH, illulink, '{land[0]}', '{land[1]}', max_sta FROM pi_unit WHERE land_code='{land[0]}';", type='all'))
         troops = troops[0]
 
         def makeembed(curp, pages, currentpage):
@@ -3903,7 +3862,7 @@ Definition? Mechanism? Lore? Yaaa```
                 await msg.delete(); return
 
     @commands.command(aliases=['troops', 'forces'])
-    @commands.cooldown(1, 10, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def units(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
@@ -3973,7 +3932,7 @@ Definition? Mechanism? Lore? Yaaa```
                 await msg.delete(); return
 
     @commands.command()
-    @commands.cooldown(1, 10, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def union(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
         
@@ -3987,12 +3946,12 @@ Definition? Mechanism? Lore? Yaaa```
         except ValueError: await ctx.send("<:osit:544356212846886924> Invalid unit's id!"); return
 
         # LAND list
-        lands = await self.quefe(f"SELECT land_id FROM pi_land WHERE user_id='{ctx.author.id}';", type='all')
+        lands = await self.quefe(f"SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}';", type='all')
         try: lands = lands[0]
         except IndexError: await ctx.send("<:osit:544356212846886924> You have no land"); return
-        lands_1 = ', '.join(lands)
-        lands_2 = f" AND m.land_id IN ({lands_1})"
-        lands_1 = f" AND p.land_id IN ({lands_2})"
+        lands_1 = "', '".join(lands)
+        lands_2 = f" AND m.land_code IN ({lands_1})"
+        lands_1 = f" AND p.land_code IN ({lands_1})"
 
         def UMCc_check(m):
             return m.channel == ctx.channel and m.author == ctx.author and m.content == 'union confirm'
@@ -4054,14 +4013,14 @@ Definition? Mechanism? Lore? Yaaa```
         except TypeError: await ctx.send(f"<:osit:544356212846886924> You tried giving {quantity} `{item_code}`|**{i_name}** to them, but nothing happened..."); return
 
         # Unit's info       ||      For checking entity, intt, asp...
-        try: land_id, u_name, entity, intt, asp, u_sta = await self.quefe(f"SELECT land_id, name, entity, intt, {o_urasp}, sta FROM pi_unit WHERE unit_id={raw[0]};")
+        try: land_code, u_name, entity, intt, asp, u_sta = await self.quefe(f"SELECT land_code, name, entity, intt, {o_urasp}, sta FROM pi_unit WHERE unit_id={raw[0]};")
         except ValueError: await ctx.send(f"<:osit:544356212846886924> Invalid `unit's id`!"); return
         except TypeError: await ctx.send(f":crown: You don't own this unit, **{ctx.author.name}**!"); return
         except IndexError: await ctx.send(f":crown: Please provide `unit's id`, **{ctx.author.name}**."); return
 
         # Land's info
-        try: l_biome, l_name, l_plot, l_productive, l_HAPPY, l_HEALTH, l_CULTURE, l_gov, l_treasury, l_resource, l_faith, currency = await self.quefe(f"SELECT biome, name, v_plot, v_productive, v_HAPPY, v_HEALTH, v_CULTURE, government, treasury, resource, faith, currency FROM pi_land WHERE land_id={land_id} AND user_id='{ctx.author.id}';")
-        except TypeError: await ctx.send(f"<:osit:544356212846886924> You don't own this land! (id.`{land_id}`)"); return
+        try: l_biome, l_name, l_plot, l_productive, l_HAPPY, l_HEALTH, l_CULTURE, l_gov, l_treasury, l_resource, l_faith, currency = await self.quefe(f"SELECT biome, name, v_plot, v_productive, v_HAPPY, v_HEALTH, v_CULTURE, government, treasury, resource, faith, currency FROM pi_land WHERE land_code='{land_code}' AND user_id='{ctx.author.id}';")
+        except TypeError: await ctx.send(f"<:osit:544356212846886924> You don't own this land! (`{land_code}`)"); return
 
         # Unit_required's info      ||      Mainly for checking entity_quantity
         if o_urc == 'n/a':
@@ -4069,8 +4028,8 @@ Definition? Mechanism? Lore? Yaaa```
             uu_name = 'n/a'
             uu_id = 0
         else:
-            try: uu_rq, uu_name, uu_id = await self.quefe(f"SELECT entity, name, unit_id FROM pi_unit WHERE land_id={land_id} AND unit_code='{o_urc}';")
-            except TypeError: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_id}`|**{l_name}** - is missing infrastructure (code.`{o_urc}`)"); return
+            try: uu_rq, uu_name, uu_id = await self.quefe(f"SELECT entity, name, unit_id FROM pi_unit WHERE land_code='{land_code}' AND unit_code='{o_urc}';")
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_code}`|**{l_name}** - is missing infrastructure (code.`{o_urc}`)"); return
 
         # =========== PREPARE 1 ===========
         if l_gov == 'COMMUNISM': 
@@ -4110,13 +4069,13 @@ Definition? Mechanism? Lore? Yaaa```
 
         # =========== CHECK ===========
         if o_urc != 'n/a':
-            if uu_rq < cost_infra: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_id}`|**{l_name}** - needs at least **{cost_infra}** infrastructure (code.`{o_urc}`) for this order"); return
+            if uu_rq < cost_infra: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_code}`|**{l_name}** - needs at least **{cost_infra}** infrastructure (code.`{o_urc}`) for this order"); return
         if entity < cost_entity: await ctx.send(f"<:osit:544356212846886924> Unit `{raw[0]}`|**{u_name}** needs at least **{cost_entity} entities** for this order"); return
         if intt < o_urintt: await ctx.send(f"<:osit:544356212846886924> Unit `{raw[0]}`|**{u_name}** needs at least **{o_urintt} INT** for this order"); return
-        if l_plot < cost_plot: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_id}`|**{l_name}** - needs at least **{cost_plot} plots** for this order"); return
-        if l_treasury < o_ltr: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_id}`|**{l_name}** - needs at least **{o_ltr} {currency}** for this order"); return
-        if l_resource < o_lres: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_id}`|**{l_name}** - needs at least **{o_lres} resources** for this order"); return
-        if l_faith < o_lfa: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_id}`|**{l_name}** - needs at least **{o_lfa} faith** for this order"); return
+        if l_plot < cost_plot: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_code}`|**{l_name}** - needs at least **{cost_plot} plots** for this order"); return
+        if l_treasury < o_ltr: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_code}`|**{l_name}** - needs at least **{o_ltr} {currency}** for this order"); return
+        if l_resource < o_lres: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_code}`|**{l_name}** - needs at least **{o_lres} resources** for this order"); return
+        if l_faith < o_lfa: await ctx.send(f"<:osit:544356212846886924> Your land - `{land_code}`|**{l_name}** - needs at least **{o_lfa} faith** for this order"); return
 
         # =========== PREPARE 2 ===========
         limit = round(o_dura/10)
@@ -4140,7 +4099,7 @@ Definition? Mechanism? Lore? Yaaa```
         else: xtra = f", v_productive=v_productive-{cost_pol}"
 
         # =========== CONFIRM ==============
-        temb = discord.Embed(title=f":crown: From **{ctx.author.name}** ➠ to `{raw[0]}`|**{u_name}** of `{land_id}`|**{l_name}**", description=f"""```dsconfig
+        temb = discord.Embed(title=f":crown: From **{ctx.author.name}** ➠ to `{raw[0]}`|**{u_name}** of `{land_code}`|**{l_name}**", description=f"""```dsconfig
     {description}```""", colour = discord.Colour(0x011C3A))
         temb.add_field(name="COST", value=f"╟ {quantity} `{o_itc}`|**{i_name}**\n╟`TREASURY` · **{o_ltr}**\n╟`RESOURCE` · **{o_lres}**\n╟`FAITH` · **{o_lfa}**")
         temb.add_field(name="CONSEQUENCES", value=f"\n╟`Pollution` · **{cost_pol}**\n╟**{cost_infra}** plots of `{uu_id}`|**{uu_name}**\n╟**{cost_entity}** entities of unit `{raw[0]}`|**{u_name}**\n╟`STA` · **{cost_sta}**")
@@ -4160,21 +4119,21 @@ Definition? Mechanism? Lore? Yaaa```
             return
 
         # =========== QUERY =============
-        reward_query = o_req.replace("user_id_here", f'{ctx.author.id}').replace("quantity_here", f"{quantity}").replace("land_id_here", f"{land_id}").replace("unit_id_here", f"{raw[0]}")
+        reward_query = o_req.replace("user_id_here", f'{ctx.author.id}').replace("quantity_here", f"{quantity}").replace("land_code_here", f"{land_code}").replace("unit_id_here", f"{raw[0]}")
         reduce_query = ''
-        if cost_infra: reward_query = reward_query + f"UPDATE pi_land SET v_plot=v_plot+{cost_infra} WHERE land_id={land_id} AND user_id='{ctx.author.id}';"
+        if cost_infra: reward_query = reward_query + f"UPDATE pi_land SET v_plot=v_plot+{cost_infra} WHERE land_code='{land_code}' AND user_id='{ctx.author.id}';"
         # This one is for unit2
         if o_urc != 'n/a':
-            reward_query = reward_query + f" UPDATE pi_unit SET entity=entity+{cost_infra} WHERE unit_code='{o_urc}' AND land_id={land_id};"
-            reduce_query = f"UPDATE pi_unit SET entity=entity-{cost_infra} WHERE unit_code='{o_urc}' AND land_id={land_id};"        # DO NOT TAKE THIS ELSEWHERE, other records has n/a in code too
+            reward_query = reward_query + f" UPDATE pi_unit SET entity=entity+{cost_infra} WHERE unit_code='{o_urc}' AND land_code='{land_code}';"
+            reduce_query = f"UPDATE pi_unit SET entity=entity-{cost_infra} WHERE unit_code='{o_urc}' AND land_code='{land_code}';"        # DO NOT TAKE THIS ELSEWHERE, other records has n/a in code too
         # This one is for unit1
-        reward_query = reward_query + f" UPDATE pi_unit SET entity=entity+{cost_entity} WHERE unit_id={raw[0]} AND land_id={land_id}; "
+        reward_query = reward_query + f" UPDATE pi_unit SET entity=entity+{cost_entity} WHERE unit_id={raw[0]} AND land_code='{land_code}'; "
 
         cost_query = f"""{decrq}
-                        UPDATE pi_unit SET sta=sta-{cost_sta}, entity=entity-{cost_entity} WHERE unit_id={raw[0]} AND land_id={land_id};
+                        UPDATE pi_unit SET sta=sta-{cost_sta}, entity=entity-{cost_entity} WHERE unit_id={raw[0]} AND land_code='{land_code}';
                         {reduce_query}
-                        UPDATE pi_land SET treasury=treasury-{o_ltr}, resource=resource-{o_lres}, faith=faith-{o_lfa}{xtra}, v_plot=v_plot-{cost_infra} WHERE land_id={land_id} AND user_id='{ctx.author.id}';
-                        INSERT INTO pi_order VALUES (0, {raw[0]}, {uu_id}, {land_id}, "{description}", "{end_point}", "{o_re}", "{reward_query}");"""
+                        UPDATE pi_land SET treasury=treasury-{o_ltr}, resource=resource-{o_lres}, faith=faith-{o_lfa}{xtra}, v_plot=v_plot-{cost_infra} WHERE land_code='{land_code}' AND user_id='{ctx.author.id}';
+                        INSERT INTO pi_order VALUES (0, {raw[0]}, {uu_id}, '{land_code}', "{description}", "{end_point}", "{o_re}", "{reward_query}");"""
 
         # ORDER
         await _cursor.execute(cost_query)
@@ -4185,12 +4144,12 @@ Definition? Mechanism? Lore? Yaaa```
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
         land_dict = {}
-        lands = await self.quefe(f"SELECT land_id, name FROM pi_land WHERE user_id='{ctx.author.id}';", type='all')
+        lands = await self.quefe(f"SELECT land_code, name FROM pi_land WHERE user_id='{ctx.author.id}';", type='all')
         if not lands: await ctx.send(f"<:osit:544356212846886924> You have no land, **{ctx.author.name}**"); return
         for land in lands:
             land_dict[f"{land[0]}"] = land[1]
 
-        orders = await self.quefe(f"""SELECT order_id, unit_id, land_id, description, end_point FROM pi_order WHERE land_id IN ('{"' '".join(land_dict.keys())}');""", type='all')
+        orders = await self.quefe(f"""SELECT order_id, unit_id, land_code, description, end_point FROM pi_order WHERE land_code IN ('{"' '".join(land_dict.keys())}');""", type='all')
 
         def makeembed(top, least, pages, currentpage):
             line = '\n'
@@ -4263,13 +4222,14 @@ Definition? Mechanism? Lore? Yaaa```
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
         # Order's info
-        try: end_point, rewards, reward_query, land_id, description = await self.quefe(f"SELECT end_point, rewards, reward_query, land_id, description FROM pi_order WHERE order_id={int(args[0])};")
+        try: 
+            end_point, rewards, reward_query, land_code, description = await self.quefe(f"SELECT end_point, rewards, reward_query, land_code, description FROM pi_order WHERE order_id={int(args[0])};")
         except ValueError: await ctx.send("<:osit:544356212846886924> Invalid `order_id`!"); return
         except IndexError: await ctx.send("<:osit:544356212846886924> Missing `order_id`"); return
         except TypeError: await ctx.send("<:osit:544356212846886924> Order's not found!"); return
 
         # Order's check
-        if await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND land_id={land_id};") == 0: await ctx.send("<:osit:544356212846886924> Order's not found!"); return
+        if await _cursor.execute(f"SELECT * FROM pi_land WHERE user_id='{ctx.author.id}' AND land_code='{land_code}';") == 0: await ctx.send("<:osit:544356212846886924> Order's not found!"); return
 
         delta = relativedelta(end_point, datetime.now())
         if datetime.now() < end_point: await ctx.send(f":cowboy: *{description}* **`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`** to go!"); return
@@ -4278,6 +4238,77 @@ Definition? Mechanism? Lore? Yaaa```
 
         a = await _cursor.execute(f"{reward_query} DELETE FROM pi_order WHERE order_id={args[0]}")
         print(a)
+
+
+    @commands.command()
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def tax(self, ctx, *args):
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+
+        # TAX info
+        taxes = await self.quefe(f"SELECT land_code, tax_treasury, tax_resource, tax_HAPPY, tax_faith FROM pi_tax WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');", type='all')
+        if not taxes: await ctx.send(f"<:osit:544356212846886924> You have no land, **{ctx.author.name}**"); return
+
+        def makeembed(curp, pages, currentpage):
+            tax = taxes[curp]
+
+            reembed = discord.Embed(title = f":crown: T A X || **`{tax[0]}`**⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", description = f"""```prolog
+    Treasury/Resource: {tax[1]}/{tax[2]} %
+    Happy/Faith: {tax[3]}/{tax[4]} %```""", colour = discord.Colour(0x011C3A))
+
+            return reembed
+
+        async def attachreaction(msg):
+            await msg.add_reaction("\U000023ee")    #Top-left
+            await msg.add_reaction("\U00002b05")    #Left
+            await msg.add_reaction("\U000027a1")    #Right
+            await msg.add_reaction("\U000023ed")    #Top-right
+
+        pages = len(taxes)
+        currentpage = 1
+        cursor = 0
+
+        emli = []
+        for curp in range(pages):
+            myembed = makeembed(curp, pages, currentpage)
+            emli.append(myembed)
+            currentpage += 1
+
+        if pages > 1: 
+            msg = await ctx.send(embed=emli[cursor])
+            await attachreaction(msg)
+        else: msg = await ctx.send(embed=emli[cursor], delete_after=15); return
+
+        def UM_check(reaction, user):
+            return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+        while True:
+            try:    
+                reaction, user = await self.client.wait_for('reaction_add', timeout=10, check=UM_check)
+                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                    cursor += 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U00002b05" and cursor > 0:
+                    cursor -= 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ee" and cursor != 0:
+                    cursor = 0
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                    cursor = pages - 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+            except asyncio.TimeoutError:
+                await msg.delete(); return
+
+
 
 
 
@@ -5462,17 +5493,29 @@ Definition? Mechanism? Lore? Yaaa```
     @commands.command(aliases=['tele'])
     @commands.cooldown(1, 5, type=BucketType.user)
     async def teleport(self, ctx, *args):
-        cur_PLACE, cur_X, cur_Y, stats = await self.quefe(f"SELECT cur_PLACE, cur_X, cur_Y, stats FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
-        r_name = await self.quefe(f"SELECT name FROM environ WHERE environ_code='{cur_PLACE}';")
+        cur_PLACE, cur_X, cur_Y, stats = await self.quefe(f"SELECT cur_PLACE, cur_X, cur_Y, stats FROM personal_info WHERE id='{ctx.author.id}';")
+
         if stats == 'DEAD': await self.ava_scan(ctx.message, type='life_check')
 
         # COORD
-        if not args: await ctx.send(f":map: **`{cur_X:.3f}`** · **`{cur_Y:.3f}`** · `{cur_PLACE}`|**{r_name[0]}** · {ctx.message.author.mention}", delete_after=5); return
+        if not args:
+            if cur_PLACE.startswith('region.'): r_name = await self.quefe(f"SELECT name FROM environ WHERE environ_code='{cur_PLACE}';")
+            else: r_name = await self.quefe(f"SELECT name FROM pi_land WHERE land_code='{cur_PLACE}';")
+            await ctx.send(f":map: **`{cur_X:.3f}`** · **`{cur_Y:.3f}`** · `{cur_PLACE}`|**{r_name[0]}** · {ctx.message.author.mention}", delete_after=5); return
+
         try:
             x = int(args[0])/1000; y = int(args[1])/1000
+
+            # Region INFO
+            if cur_PLACE.startswith('region.'): r_name, border_X, border_Y = await self.quefe(f"SELECT name, border_X, border_Y FROM environ WHERE environ_code='{cur_PLACE}'")
+            # Land INFO
+            else:
+                try: r_name, border_X, border_Y = await self.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{cur_PLACE}'")
+                except TypeError: await ctx.send(f"**{cur_PLACE}**... There is no such place here, perhap it's from another era?"); return
+
             if len(args[0]) <= 5 and len(args[1]) <= 5:
-                if x > self.environ[cur_PLACE]['info']['border'][0]: x = self.environ[cur_PLACE]['info']['border'][0]
-                if y > self.environ[cur_PLACE]['info']['border'][1]: y = self.environ[cur_PLACE]['info']['border'][1]
+                if x > border_X: x = border_X
+                if y > border_Y: y = border_Y
                 if x < 0: x = -1
                 if y < 0: y = -1
                 # Check if <distance> is provided
@@ -5481,28 +5524,35 @@ Definition? Mechanism? Lore? Yaaa```
                     prior_x = x; prior_y = y
                     x, y = await self.distance_tools(cur_X, cur_Y, x, y, distance=distance, type='d-c')
                     # Coord check
-                    if x > self.environ[cur_PLACE]['info']['border'][0]: x = self.environ[cur_PLACE]['info']['border'][0]
-                    if y > self.environ[cur_PLACE]['info']['border'][1]: y = self.environ[cur_PLACE]['info']['border'][1]
+                    if x > border_X: x = border_X
+                    if y > border_Y: y = border_Y
                     if x < 0: x = 0
                     if y < 0: y = 0
                 except (IndexError, ValueError): pass
                 
                 # Procede teleportation
-                await self.tele_procedure(cur_PLACE, str(ctx.message.author.id), x, y)
+                await self.tele_procedure(cur_PLACE, str(ctx.author.id), x, y)
 
                 # Informmmm :>
-                try: await ctx.send(f"<:dual_cyan_arrow:543662534612353044>`{distance}m`<:dual_cyan_arrow:543662534612353044> toward **`{prior_x:.3f}`** · **`{prior_y:.3f}`**\n:map: Now you're at **`{x:.3f}`** · **`{y:.3f}`** · `{cur_PLACE}`|**{r_name[0]}**!", delete_after=5)
-                except NameError: await ctx.send(f":map: [{cur_X:.3f}, {cur_Y:.3f}] <:dual_cyan_arrow:543662534612353044> **`{x:.3f}`** · **`{y:.3f}`** · `{cur_PLACE}`|**{self.environ[cur_PLACE]['name']}**!", delete_after=5)
+                try: await ctx.send(f"<:dual_cyan_arrow:543662534612353044>`{distance}m`<:dual_cyan_arrow:543662534612353044> toward **`{prior_x:.3f}`** · **`{prior_y:.3f}`**\n:map: Now you're at **`{x:.3f}`** · **`{y:.3f}`** · `{cur_PLACE}`|**{r_name}**!", delete_after=5)
+                except NameError: await ctx.send(f":map: [{cur_X:.3f}, {cur_Y:.3f}] <:dual_cyan_arrow:543662534612353044> **`{x:.3f}`** · **`{y:.3f}`** · `{cur_PLACE}`|**{r_name}**!", delete_after=5)
             else: await ctx.send(f"<:osit:544356212846886924> Please use 5-digit coordinates!"); return
         except IndexError: await ctx.send(f"<:osit:544356212846886924> Out of map's range!"); return
 
         # PLACE
         except (KeyError, ValueError):
-            if not args[0] in list(self.environ.keys()): await ctx.send(f"**{args[0]}**... There is no such place here, perhap it's from another era?"); return
+            if cur_PLACE == args[0]: await ctx.send("<:osit:544356212846886924> You're already there :|")
+
+            # Region INFO
+            if args[0].startswith('region.'): r_name, border_X, border_Y = await self.quefe(f"SELECT name, border_X, border_Y FROM environ WHERE environ_code='{args[0]}'")
+            # Land INFO
+            else:
+                try: r_name, border_X, border_Y = await self.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{args[0]}'")
+                except TypeError: await ctx.send(f"**{args[0]}**... There is no such place here, perhap it's from another era?"); return
 
             if cur_X <= 1 and cur_Y <=1:
-                await _cursor.execute(f"UPDATE personal_info SET cur_PLACE='{args[0]}' WHERE id='{str(ctx.message.author.id)}';")
-                await ctx.send(f":round_pushpin: Successfully move to `{args[0]}`|**{self.environ[args[0]]['name']}**!", delete_after=5)
+                await _cursor.execute(f"UPDATE personal_info SET cur_PLACE='{args[0]}' WHERE id='{ctx.author.id}';")
+                await ctx.send(f":round_pushpin: Successfully move to `{args[0]}`|**{r_name}**!", delete_after=5)
             else: await ctx.send(f"<:osit:544356212846886924> You can only travel between regions inside **Peace Belt**!"); return
 
     @commands.command(aliases=['md'])
@@ -5702,12 +5752,52 @@ Definition? Mechanism? Lore? Yaaa```
         elif item_code.startswith('it'):
             t = await _cursor.execute(f"SELECT func_it_reward('{target.id}', '{item_code}', {quantity}); ")
         elif item_code.startswith('if'):
-            try: land_id = args[3]
-            except IndexError: await ctx.send("Missing `land_id`"); return
-            t = await _cursor.execute(f"SELECT func_if_reward({land_id}, '{item_code}', {quantity}); ")
+            try: land_code = args[3]
+            except IndexError: await ctx.send("Missing `land_code`"); return
+            t = await _cursor.execute(f"SELECT func_if_reward('{land_code}', '{item_code}', {quantity}); ")
 
         await ctx.send(f":white_check_mark: Given {quantity} `{item_code}` to **{target.name}**")
 
+    @commands.command()
+    @check_id()
+    async def megafreeze(self, ctx, *args):
+        try:
+            target_id = ctx.message.mentions[0].id
+            cmd_tag = args[1]
+            if cmd_tag.startswith('<@'): cmd_tag = args[0]
+        except (IndexError, TypeError): await ctx.send(":warning: Missing stuff!"); return
+
+        if await self.client.loop.run_in_executor(None, partial(redio.delete, f'{cmd_tag}{target_id}')) == 0: await ctx.send(':x:')
+        else: await ctx.send(':white_check_mark:')
+
+    @commands.command()
+    @check_id()
+    async def megakill(self, ctx, *args):
+        if not args: await ctx.send(":warning: Missing user!"); return
+        try: 
+            target_id = ctx.message.mentions[0].id
+            target_name = ctx.message.mentions[0].mention
+        except (IndexError, TypeError):
+            target_id = args[0]
+            target_name = args[0]
+
+        query = f"""DELETE FROM pi_degrees WHERE user_id='{target_id}';
+                    DELETE FROM pi_guild WHERE user_id='{target_id}';
+                    DELETE FROM cosmetic_preset WHERE user_id='{target_id}';
+                    DELETE FROM pi_arts WHERE user_id='{target_id}';
+                    UPDATE pi_inventory SET existence='BAD' WHERE user_id='{target_id}';
+                    UPDATE pi_land SET user_id='BAD' WHERE user_id='{target_id}';
+                    DELETE FROM pi_bank WHERE user_id='{target_id}';
+                    DELETE FROM pi_avatars WHERE user_id='{target_id}';
+                    DELETE FROM pi_hunt WHERE user_id='{target_id}';
+                    DELETE FROM pi_mobs_collection WHERE user_id='{target_id}';
+                    DELETE FROM pi_rest WHERE user_id='{target_id}';
+                    DELETE FROM pi_quests WHERE user_id='{target_id}';
+                    DELETE FROM personal_info WHERE id='{target_id}';"""
+
+        if await _cursor.execute(query) == 0:
+            await ctx.send(':warning: User has not incarnated'); return
+        await ctx.send(f":white_check_mark: Slashed {target_name} into half. Bai ya~")
 
 
 # ============= TOOLS =================
@@ -5994,6 +6084,7 @@ Definition? Mechanism? Lore? Yaaa```
 
 
 
+
 # ============= DATA MANIPULATION =================
 
     @commands.command()
@@ -6016,16 +6107,6 @@ Definition? Mechanism? Lore? Yaaa```
         except IndexError: await ctx.send("<:osit:544356212846886924> Invalid directory!")
 
         await ctx.send(":white_check_mark: Item added!")
-
-    @commands.command()
-    @check_id()
-    async def avaava_kill(self, ctx, *args):
-        u = ' '.join(args)
-        try: 
-            del self.ava_dict[u]
-            await ctx.send(f":white_check_mark: User **{u}** is deleted!")
-            await self.client.loop.run_in_executor(None, self.avatars_updating)
-        except KeyError: await ctx.send(f":x: User **{u}** not found!")
 
     @commands.command()
     @check_id()
@@ -6102,9 +6183,15 @@ Definition? Mechanism? Lore? Yaaa```
 
     async def quefe(self, query, args=None, type='one'):
         """args ---> tuple"""
+        global conn
+        global _cursor
 
         try: await _cursor.execute(query, args=args)
         except RuntimeError: return ''
+        except mysqlError.OperationalError:
+            loop.stop()
+            conn, _cursor = loop.run_until_complete(get_CURSOR())
+            await _cursor.execute(query, args=args)
         if type == 'all': resu = await _cursor.fetchall()
         else: resu = await _cursor.fetchone()
         return resu
@@ -6367,7 +6454,8 @@ Definition? Mechanism? Lore? Yaaa```
                         'Akari_NSFW': 'av13',
                         'Akari_Cosplay': 'av14',
                         'RPG_Girl_1': 'av15',
-                        'GBF': 'av16'}
+                        'GBF_Female': 'av16',
+                        'GBF_Male': 'av17'}
 
         ##bg_codes = {'LoveRibbon/evening': 'bg0'}
         bg_codes = {'indoor_night': 'bg0'}
