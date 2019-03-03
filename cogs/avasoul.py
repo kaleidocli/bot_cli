@@ -4241,72 +4241,91 @@ Definition? Mechanism? Lore? Yaaa```
 
 
     @commands.command()
-    @commands.cooldown(1, 10, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def tax(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
+        sec = {'treasury': ['tax_treasury', 'tax_resource', 'resource'], 'resource': ['tax_resource', 'tax_treasury', 'treasury'], 'faith': ['tax_faith', 'tax_HAPPY','happy'], 'happy': ['tax_HAPPY', 'tax_faith', 'faith']}
 
-        # TAX info
-        taxes = await self.quefe(f"SELECT land_code, tax_treasury, tax_resource, tax_HAPPY, tax_faith FROM pi_tax WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');", type='all')
-        if not taxes: await ctx.send(f"<:osit:544356212846886924> You have no land, **{ctx.author.name}**"); return
+        try:
+            # Info get
+            land_code = args[0]
+            try:
+                if args[1] not in sec.keys(): await ctx.send(f"<:osit:544356212846886924> Unknown tax' type. Please use: **`{'` `'.join(sec.keys())}`**)"); return
+            except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing tax' type. Please use: (**`{'` `'.join(sec.keys())}`**)"); return
+            try:
+                if int(args[2]) > 100 or int(args[2]) < 0: await ctx.send("<:osit:544356212846886924> Percentage only varies from 0 - 100"); return
+            except IndexError: await ctx.send("<:osit:544356212846886924> Missing percentage (0 - 100)"); return
+            except ValueError: await ctx.send("<:osit:544356212846886924> Invalid percentage!"); return
 
-        def makeembed(curp, pages, currentpage):
-            tax = taxes[curp]
+            # Make effect
+            if await _cursor.execute(f"UPDATE pi_tax SET {sec[args[1]][0]}={args[2]}, {sec[args[1]][1]}=100-{args[2]} WHERE land_code='{land_code}' AND EXISTS (SELECT * FROM pi_land WHERE land_code='{land_code}');") == 0:
+                await ctx.send(f"<:osit:544356212846886924> You don't own this land, **{ctx.author.name}**"); return
+            await ctx.send(f":crown: **{args[1].capitalize()} tax** is set to **{args[2]}%**, and also changes **{sec[args[1]][2].capitalize()} tax**.")
+        
+        # Tax board
+        except IndexError:
+            # TAX info
+            taxes = await self.quefe(f"SELECT land_code, tax_treasury, tax_resource, tax_HAPPY, tax_faith FROM pi_tax WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');", type='all')
+            if not taxes: await ctx.send(f"<:osit:544356212846886924> You have no land, **{ctx.author.name}**"); return
 
-            reembed = discord.Embed(title = f":crown: T A X || **`{tax[0]}`**⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", description = f"""```prolog
-    Treasury/Resource: {tax[1]}/{tax[2]} %
-    Happy/Faith: {tax[3]}/{tax[4]} %```""", colour = discord.Colour(0x011C3A))
+            def makeembed(curp, pages, currentpage):
+                tax = taxes[curp]
 
-            return reembed
+                reembed = discord.Embed(title = f":crown: T A X || **`{tax[0]}`**⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", description = f"""```prolog
+        Treasury/Resource: {tax[1]}/{tax[2]} %
+        Happy/Faith: {tax[3]}/{tax[4]} %```""", colour = discord.Colour(0x011C3A))
 
-        async def attachreaction(msg):
-            await msg.add_reaction("\U000023ee")    #Top-left
-            await msg.add_reaction("\U00002b05")    #Left
-            await msg.add_reaction("\U000027a1")    #Right
-            await msg.add_reaction("\U000023ed")    #Top-right
+                return reembed
 
-        pages = len(taxes)
-        currentpage = 1
-        cursor = 0
+            async def attachreaction(msg):
+                await msg.add_reaction("\U000023ee")    #Top-left
+                await msg.add_reaction("\U00002b05")    #Left
+                await msg.add_reaction("\U000027a1")    #Right
+                await msg.add_reaction("\U000023ed")    #Top-right
 
-        emli = []
-        for curp in range(pages):
-            myembed = makeembed(curp, pages, currentpage)
-            emli.append(myembed)
-            currentpage += 1
+            pages = len(taxes)
+            currentpage = 1
+            cursor = 0
 
-        if pages > 1: 
-            msg = await ctx.send(embed=emli[cursor])
-            await attachreaction(msg)
-        else: msg = await ctx.send(embed=emli[cursor], delete_after=15); return
+            emli = []
+            for curp in range(pages):
+                myembed = makeembed(curp, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
 
-        def UM_check(reaction, user):
-            return user.id == ctx.message.author.id and reaction.message.id == msg.id
+            if pages > 1: 
+                msg = await ctx.send(embed=emli[cursor])
+                await attachreaction(msg)
+            else: msg = await ctx.send(embed=emli[cursor], delete_after=15); return
 
-        while True:
-            try:    
-                reaction, user = await self.client.wait_for('reaction_add', timeout=10, check=UM_check)
-                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                    cursor += 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U00002b05" and cursor > 0:
-                    cursor -= 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ee" and cursor != 0:
-                    cursor = 0
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                    cursor = pages - 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-            except asyncio.TimeoutError:
-                await msg.delete(); return
+            def UM_check(reaction, user):
+                return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+            while True:
+                try:    
+                    reaction, user = await self.client.wait_for('reaction_add', timeout=10, check=UM_check)
+                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                        cursor += 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U00002b05" and cursor > 0:
+                        cursor -= 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ee" and cursor != 0:
+                        cursor = 0
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                        cursor = pages - 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                except asyncio.TimeoutError:
+                    await msg.delete(); return
 
 
 
