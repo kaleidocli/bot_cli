@@ -26,7 +26,7 @@ char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U00
             'l': '\U0001f1f1', 'm': '\U0001f1f2', 'n': '\U0001f1f3', 'o': '\U0001f1f4', 'p': '\U0001f1f5', 'q': '\U0001f1f6', 'r': '\U0001f1f7', 's': '\U0001f1f8', 't': '\U0001f1f9', 'u': '\U0001f1fa', 'v': '\U0001f1fb', 'w': '\U0001f1fc', 'x': '\U0001f1fd', 'y': '\U0001f1fe', 'z': '\U0001f1ff'}
 
 #extensions = ['cogs.error_handler', 'cogs.ai', 'cogs.audio', 'cogs.pydanboo', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.avasoul', 'cogs.guess']
-extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.avasoul']
+extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.avasoul', 'cogs.audio']
 TOKEN = 'NDQ5Mjc4ODExMzY5MTExNTUz.Dl2k3A.pGUlnO4HDB2xCH31iXa3uTUJxqA'
 #TOKEN = 'NDQ2NDMxODcyNTQ1ODQ5MzU0.Dm4nJQ.KXmpoZjn47UMNoPSsT34hq_NiQo'                    #thebluecat
 
@@ -407,7 +407,6 @@ async def countline(ctx, *args):
 
 @client.command(aliases=['ctd'])
 @check_id()
-@commands.cooldown(1, 5, type=BucketType.guild)
 async def countdown(ctx, *args):
     try: duration = int(args[0])
     except IndexError: await ctx.send(":warning: Missing `duration`"); return
@@ -429,6 +428,32 @@ async def countdown(ctx, *args):
 @commands.cooldown(1, 5, type=BucketType.guild)
 async def typestuff(ctx, *args):
     await ctx.trigger_typing()
+
+@client.command()
+@commands.cooldown(1, 2, type=BucketType.user)
+async def act(ctx, *,args):
+    acts = {'yay': 'https://imgur.com/dvKPLJH.gif',
+            'mumu': 'https://imgur.com/UEA7ME0.gif',
+            'yaya': 'https://imgur.com/BsHjshO.gif',
+            'huray': 'https://imgur.com/oayh25M.gif',
+            'nom': 'https://imgur.com/QzH4Irq.gif',
+            'shake': 'https://imgur.com/yG86BOm.gif',
+            'eto': 'https://imgur.com/nmjwmiW.gif',
+            'sneak': 'https://imgur.com/QzotxLT.gif',
+            'scared': 'https://imgur.com/6a1v0oK.gif',
+            'aaa': 'https://imgur.com/2xS3kXK.gif',
+            'snack': 'https://imgur.com/eCfbVBK.gif',
+            'zzz': 'https://imgur.com/N1Sv2hC.gif'}
+
+    if args == 'all': await ctx.send(f"`{'` `'.join(acts.keys())}`"); return
+
+    temb = discord.Embed(colour=0x36393E)
+    try: temb.set_image(url=acts[args])
+    except KeyError: return
+    await ctx.send(embed=temb)
+
+
+
 
 # ==============================================
 
@@ -494,12 +519,6 @@ def help_dict_plugin():
         #try:
         help_dict = json.load(f)
         #except: print("ERROR at <help_dict_plugin()>")
-
-def reload(ext):
-    print(ext)
-    importlib.reload(importlib.import_module(ext))
-    client.unload_extension(ext)
-    client.load_extension(ext)
 
 
 

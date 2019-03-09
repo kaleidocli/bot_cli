@@ -47,6 +47,7 @@ class avasoul:
         self.ava_dict = {}
         self.prote_lib = {}
         self.jobs_dict = {}
+        self.trigg = {}
         self.data_ARSENAL = {}; self.data_SUPPLY = {}; self.data_AMMU = {}
         self.data = {}
         self.environ = {}
@@ -115,6 +116,8 @@ class avasoul:
     @commands.command()
     @check_id()
     async def avauda(self, ctx):
+
+        # AVATARs
         temp = await self.quefe(f"SELECT avatar_id FROM model_avatar", type='all')
         avas = [i[0] for i in temp]
 
@@ -126,6 +129,20 @@ class avasoul:
                 que = que + f"INSERT INTO pi_avatars (user_id, avatar_id) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_avatars WHERE user_id='{pack[0]}' AND avatar_id='{ava}'); "
             master_que = master_que + que
         await _cursor.execute(master_que)
+
+        # BACKGROUNDs
+        temp = await self.quefe(f"SELECT bg_code FROM model_background", type='all')
+        avas = [i[0] for i in temp]
+
+        user_ids = await self.quefe("SELECT id FROM personal_info", type='all')
+        master_que = ''
+        for pack in user_ids:
+            que = ''
+            for ava in avas:
+                que = que + f"INSERT INTO pi_backgrounds (user_id, bg_code) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_backgrounds WHERE user_id='{pack[0]}' AND bg_code='{ava}'); "
+            master_que = master_que + que
+        await _cursor.execute(master_que)
+
         await ctx.send(":white_check_mark:")
 
 
@@ -253,8 +270,9 @@ class avasoul:
             await _cursor.execute(f"INSERT INTO pi_guild VALUES ('{id}', 'region.0', 'iron', 0, 0);")
             # Avatars
             for ava_code in ava['avatars']: await _cursor.execute(f"INSERT INTO pi_avatars VALUES ('{id}', '{ava_code}');")
-            await _cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{ctx.author.id}', 'default of {ava['name']}','DEFAULT', 'av0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
-            await _cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{ctx.author.id}', 'default of {ava['name']}', 'CURRENT', 'av0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
+            await _cursor.execute(f"INSERT INTO pi_backgrounds VALUES ('{id}', 'bg0');")
+            await _cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{ctx.author.id}', 'default of {ava['name']}','DEFAULT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
+            await _cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{ctx.author.id}', 'default of {ava['name']}', 'CURRENT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
             # Arts
             await _cursor.execute(f"INSERT INTO pi_arts VALUES ('{ctx.author.id}', 'sword', 'chain_attack', 5)")
             # Inventory     |      Add fist as a default weapon
@@ -275,6 +293,7 @@ class avasoul:
                     UPDATE pi_land SET user_id='BAD' WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_bank WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_avatars WHERE user_id='{ctx.author.id}';
+                    DELETE FROM pi_backgrounds WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_hunt WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_mobs_collection WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_rest WHERE user_id='{ctx.author.id}';
@@ -327,7 +346,7 @@ class avasoul:
         await ctx.send(":incoming_envelope: **Bang!** <a:blob_snu:531060438142812190> *From Cli with love*")
 
     @commands.command(aliases=['a'])
-    @commands.cooldown(1, 10, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def avatar(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
         await self.ava_scan(ctx.message, type='all')
@@ -347,7 +366,7 @@ class avasoul:
         except IndexError: user_id = ctx.author.id
 
         # Colour n Character get
-        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name = await self.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
+        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code = await self.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id, bg_code FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
         except TypeError: await ctx.send(f"<:osit:544356212846886924> User has not incarnated! ({user_id})"); return
         #co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = ('#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')
 
@@ -361,13 +380,13 @@ class avasoul:
 
             form_img = self.prote_lib['form'][0]
             char_img = random.choice(self.prote_lib[char_name])
-            char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height))
+            #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height))
             badge_img = self.prote_lib['badge'][rank.lower()]
-            badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)))
+            #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)))
             #bg = self.prote_lib['bg'][0]
-            bg = copy.deepcopy(random.choice(self.prote_lib['bg']))
-            bg = bg.resize((800, 600))
-            bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
+            bg = copy.deepcopy(random.choice(self.prote_lib['bg'][bg_code]))
+            #bg = bg.resize((800, 600))
+            #bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
             name_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
             degree_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
             money_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
@@ -441,12 +460,12 @@ class avasoul:
 
             #img = Image.open('sampleimg.jpg').convert('RGBA')
             form_img = self.prote_lib['form'][0]
-            char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height))
+            #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height))
             badge_img = self.prote_lib['badge'][rank.lower()]
-            badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)))
-            bg = in_img
-            bg = bg.resize((800, 600))
-            bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
+            #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)))
+            bg = copy.deepcopy(in_img)
+            #bg = bg.resize((800, 600))
+            #bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
             name_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
             degree_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
             money_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
@@ -515,22 +534,24 @@ class avasoul:
             particles = []
             outImPart = []
 
-            particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
+            particles = self.prote_lib['bg_gif'][0]
             char_img = self.prote_lib[char_name][random.choice(range(10))]
-            count = 0
+            count = 0; partilen = len(particles)
             # This is for the sake of off-set
             while True:
                 print(f"LOOOPPPPP {count}")
-                if count > 60: break
-                try: particle = particles[count]
-                except IndexError: break
-                a = Image.fromarray(particle)
+                if count > partilen: break
+                try:
+                    #particle = particles[count]
+                    #a = Image.fromarray(particle)  
 
-                out_img = await gafiking(ctx, a, char_img)
-                await asyncio.sleep(0)
-                #outImPart.append(np.asarray(a))
-                outImPart.append(out_img)
-                count += 3
+                    #out_img = await gafiking(ctx, a, char_img)
+                    out_img = await gafiking(ctx, particles[count], char_img)
+                    await asyncio.sleep(0.1)
+                    #outImPart.append(np.asarray(a))
+                    outImPart.append(out_img)
+                except IndexError: break
+                count += 15
 
             output_buffer = BytesIO()
             #imageio.mimwrite(output_buffer, outImPart)
@@ -809,13 +830,13 @@ Definition? Mechanism? Lore? Yaaa```
                 # Quantity limit check
                 if await _cursor.execute(f"SELECT * FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';") >= 3: await ctx.send(f"<:osit:544356212846886924> You cannot have more than three presets at a time, {str(ctx.message.author.id)}")
 
-                await _cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT {str(ctx.message.author.id)}, '{pname}', 'PRESET', avatar_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
+                await _cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT {str(ctx.message.author.id)}, '{pname}', 'PRESET', avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
 
                 await ctx.send(f":white_check_mark: Created preset **{pname}**. Use `-wardrobe presets` to check its *id*."); return
 
             elif raw[0] == 'delete':
                 try:
-                    if await _cursor.execute(f"DELETE FROM cosmetic_preset WHERE preset_id='{raw[1]}' AND user_id='{str(ctx.message.author.id)}' AND stats!='DEFAULT';") == 0:
+                    if await _cursor.execute(f"DELETE FROM cosmetic_preset WHERE preset_id='{raw[1]}' AND user_id='{ctx.author.id}' AND stats!='DEFAULT';") == 0:
                         await ctx.send("<:osit:544356212846886924> Preset's id not found!"); return
                 # E: Preset's id not given
                 except IndexError: await ctx.send("<:osit:544356212846886924> Please provide the id!"); return
@@ -826,14 +847,14 @@ Definition? Mechanism? Lore? Yaaa```
                 # GET preset
                 try: 
                     if raw[1] == 'default':
-                        avatar_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.quefe(f"SELECT avatar_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='DEFAULT';")
+                        avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.quefe(f"SELECT avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='DEFAULT';")
                     else:
-                        avatar_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.quefe(f"SELECT avatar_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND preset_id='{raw[1]}';")
+                        avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.quefe(f"SELECT avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND preset_id='{raw[1]}';")
                 # E: Preset's id not found
                 except (IndexError, TypeError): await ctx.send("<:osit:544356212846886924> Preset's id not found!"); return
 
                 # UPDATE current
-                await _cursor.execute(f"UPDATE cosmetic_preset SET user_id='{str(ctx.message.author.id)}', name='current of {ctx.message.author.name}', stats='CURRENT', avatar_id='{avatar_id}', co_name='{co_name}', co_partner='{co_partner}', co_money='{co_money}', co_age='{co_age}', co_guild='{co_guild}', co_rank='{co_rank}', co_evo='{co_evo}', co_kill='{co_kill}', co_death='{co_death}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
+                await _cursor.execute(f"UPDATE cosmetic_preset SET user_id='{str(ctx.message.author.id)}', name='current of {ctx.message.author.name}', stats='CURRENT', avatar_id='{avatar_id}', bg_code='{bg_code}', co_name='{co_name}', co_partner='{co_partner}', co_money='{co_money}', co_age='{co_age}', co_guild='{co_guild}', co_rank='{co_rank}', co_evo='{co_evo}', co_kill='{co_kill}', co_death='{co_death}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
                 await ctx.send(":white_check_mark: Preset's loaded!"); return
             
             elif raw[0] == 'presets':
@@ -847,6 +868,8 @@ Definition? Mechanism? Lore? Yaaa```
                     line = line + f"\n `{preset[0]}` :bust_in_silhouette: **{preset[1]}** |< {preset[2]} >|"
 
                 await ctx.send(f":gear: Your list of presets, {ctx.message.author.mention}\n----------------------{line}"); return
+
+            elif raw[0] in ['background', 'bg']: raise IndexError
 
             else:
                 # COLOUR
@@ -863,11 +886,18 @@ Definition? Mechanism? Lore? Yaaa```
                 # AVATAR
                 # E: Color not given
                 except IndexError:
-                    try: 
-                        if await _cursor.execute(f"UPDATE cosmetic_preset SET avatar_id='{raw[0]}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT' AND EXISTS (SELECT * FROM pi_avatars WHERE user_id='{str(ctx.message.author.id)}' AND avatar_id='{raw[0]}');") == 0:
-                            await ctx.send(f"<:osit:544356212846886924> You don't own this avatar, **{ctx.message.author.name}**!"); return
-                        await ctx.send(f":white_check_mark: Changed to `{raw[0]}`"); return
-                    except mysqlError.IntegrityError: await ctx.send(f"<:osit:544356212846886924> Avatar not found!"); return
+                    if raw[0].startswith('av'):
+                        try:
+                            if await _cursor.execute(f"UPDATE cosmetic_preset SET avatar_id='{raw[0]}' WHERE user_id='{ctx.author.id}' AND stats='CURRENT' AND EXISTS (SELECT * FROM pi_avatars WHERE user_id='{ctx.author.id}' AND avatar_id='{raw[0]}');") == 0:
+                                await ctx.send(f"<:osit:544356212846886924> You don't own this avatar, **{ctx.author.name}**!"); return
+                            await ctx.send(f":white_check_mark: Changed to `{raw[0]}`"); return
+                        except mysqlError.IntegrityError: await ctx.send(f"<:osit:544356212846886924> Avatar not found!"); return
+                    else:
+                        try: 
+                            if await _cursor.execute(f"UPDATE cosmetic_preset SET bg_code='{raw[0]}' WHERE user_id='{ctx.author.id}' AND stats='CURRENT' AND EXISTS (SELECT * FROM pi_backgrounds WHERE user_id='{ctx.author.id}' AND bg_code='{raw[0]}');") == 0:
+                                await ctx.send(f"<:osit:544356212846886924> You don't own this avatar, **{ctx.author.name}**!"); return
+                            await ctx.send(f":white_check_mark: Changed to `{raw[0]}`"); return
+                        except mysqlError.IntegrityError: await ctx.send(f"<:osit:544356212846886924> Background not found!"); return
 
         # AVATARs
         # E: No avatar given
@@ -875,79 +905,155 @@ Definition? Mechanism? Lore? Yaaa```
             line = ''
 
             async def browse():
-                items2 = await self.quefe(f"SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}';", type='all')
-                if not items2: await ctx.send(f":x: No result..."); return
+                if not args:
+                    items2 = await self.quefe(f"SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}';", type='all')
+                    if not items2: await ctx.send(f":x: No result..."); return
 
-                items = []
-                for item in items2:
-                    ava_id, name, description = await self.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id='{item[0]}';")
-                    items.append([ava_id, name, description])
+                    items = []
+                    for item in items2:
+                        ava_id, name, description = await self.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id='{item[0]}';")
+                        items.append([ava_id, name, description])
 
-                def makeembed(top, least, pages, currentpage):
-                    line = '' 
+                    def makeembed(top, least, pages, currentpage):
+                        line = '' 
 
-                    for item in items[top:least]:
-                        
-                        line = line + f"""\n`{item[0]}` · **{item[1]}**\n⠀⠀⠀| *"{item[2]}"*"""
+                        for item in items[top:least]:
+                            
+                            line = line + f"""\n`{item[0]}` · **{item[1]}**\n⠀⠀⠀| *"{item[2]}"*"""
 
-                    reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s avatars", colour = discord.Colour(0x011C3A), description=line)
-                    reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
-                    return reembed
-                    #else:
-                    #    await ctx.send("*Nothing but dust here...*")
-                
-                async def attachreaction(msg):
-                    await msg.add_reaction("\U000023ee")    #Top-left
-                    await msg.add_reaction("\U00002b05")    #Left
-                    await msg.add_reaction("\U000027a1")    #Right
-                    await msg.add_reaction("\U000023ed")    #Top-right
+                        reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s avatars", colour = discord.Colour(0x011C3A), description=line)
+                        reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                        return reembed
+                        #else:
+                        #    await ctx.send("*Nothing but dust here...*")
+                    
+                    async def attachreaction(msg):
+                        await msg.add_reaction("\U000023ee")    #Top-left
+                        await msg.add_reaction("\U00002b05")    #Left
+                        await msg.add_reaction("\U000027a1")    #Right
+                        await msg.add_reaction("\U000023ed")    #Top-right
 
-                pages = int(len(items)/5)
-                if len(items)%5 != 0: pages += 1
-                currentpage = 1
-                cursor = 0
+                    pages = int(len(items)/5)
+                    if len(items)%5 != 0: pages += 1
+                    currentpage = 1
+                    cursor = 0
 
-                emli = []
-                for curp in range(pages):
-                    myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
-                    emli.append(myembed)
-                    currentpage += 1
+                    emli = []
+                    for curp in range(pages):
+                        myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
+                        emli.append(myembed)
+                        currentpage += 1
 
-                if pages > 1:
-                    msg = await ctx.send(embed=emli[cursor])
-                    await attachreaction(msg)
-                else: 
-                    msg = await ctx.send(embed=emli[cursor], delete_after=15)
-                    return
+                    if pages > 1:
+                        msg = await ctx.send(embed=emli[cursor])
+                        await attachreaction(msg)
+                    else: 
+                        msg = await ctx.send(embed=emli[cursor], delete_after=15)
+                        return
 
-                def UM_check(reaction, user):
-                    return user.id == ctx.author.id and reaction.message.id == msg.id
+                    def UM_check(reaction, user):
+                        return user.id == ctx.author.id and reaction.message.id == msg.id
 
-                while True:
-                    try:
-                        reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                            cursor += 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U00002b05" and cursor > 0:
-                            cursor -= 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ee" and cursor != 0:
-                            cursor = 0
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                            cursor = pages - 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                    except asyncio.TimeoutError:
-                        await msg.delete(); return
+                    while True:
+                        try:
+                            reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
+                            if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                                cursor += 1
+                                await msg.edit(embed=emli[cursor])
+                                try: await msg.remove_reaction(reaction.emoji, user)
+                                except discordErrors.Forbidden: pass
+                            elif reaction.emoji == "\U00002b05" and cursor > 0:
+                                cursor -= 1
+                                await msg.edit(embed=emli[cursor])
+                                try: await msg.remove_reaction(reaction.emoji, user)
+                                except discordErrors.Forbidden: pass
+                            elif reaction.emoji == "\U000023ee" and cursor != 0:
+                                cursor = 0
+                                await msg.edit(embed=emli[cursor])
+                                try: await msg.remove_reaction(reaction.emoji, user)
+                                except discordErrors.Forbidden: pass
+                            elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                                cursor = pages - 1
+                                await msg.edit(embed=emli[cursor])
+                                try: await msg.remove_reaction(reaction.emoji, user)
+                                except discordErrors.Forbidden: pass
+                        except asyncio.TimeoutError:
+                            await msg.delete(); return
+
+                else:
+                    items2 = await self.quefe(f"SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}';", type='all')
+                    if not items2: await ctx.send(f":x: No result..."); return
+
+                    items = []
+                    for item in items2:
+                        ava_id, name, description = await self.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code='{item[0]}';")
+                        items.append([ava_id, name, description])
+
+                    def makeembed(top, least, pages, currentpage):
+                        line = '' 
+
+                        for item in items[top:least]:
+                            
+                            line = line + f"""\n`{item[0]}` · **{item[1]}**\n⠀⠀⠀| *"{item[2]}"*"""
+
+                        reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
+                        reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                        return reembed
+                        #else:
+                        #    await ctx.send("*Nothing but dust here...*")
+                    
+                    async def attachreaction(msg):
+                        await msg.add_reaction("\U000023ee")    #Top-left
+                        await msg.add_reaction("\U00002b05")    #Left
+                        await msg.add_reaction("\U000027a1")    #Right
+                        await msg.add_reaction("\U000023ed")    #Top-right
+
+                    pages = int(len(items)/5)
+                    if len(items)%5 != 0: pages += 1
+                    currentpage = 1
+                    cursor = 0
+
+                    emli = []
+                    for curp in range(pages):
+                        myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
+                        emli.append(myembed)
+                        currentpage += 1
+
+                    if pages > 1:
+                        msg = await ctx.send(embed=emli[cursor])
+                        await attachreaction(msg)
+                    else: 
+                        msg = await ctx.send(embed=emli[cursor], delete_after=15)
+                        return
+
+                    def UM_check(reaction, user):
+                        return user.id == ctx.author.id and reaction.message.id == msg.id
+
+                    while True:
+                        try:
+                            reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
+                            if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                                cursor += 1
+                                await msg.edit(embed=emli[cursor])
+                                try: await msg.remove_reaction(reaction.emoji, user)
+                                except discordErrors.Forbidden: pass
+                            elif reaction.emoji == "\U00002b05" and cursor > 0:
+                                cursor -= 1
+                                await msg.edit(embed=emli[cursor])
+                                try: await msg.remove_reaction(reaction.emoji, user)
+                                except discordErrors.Forbidden: pass
+                            elif reaction.emoji == "\U000023ee" and cursor != 0:
+                                cursor = 0
+                                await msg.edit(embed=emli[cursor])
+                                try: await msg.remove_reaction(reaction.emoji, user)
+                                except discordErrors.Forbidden: pass
+                            elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                                cursor = pages - 1
+                                await msg.edit(embed=emli[cursor])
+                                try: await msg.remove_reaction(reaction.emoji, user)
+                                except discordErrors.Forbidden: pass
+                        except asyncio.TimeoutError:
+                            await msg.delete(); return
 
             await browse()
 
@@ -979,6 +1085,13 @@ Definition? Mechanism? Lore? Yaaa```
     async def pralaeyr(self, ctx):
         await ctx.send("https://media.discordapp.net/attachments/381963689470984203/546796245994307595/map_description.png")
 
+    @commands.command(aliases=['tut'])
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def tutorial(self, ctx, *args):
+        await ctx.send("GO. TEACH. YOURSELF.")
+
+
+
 # ============= ACTIVITIES ==================
 
     @commands.command(aliases=['job'])
@@ -986,7 +1099,7 @@ Definition? Mechanism? Lore? Yaaa```
     async def work(self, ctx, *args):
         cmd_tag = 'work'
         if not await self.ava_scan(ctx.message, type='life_check'): return
-        if not await self.__cd_check(ctx.message, cmd_tag, f"We haven't heard anything from **{ctx.author.name}**, yet."): return
+        if not await self.__cd_check(ctx.message, cmd_tag, f"**{ctx.author.name}**, you are working."): return
         raw = list(args)
 
         try: 
@@ -1004,8 +1117,8 @@ Definition? Mechanism? Lore? Yaaa```
                 STA, money = await self.quefe(f"""SELECT STA, money FROM personal_info WHERE id='{ctx.author.id}' {full_cheq};""")
                 if STA < sta: await ctx.send(f"Grab something to *eat*, **{ctx.author.name}** <:fufu:508437298808094742> You can't do anything with such STA."); return
 
-                await _cursor.execute(f"UPDATE personal_info SET STA={STA - sta}, money={money + reward} WHERE id='{ctx.author.id}'")
                 await ctx.send(f":briefcase: **{ctx.author.name}** wants to be `{raw[0]}`|**{jname}** for `{int(duration/240)}` days. We'll prepay you **<:36pxGold:548661444133126185>{reward}**!")
+                await _cursor.execute(f"UPDATE personal_info SET STA={STA - sta}, money={money + reward} WHERE id='{ctx.author.id}'")
             # E: Unpack on empty query, due to degree not found
             except TypeError: await ctx.send(f""":briefcase: You need `{"', '".join(requirement.split(' - '))}` to apply for this job!"""); return
         except IndexError: await ctx.send(":briefcase: Please choose a job! You can use `works` check what you can do"); return
@@ -1068,27 +1181,27 @@ Definition? Mechanism? Lore? Yaaa```
             await msg.add_reaction("\U000027a1")    #Right
             await msg.add_reaction("\U000023ed")    #Top-right
 
-        pages = len(job_list)//10
-        if len(job_list)%10 != 0: pages += 1
+        pages = len(job_list)//5
+        if len(job_list)%5 != 0: pages += 1
         currentpage = 1
         cursor = 0
 
         emli = []
         for curp in range(pages):
-            myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
+            myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
             emli.append(myembed)
             currentpage += 1
 
-        if pages > 1: 
-            await attachreaction(msg)
+        if pages > 1:
             msg = await ctx.send(embed=emli[cursor])
-        else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
+            await attachreaction(msg)
+        else: msg = await ctx.send(embed=emli[cursor], delete_after=21); return
 
         def UM_check(reaction, user):
             return user.id == ctx.message.author.id and reaction.message.id == msg.id
 
         while True:
-            try:    
+            try:
                 reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
                 if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                     cursor += 1
@@ -1228,7 +1341,7 @@ Definition? Mechanism? Lore? Yaaa```
                     'ice': f"UPDATE personal_info SET au_ICE=au_ICE+0.05, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
                     'holy': f"UPDATE personal_info SET au_HOLY=au_HOLY+0.05, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
                     'dark': f"UPDATE personal_info SET au_DARK=au_DARK+0.05, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
-                    'charm': f"UPDATE personal_info SET charm=charm+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND preks>0;"}
+                    'charm': f"UPDATE personal_info SET charm=charm+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;"}
 
         try:
             if raw[0] == 'transfuse':
@@ -1460,7 +1573,7 @@ Definition? Mechanism? Lore? Yaaa```
             if await _cursor.execute(f"""UPDATE pi_hunt SET stats='ONGOING', end_point='{end_point}', reward_query="{reward_query}", rewards='{rewards}' WHERE user_id='{ctx.author.id}';""") == 0:
                 await _cursor.execute(f"""INSERT INTO pi_hunt VALUES ('{ctx.author.id}', '{end_point}', 'ONGOING', '{rewards}', "{reward_query}");""")
             await _cursor.execute(f"UPDATE personal_info SET STA=STA-{limit} WHERE id='{ctx.author.id}';")
-            await ctx.send(f":cowboy: Hang tight, **{ctx.author.name}**! The hunt will end at **`{end_point}`**."); return
+            await ctx.send(f":cowboy: Hang tight, **{ctx.author.name}**! The hunt will end after **`{timedelta(seconds=duration)}`**."); return
 
         else:
 
@@ -1525,7 +1638,7 @@ Definition? Mechanism? Lore? Yaaa```
         await ctx.send(f":sunrise_over_mountains: Beneath piles of cotton growling an annoying voice... *Groaaarrr!* Good.. morning? You've recovered **{sta_receive}**`STA`!"); return
 
     @commands.command()
-    @commands.cooldown(1, 30, type=BucketType.user)
+    @commands.cooldown(1, 10, type=BucketType.user)
     async def craft(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
@@ -1575,7 +1688,93 @@ Definition? Mechanism? Lore? Yaaa```
         # Inform
         await ctx.send(f":tools: {info_msg[0]} **Successfully crafted!**")
 
+    @commands.command(aliases=['crafts'])
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def formulas(self, ctx, *args):
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+
+        # FORMULA
+        try:
+            if args[0].startswith('fm'):
+                try: formula_code, name, formula_value, description, tags, kit = await self.quefe(f"SELECT formula_code, name, formula_value, description, tags, kit FROM model_formula WHERE formula_code='{args[0]}';")
+                except TypeError: await ctx.send(":tools: Formula not found!"); return
             
+            temb = discord.Embed(title=f":tools: `{formula_code}`|**{name}**", description=f"""```{description}```""", colour = discord.Colour(0x011C3A))
+            temb.add_field(name=f'╟ K I T [{formula_value}]', value=f'╟ {kit}', inline=True)
+            temb.add_field(name=f'╟ T A G S', value=f"╟ `{tags.replace(' - ', '` · `')}`", inline=True)
+
+            await ctx.send(embed=temb, delete_after=15)
+
+        except IndexError:
+
+            formus = await self.quefe(f"SELECT formula_code, description, tags FROM model_formula;", type='all')
+
+            def makeembed(top, least, pages, currentpage):
+                line = ''
+
+                for formu in formus[top:least]:
+                    line = line + f"╟ `{formu[0]}` | **`{formu[1]}`** | `{formu[2].replace(' - ', '` `')}`\n"
+
+                reembed = discord.Embed(colour = discord.Colour(0x011C3A), description=line)
+                reembed.set_footer(text=f"------ {currentpage}/{pages} ------")
+                return reembed
+                #else:
+                #    await ctx.send("*Nothing but dust here...*")
+            
+            async def attachreaction(msg):
+                await msg.add_reaction("\U000023ee")    #Top-left
+                await msg.add_reaction("\U00002b05")    #Left
+                await msg.add_reaction("\U000027a1")    #Right
+                await msg.add_reaction("\U000023ed")    #Top-right
+
+            pages = len(formus)//10
+            if len(formus)%10 != 0: pages += 1
+            currentpage = 1
+            cursor = 0
+
+            emli = []
+            for curp in range(pages):
+                myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
+
+            if pages > 1: 
+                msg = await ctx.send(embed=emli[cursor])
+                await attachreaction(msg)
+            else: msg = await ctx.send(embed=emli[cursor], delete_after=21); return
+
+            def UM_check(reaction, user):
+                return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+            while True:
+                try:    
+                    reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                        cursor += 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U00002b05" and cursor > 0:
+                        cursor -= 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ee" and cursor != 0:
+                        cursor = 0
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                        cursor = pages - 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                except asyncio.TimeoutError:
+                    await msg.delete(); return
+
+
+
+
 
 
 
@@ -1890,6 +2089,7 @@ Definition? Mechanism? Lore? Yaaa```
                     elif 'ingredient' in item[4]:
                         icon = '<:green_ruby:520092621381697540>'
                         #line = line + f""" `{item_code}` <:green_ruby:520092621381697540> **{self.data['ingredient'][item_code].name}**\n| *"{self.data['ingredient'][item_code].description}"*\n| **`Price`** <:36pxGold:548661444133126185>{self.data['ingredient'][item_code].price}\n| **`Quantity`** {items[item_code]}\n++ `{'` `'.join(self.data['ingredient'][item_code].tags)}`\n\n"""                            
+                    else: icon = ':tools:'
                     line = line + f""" `{item[0]}` {icon} `{item[1]}`| **{item[2]}** [{item[6]}]\n╟ *"{item[3]}"*\n**╟ `『Weight』{item[5]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[7]}`**\n**╟╼**`{item[4].replace(' - ', '`·`')}`\n\n"""
                             
                 line = line + f"**╚═════════╡**`{currentpage}/{pages}`**╞══════════**" 
@@ -2064,7 +2264,7 @@ Definition? Mechanism? Lore? Yaaa```
             await _cursor.execute(f"UPDATE personal_info SET right_hand='{sw}', {slots['b']}='{mw}' WHERE id='{str(ctx.message.author.id)}';")
 
             # Get line
-            sw_name = await self.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' ANDE user_id='{str(ctx.message.author.id)}' AND item_id='{sw}';")
+            sw_name = await self.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{sw}';")
             if sw_name: line_1 = f"`{sw}`|**{sw_name}** ➠ **right_hand**"
             else: line_1 = '**right_hand** is left empty'
             mw_name = await self.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{mw}';")
@@ -2172,9 +2372,10 @@ Definition? Mechanism? Lore? Yaaa```
             if price*quantity <= money:
                 # UN-SERIALIZABLE
                 # Increase item_code's quantity
-                if await _cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{str(ctx.message.author.id)}' AND item_code='{ig_code}';") == 0:
+                await _cursor.execute(f"SELECT func_ig_reward('{ctx.author.id}', '{ig_code}', {quantity});")
+                #if await _cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{str(ctx.message.author.id)}' AND item_code='{ig_code}';") == 0:
                     # E: item_code did not exist. Create one, with given quantity
-                    await _cursor.execute(f"INSERT INTO pi_inventory SELECT 0, {str(ctx.message.author.id)}, ingredient_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, {quantity}, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_ingredient WHERE ingredient_code='{ig_code}';")
+                #    await _cursor.execute(f"INSERT INTO pi_inventory SELECT 0, {str(ctx.message.author.id)}, ingredient_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, {quantity}, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_ingredient WHERE ingredient_code='{ig_code}';")
 
                 # Deduct money
                 await _cursor.execute(f"UPDATE personal_info SET money=money-{price*quantity} WHERE id='{str(ctx.message.author.id)}';")
@@ -2608,7 +2809,7 @@ Definition? Mechanism? Lore? Yaaa```
 
 
 
-# ============= SOCIAL ================
+# ================ LIFE ===================
         
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -3339,10 +3540,79 @@ Definition? Mechanism? Lore? Yaaa```
 
             await ctx.send(embed=discord.Embed(description=f"{marker[role]} Currently in party `{party_id}` as a {role.lower()}.", colour=0xF4A400)); return
 
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def npc(self, ctx, *args):
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+
+        try: npc = await self.quefe(f"SELECT name, description, branch, EVO, illulink FROM model_npc WHERE npc_code='{args[0]}';")
+        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing npc's code"); return
+
+        if not npc: await ctx.send("<:osit:544356212846886924> NPC not found!"); return
+
+        temb = discord.Embed(title = f"`{args[0]}` | **{npc[0].upper()}**\n━━━━━━━ {npc[2].capitalize()} NPC-{npc[3]}", description = f"""```dsconfig
+{npc[1]}```""", colour = discord.Colour(0x011C3A))
+        temb.set_image(url=npc[4])
+
+        await ctx.send(embed=temb)
+
+    @commands.command(aliases=['I'])
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def interact(self, ctx, *args):
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+
+        try: intera_kw = args[1]
+        except IndexError: intera_kw = 'talk'
+
+        # User's info
+        cur_PLACE, cur_X, cur_Y = await self.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
+
+        # NPC / Item
+        try:
+            try: entity_code, entity_name, illulink = await self.quefe(f"SELECT item_id, name, illulink FROM pi_inventory WHERE item_id='{int(args[0])}' AND user_id='n/a' AND existence='GOOD';")
+            # E: Item not found --> Silently ignore
+            except TypeError: return
+        except ValueError:
+            try: entity_code, entity_name, illulink = await self.quefe(f"SELECT npc_code, name, illulink FROM model_npc WHERE npc_code='{args[0]}' OR name LIKE '%{args[0]}%'")
+            # E: NPC not found --> Silently ignore
+            except TypeError: return
+
+        # Relationship's info
+        try: value_chem, value_impression, flag = await self.quefe(f"SELECT value_chem, value_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
+        # E: Relationship not initiated. Init one.
+        except TypeError:
+            value_chem = 0; value_impression = 0; flag = 'n/a'
+            await _cursor.execute(f"INSERT INTO pi_relationship VALUES ('{ctx.author.id}', '{entity_code}', {value_chem}, {value_impression}, '{flag}');")
+
+        # Interaction's info
+        try: entity_code, trigg, data_goods, effect_query, line = await self.quefe(f"SELECT entity_code, trigg, data_goods, effect_query, line FROM environ_interaction WHERE entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' AND {value_chem}>=limit_chem AND limit_impression>={value_impression} AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC LIMIT 1;")
+        except TypeError: return         # Silently ignore         #await ctx.send("<:osit:544356212846886924> Entity not found!"); return
+
+        # TRIGGER !!!!!!!!!!!!!!!!!!!
+        if trigg != 'n/a':
+            pack = [ctx, data_goods,entity_code]
+            try: pack.append(args[2:])
+            except IndexError: pass
+
+            await self.trigg[trigg](pack)
+            return
+
+        temb = discord.Embed(title=f"""```css
+[{entity_code}] | {entity_name}```\n\t{random.choice(line.split(' ||| '))}""", colour = 0x36393E)
+        temb.set_thumbnail(url=illulink)
+
+        if effect_query: await _cursor.execute(effect_query)
+
+        await ctx.send(embed=temb, delete_after=30)
 
 
 
-# ============= LIFE ==================
+
+
+
+
+
+# ================ SOCIAL ==================
 
     @commands.command()
     @commands.cooldown(1, 90, type=BucketType.user)
@@ -3439,6 +3709,9 @@ Definition? Mechanism? Lore? Yaaa```
 
         await ctx.send(f"<:argh:544354429302865932> **{ctx.author.name}** has humiliate {target.mention}!")
         await self.client.loop.run_in_executor(None, partial(redio.set, f'{cmd_tag}{ctx.author.id}', 'dislike', ex=86400, nx=True))
+
+
+
 
 
 
@@ -4505,7 +4778,7 @@ Definition? Mechanism? Lore? Yaaa```
                         target = await self.client.get_user(int(copo))
                         if not target: await ctx.send("<:osit:544356212846886924> User's not found"); return
                         target_id = target.id
-                    except (discordErrors.NotFound, discordErrors.HTTPException): await ctx.send("<:osit:544356212846886924> Invalid user's id!"); return
+                    except (discordErrors.NotFound, discordErrors.HTTPException, TypeError): await ctx.send("<:osit:544356212846886924> Invalid user's id!"); return
                     __bmode = 'INDIRECT'
                 # MOVES     |      acabcbabbba
                 except ValueError: 
@@ -4627,7 +4900,7 @@ Definition? Mechanism? Lore? Yaaa```
 
             # Conduct dealing dmg   |  Conduct dealing STA dmg
             if hit_count == 0:
-                await ctx.send(f"\n--------------------\n:shield: **{target.mention}** has successfully *guarded* all **{name}**'s attack!")
+                await ctx.send(f"\n:shield: **{target.mention}** ⌫ **{name}**")
 
                 # Recalculate the dmg, since hit_count == 0                
                 ## Player's dmg
@@ -5083,8 +5356,8 @@ Definition? Mechanism? Lore? Yaaa```
                 # Conduct dealing dmg   |  Conduct dealing STA dmg
                 dmgdeal = a_dmg*hit_count
                 if hit_count == 0:
-                    await ctx.send(f"\n--------------------\n:shield: **{target.mention}** has successfully *guarded* all **{name}**'s attack!")
-                    if __bmode == 'INDIRECT': await target.send(f"\n--------------------\n:shield: **{target.mention}** has successfully *guarded* all **{name}**'s attack!")
+                    await ctx.send(f"\n:shield: **{target.mention}** ⌫ **{name}**")
+                    if __bmode == 'INDIRECT': await target.send(f"\n:shield: **{target.mention}** ⌫ **{name}**")
 
                     # Recalculate the dmg, since hit_count == 0                
                     ## Player's dmg
@@ -5146,7 +5419,7 @@ Definition? Mechanism? Lore? Yaaa```
                 my_dmgdeal = round(a_dmg*len(shots))
                 # Inform, of course :>
                 await _cursor.execute(f"UPDATE environ_mob SET lp=lp-{my_dmgdeal} WHERE mob_id='{target_id}'; ")
-                await ctx.send(f":dagger: **{name}** has dealt *{my_dmgdeal} DMG* to **「`{target_id}` | {t_name}」**!")
+                await ctx.send(f":dagger: **{name}** ⋙ *{my_dmgdeal} DMG* ⋙ **「`{target_id}` | {t_name}」**!")
             elif _style == 'MAGIC':
                 my_dmgdeal = a_dmg*shots*amount
 
@@ -5160,7 +5433,7 @@ Definition? Mechanism? Lore? Yaaa```
 
                 # Inform, of course :>
                 await _cursor.execute(f"UPDATE environ_mob SET lp=lp-{dmgdeal} WHERE mob_id='{target_id}'; ")
-                await ctx.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **「`{target_id}` | {t_name}」**!")
+                await ctx.send(f":dagger: **{name}** ⋙ *{dmgdeal} DMG* ⋙ **「`{target_id}` | {t_name}」**!")
 
 
         if __mode == 'PVP':
@@ -5191,7 +5464,7 @@ Definition? Mechanism? Lore? Yaaa```
             # REFRESHING ===========================================
             name, LP, STA, user_id, cur_PLACE = await self.quefe(f"SELECT name, LP, STA, id, cur_PLACE FROM personal_info WHERE id='{MSG.author.id}';")
             #name, LP, STA, MAX_STA, user_id, cur_PLACE, cur_X, cur_Y, cur_MOB, combat_HANDLING, right_hand, left_hand = await self.quefe(f"SELECT name, LP, STA, MAX_STA, id, cur_PLACE, cur_X, cur_Y, cur_MOB, combat_HANDLING, right_hand, left_hand FROM personal_info WHERE id='{MSG.author.id}';")
-            t_lp, t_name, t_speed = await self.quefe(f"SELECT lp, name, speed FROM environ_mob WHERE mob_id='{target_id}';")
+            t_lp, t_name = await self.quefe(f"SELECT lp, name FROM environ_mob WHERE mob_id='{target_id}';")
             #t_lp, t_name, t_speed, t_str, t_chain = await self.quefe(f"SELECT lp, name, speed, str, chain FROM environ_mob WHERE mob_id='{target_id}';")
 
 
@@ -5208,10 +5481,11 @@ Definition? Mechanism? Lore? Yaaa```
                     await _cursor.execute(f"INSERT INTO pi_mobs_collection (user_id, region, {type}) VALUES ('{user_id}', '{cur_PLACE}', 1);")
 
                 # Erase the current_enemy lock on off the target_id
+
                 await _cursor.execute(f"UPDATE personal_info SET cur_MOB='n/a' WHERE id='{user_id}';")
                 return False 
 
-            msg = f"--------------------\n**{name}:** `{LP}` LP  |  `{STA}` STA\n**{t_name}:** `{t_lp}` LP\n--------------------"
+            msg = f"╔═══════════\n╟:heartpulse:`{LP}` :muscle:`{STA}` ⠀⠀ |〖**{name}**〗\n╟:heartpulse:`{t_lp}`⠀⠀⠀⠀⠀⠀⠀⠀|〖**{t_name}**〗\n╚═══════════"
             return msg
 
         async def vanishing():
@@ -5284,21 +5558,24 @@ Definition? Mechanism? Lore? Yaaa```
 
             dmg, mmove, counter_mmove = await attack()
 
-            await MSG.channel.send(f"**{t_name}** performed an attack on {MSG.author.mention}: `{' '.join(mmove)}`")
+            decl_msg = await MSG.channel.send(f":crossed_swords: **{t_name}** ⋙ `{' '.join(mmove)}` ⋙ {MSG.author.mention} ")
 
             # Wait for response moves
             def UCc_check(m):
                 return m.author == MSG.author and m.channel == MSG.channel and m.content.startswith('!')
             
-            try: msg = await self.client.wait_for('message', timeout=t_speed, check=UCc_check)            #timeout=10
+            try:
+                msg = await self.client.wait_for('message', timeout=t_speed, check=UCc_check)            #timeout=10
+                await decl_msg.delete()
             except asyncio.TimeoutError:
                 dmgdeal = round(dmg*len(mmove))
                 await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                pack_1 = f":dagger: **「`{target_id}` | {t_name}」** has dealt *{dmgdeal} DMG* to **{MSG.author.mention}**!"
+                pack_1 = f":dagger: **「`{target_id}` | {t_name}」** ⋙ ***{dmgdeal} DMG*** ⋙ {MSG.author.mention}!"
                 pack_2 = await conclusing()
                 if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                 else: msg_pack = False
                 if message_obj: await message_obj.delete()
+                await decl_msg.delete()
                 return msg_pack
 
             try: await msg.delete()
@@ -5318,7 +5595,7 @@ Definition? Mechanism? Lore? Yaaa```
                 else:
                     dmgdeal = round(dmg*len(mmove))*2
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f":dagger\n::dagger: As **{name}** failed to flee, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
+                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to flee, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
                     pack_2 = await conclusing()
                     if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                     else: msg_pack = False
@@ -5331,7 +5608,7 @@ Definition? Mechanism? Lore? Yaaa```
                 except IndexError: 
                     dmgdeal = round(dmg*len(mmove))*2
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f":dagger\n::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
+                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
                     pack_2 = await conclusing()
                     if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                     else: msg_pack = False
@@ -5344,7 +5621,7 @@ Definition? Mechanism? Lore? Yaaa```
                         await MSG.channel.send(f"<:osit:544356212846886924> {switchee.mention} and {MSG.author.mention}, you have to be in the same region!")
                         dmgdeal = round(dmg*len(mmove))*2
                         await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                        pack_1 = f":dagger\n::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
+                        pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
                         pack_2 = await conclusing()
                         if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                         else: msg_pack = False                       
@@ -5355,7 +5632,7 @@ Definition? Mechanism? Lore? Yaaa```
                     await MSG.channel.send(f"<:osit:544356212846886924> User **{switchee.name}** doesn't have an *ava*!")
                     dmgdeal = round(dmg*len(mmove))*2
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f":dagger\n::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
+                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
                     pack_2 = await conclusing()
                     if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                     else: msg_pack = False                       
@@ -5366,7 +5643,7 @@ Definition? Mechanism? Lore? Yaaa```
                     await self.client(f"<:osit:544356212846886924> {switchee.mention} and {MSG.author.mention}, you can only switch within *5 metres*!")
                     dmgdeal = round(dmg*len(mmove))*2
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f":dagger\n::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
+                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
                     pack_2 = await conclusing()
                     if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                     else: msg_pack = False                     
@@ -5382,7 +5659,7 @@ Definition? Mechanism? Lore? Yaaa```
                 except asyncio.TimeoutError:
                     dmgdeal = round(dmg*len(mmove))*2
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f":dagger\n::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
+                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
                     pack_2 = await conclusing()
                     if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                     else: msg_pack = False                     
@@ -5392,7 +5669,7 @@ Definition? Mechanism? Lore? Yaaa```
                 if MSG.author not in switch_resp.mentions:
                     dmgdeal = round(dmg*len(mmove))*2
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f":dagger\n::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
+                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
                     pack_2 = await conclusing()
                     if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                     else: msg_pack = False                    
@@ -5441,7 +5718,7 @@ Definition? Mechanism? Lore? Yaaa```
                     else: await _cursor.execute(f"UPDATE personal_info SET STA=STA-{tem} WHERE id='{user_id}';")
                 
                 # Inform
-                pack_1 = f"\n--------------------\n:shield: {MSG.author.mention} has successfully *guarded* all **「`{target_id}` | {t_name}」**'s attack!"
+                pack_1 = f"\n:shield: {MSG.author.mention} ⌫ **「`{target_id}`|{t_name}」**"
                 pack_2 = await conclusing()
                 if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                 else: msg_pack = False
@@ -5467,7 +5744,7 @@ Definition? Mechanism? Lore? Yaaa```
                 await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}';")
 
                 # Inform
-                pack_1 = f"\n--------------------\n:dagger: **「`{target_id}` | {t_name}」** has dealt *{dmgdeal} DMG* to **{MSG.author.mention}**!"
+                pack_1 = f"\n:dagger: **「`{target_id}` | {t_name}」** ⋙ *{dmgdeal} DMG* ⋙ **{MSG.author.mention}**"
                 pack_2 = await conclusing()
                 if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                 else: msg_pack = False
@@ -5503,7 +5780,7 @@ Definition? Mechanism? Lore? Yaaa```
     async def radar(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
-        cur_PLACE, cur_X, cur_Y = await self.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
+        cur_X, cur_Y = await self.quefe(f"SELECT cur_X, cur_Y FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
         xrange = 0.1; yrange = 0.1
         try: 
             # Check if the range is off-limit
@@ -5546,8 +5823,8 @@ Definition? Mechanism? Lore? Yaaa```
             line = ""; swi = True
 
             for coords in coords_list[top:least]:
-                if swi: line = line + f"\n╠ **`{coords[0]}`** · **`{coords[1]}`**"; swi = False
-                else: line = line + f"⠀⠀⠀╠ **`{coords[0]}`** · **`{coords[1]}`**"; swi = True
+                if swi: line = line + f"\n╠ **`{coords[0]:.3f}`** · **`{coords[1]:.3f}`**"; swi = False
+                else: line = line + f"⠀⠀⠀╠ **`{coords[0]:.3f}`** · **`{coords[1]:.3f}`**"; swi = True
 
             reembed = discord.Embed(title = f":satellite: [{xrange*2*1000}m x {yrange*2*1000}m] square radius, with user as the center", colour = discord.Colour(0x011C3A), description=line)
             reembed.set_footer(text=f"{len(coords_list)} detected | List {currentpage} of {pages}")
@@ -5865,7 +6142,7 @@ Definition? Mechanism? Lore? Yaaa```
 
         if item_code.startswith('ig'):
             t = await _cursor.execute(f"SELECT func_ig_reward('{target.id}', '{item_code}', {quantity}); ")
-        elif item_code.startswith('it') or item_code.startswith('ar') or item_code.startswith('am'):
+        elif item_code.startswith('it') or item_code.startswith('ar') or item_code.startswith('am') or item_code.startswith('bp'):
             t = await _cursor.execute(f"SELECT func_it_reward('{target.id}', '{item_code}', {quantity}); ")
         elif item_code.startswith('if'):
             try: land_code = args[3]
@@ -6111,7 +6388,7 @@ Definition? Mechanism? Lore? Yaaa```
     async def tele_procedure(self, current_place, user_id, desti_x, desti_y):
         """x, y: float"""
         # Assign the user's id to coord / Resign the user's id from the old coord
-        await _cursor.execute(f"UPDATE personal_info SET cur_X={desti_x}, cur_Y={desti_y} WHERE id='{user_id}';")
+        await _cursor.execute(f"UPDATE personal_info SET cur_X={desti_x:.3}, cur_Y={desti_y:.3} WHERE id='{user_id}';")
         # Assign the coord to ava
         #self.ava_dict[user_id]['realtime_zone']['current_coord'] = [desti_x, desti_y]
 
@@ -6138,6 +6415,7 @@ Definition? Mechanism? Lore? Yaaa```
 
     async def inj_filter(self, text):
         text = text.replace("'", ' ')
+        text = text.replace("=", ' ')
         text = text.replace("`", ' ')
         text = text.replace("\"", ' ')
         text = text.replace(";", ' ')
@@ -6468,47 +6746,104 @@ Definition? Mechanism? Lore? Yaaa```
 
 
         async def world_built():
-            for floor in list(self.environ.keys()):
-                
-                # ----------- MOB/BOSS initialize ------------
-                for mob_code, pack in self.environ[floor]['info']['diversity'].items():
-                    # Quantity of kind in a diversity check
-                    qk = await self.quefe(f"SELECT COUNT(*) FROM environ_mob WHERE mob_code='{mob_code}' AND region='{floor}';")
-                    if qk[0] == pack[0]: continue
-                    elif qk[0] < pack[0]: pack[0] -= qk[0]
-                    
-                    # Get the <mob> prototype
-                    name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY = await self.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY FROM model_mob WHERE mob_code='{mob_code}';")
-                    rewards = rewards.split(' | ')
-                    
-                    # Mass production
-                    for count in range(pack[0]):
-                        # Generating rewards
-                        status = []; objecto = []; bingo_list = []
-                        for reward in rewards:
-                            stuff = reward.split(' - ')
-                            if random.choice(range(int(stuff[2]))) == 0:
-                                if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+            regions = await self.quefe("SELECT environ_code FROM environ", type='all')
 
-                                # Stats reward
-                                if stuff[0] in ['money']: status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
-                                # ... other shit
-                                else: 
-                                    # Get item/weapon's info
-                                    temp = await self.quefe(f"SELECT * FROM model_item WHERE item_code='{stuff[0]}';")
-                                    # SERI / UN-SERI check
-                                    # SERI
-                                    if 'inconsumbale' in temp[2].split(' - '):
-                                        objecto.append(f"""INSERT INTO pi_inventory VALUE ("user_id_here", {', '.join(temp)});""")
-                                    # UN-SERI
-                                    else: objecto.append(f"""UPDATE pi_inventory SET quantity=quantity+{random.choice(range(stuff[1]))} WHERE user_id="user_id_here" AND item_code='{stuff[0]}';""")
-                        stata = f"""UPDATE personal_info SET {', '.join(status)} WHERE id="user_id_here"; """
-                        rewards_query = f"{stata} {' '.join(objecto)}"
+            for region in regions:
+                region = region[0]
+                
+                # ----------- MOB/BOSS/NPC initialize ------------
+                mobs = await self.quefe(f"SELECT mob_code, quantity, limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_diversity WHERE environ_code='{region}';", type='all')
+
+                for mob in mobs:
+                    mob = list(mob)
+                    # MOB
+                    if mob[0].startswith('mb'):
+                        # Quantity of kind in a diversity check
+                        qk = await self.quefe(f"SELECT COUNT(*) FROM environ_mob WHERE mob_code='{mob[0]}' AND region='{region}';")
+                        if qk[0] == mob[1]: continue
+                        elif qk[0] < mob[1]: mob[1] -= qk[0]
+                        
+                        # Get the <mob> prototype
+                        name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY = await self.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY FROM model_mob WHERE mob_code='{mob[0]}';")
+                        rewards = rewards.split(' | ')
+                        
+                        # Mass production
+                        for count in range(mob[1]):
+                            # Generating rewards
+                            status = []; objecto = []; bingo_list = []
+                            for reward in rewards:
+                                stuff = reward.split(' - ')
+                                if random.choice(range(int(stuff[2]))) == 0:
+                                    if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+
+                                    # Stats reward
+                                    if stuff[0] in ['money']: status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
+                                    # ... other shit
+                                    else:
+                                        # Get item/weapon's info
+                                        temp = await self.quefe(f"SELECT * FROM model_item WHERE item_code='{stuff[0]}';")
+                                        # SERI / UN-SERI check
+                                        # SERI
+                                        if 'inconsumbale' in temp[2].split(' - '):
+                                            #objecto.append(f"""INSERT INTO pi_inventory VALUE ("user_id_here", {', '.join(temp)});""")
+                                            objecto.append(f"""SELECT func_it_reward('user_id_here', '{stuff[0]}', '{random.choice(range(stuff[1]))}');""")
+                                        # UN-SERI
+                                        else:
+                                            #objecto.append(f"""UPDATE pi_inventory SET quantity=quantity+{random.choice(range(stuff[1]))} WHERE user_id="user_id_here" AND item_code='{stuff[0]}';""")
+                                            objecto.append(f"""SELECT func_ig_reward('user_id_here', '{stuff[0]}', '{random.choice(range(stuff[1]))}');""")
+                            stata = f"""UPDATE personal_info SET {', '.join(status)} WHERE id="user_id_here"; """
+                            rewards_query = f"{stata} {' '.join(objecto)}"
+
+                            # Insert the mob to DB
+                            await _cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob[0]}', "{name}", '{branch}', {lp}, {str}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_DARK}, {au_HOLY}, '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {mob[2]}, {mob[3]}, {mob[4]}, {mob[5]}, 'n/a');""")
+                            counter_get = await self.quefe("SELECT MAX(id_counter) FROM environ_mob")
+                            await _cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
+                    
+                    # NPC
+                    elif mob[0].startswith('p'):
+                        # Quantity of kind in a diversity check
+                        qk = await self.quefe(f"SELECT COUNT(*) FROM environ_npc WHERE npc_code='{mob[0]}' AND region='{region}';")
+                        if qk[0] == mob[1]: continue
+                        elif qk[0] < mob[1]: mob[1] -= qk[0]
+                        
+                        # Get the <mob> prototype
+                        name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY = await self.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY FROM model_npc WHERE npc_code='{mob[0]}';")
+                        if rewards:
+                            rewards = rewards.split(' | ')
+                            
+                            
+                            # Mass production
+                            for count in range(mob[1]):
+                                # Generating rewards
+                                status = []; objecto = []; bingo_list = []
+                                for reward in rewards:
+                                    stuff = reward.split(' - ')
+                                    if random.choice(range(int(stuff[2]))) == 0:
+                                        if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+
+                                        # Stats reward
+                                        if stuff[0] in ['money']: status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
+                                        # ... other shit
+                                        else:
+                                            # Get item/weapon's info
+                                            temp = await self.quefe(f"SELECT * FROM model_item WHERE item_code='{stuff[0]}';")
+                                            # SERI / UN-SERI check
+                                            # SERI
+                                            if 'inconsumbale' in temp[2].split(' - '):
+                                                #objecto.append(f"""INSERT INTO pi_inventory VALUE ("user_id_here", {', '.join(temp)});""")
+                                                objecto.append(f"""SELECT func_it_reward('user_id_here', '{stuff[0]}', '{random.choice(range(stuff[1]))}');""")
+                                            # UN-SERI
+                                            else:
+                                                #objecto.append(f"""UPDATE pi_inventory SET quantity=quantity+{random.choice(range(stuff[1]))} WHERE user_id="user_id_here" AND item_code='{stuff[0]}';""")
+                                                objecto.append(f"""SELECT func_ig_reward('user_id_here', '{stuff[0]}', '{random.choice(range(stuff[1]))}');""")
+                                stata = f"""UPDATE personal_info SET {', '.join(status)} WHERE id="user_id_here"; """
+                                rewards_query = f"{stata} {' '.join(objecto)}"
+                        else: rewards_query = ''; bingo_list = []
 
                         # Insert the mob to DB
-                        await _cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", '{branch}', {lp}, {str}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_DARK}, {au_HOLY}, '{' | '.join(bingo_list)}', '{rewards_query}', '{floor}', {pack[1]}, {pack[2]}, {pack[3]}, {pack[4]}, 'n/a');""")
-                        counter_get = await self.quefe("SELECT MAX(id_counter) FROM environ_mob")
-                        await _cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
+                        await _cursor.execute(f"""INSERT INTO environ_npc VALUES (0, 'main', '{mob[0]}', "{name}", '{branch}', {lp}, {str}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_DARK}, {au_HOLY}, '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {mob[2]}, {mob[3]}, {mob[4]}, {mob[5]}, 'n/a', '');""")
+                        counter_get = await self.quefe("SELECT MAX(id_counter) FROM environ_npc")
+                        await _cursor.execute(f"UPDATE environ_npc SET npc_id='npc.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
 
                 # ----------- MAP initialize -------------
                 map = []
@@ -6522,10 +6857,10 @@ Definition? Mechanism? Lore? Yaaa```
                     try: map[int(self.ava_dict[user_id]['realtime_zone']['current_coord'][0])][int(self.ava_dict[user_id]['realtime_zone']['current_coord'][1])].append(user_id)
                     except TypeError: pass
                 #Return the map
-                self.environ[floor]['map'] = map
+                self.environ[region]['map'] = map
                 
                 # ----------- QUESTS initialize ----------                
-                try: self.environ[floor]['characteristic']['quest'] = data_QUESTS
+                try: self.environ[region]['characteristic']['quest'] = data_QUESTS
                 except KeyError: print("KEY_ERROR")
             
             print("___WORLD built() done")  
@@ -6572,25 +6907,41 @@ Definition? Mechanism? Lore? Yaaa```
                         'Akari_Cosplay': 'av14',
                         'RPG_Girl_1': 'av15',
                         'GBF_Female': 'av16',
-                        'GBF_Male': 'av17'}
+                        'GBF_Male': 'av17',
+                        'GBF_Female_2': 'av18',
+                        'Djeeta': 'av19'}
 
         ##bg_codes = {'LoveRibbon/evening': 'bg0'}
-        bg_codes = {'indoor_night': 'bg0'}
+        bg_codes = {'medieval_indoor': 'bg0',
+                    'medieval_outdoor': 'bg1',
+                    'modern_indoor': 'bg2',
+                    'modern_outdoor': 'bg3',
+                    'fengfeng': 'bg4',
+                    'sleepypang': 'bg5',
+                    'rocha_cold': 'bg6',
+                    'rocha_crimson': 'bg7',
+                    'rocha_gold': 'bg8',
+                    'rocha_green': 'bg9'}
 
         def ImageGen_supporter(char, rawimg):
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/char/{char}/{rawimg}').convert('RGBA')
+            img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height))
             self.prote_lib[prote_codes[char]].append(img)
 
         def BackgroundGen_supporter(bg_name, rawimg):
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}/{rawimg}').convert('RGBA')
-            self.prote_lib['bg'].append(img)
+            img = img.resize((800, 600))
+            img = img.filter(ImageFilter.GaussianBlur(2.6))
+            self.prote_lib['bg'][bg_codes[bg_name]].append(img)
 
         def bg_plugin():
-            self.prote_lib['bg'] = []
+            self.prote_lib['bg'] = {}
             self.prote_lib['bg_stock'] = []
             self.prote_lib['stock_bar'] = []
+            self.prote_lib['bg_gif'] = []
 
             for bg_name, bg_id in bg_codes.items():
+                self.prote_lib['bg'][bg_id] = []
                 for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}'):
                     BackgroundGen_supporter(bg_name, rawimg)
                     #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
@@ -6599,6 +6950,15 @@ Definition? Mechanism? Lore? Yaaa```
             self.prote_lib['bg_stock'].append(img)
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bar.png').convert('RGBA')
             self.prote_lib['stock_bar'].append(img)
+
+            particle_after = []
+            particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
+            for particle in particles:
+                a = Image.fromarray(particle)
+                a = a.resize((800, 600))
+                a = a.filter(ImageFilter.GaussianBlur(2.6))
+                particle_after.append(a)
+            self.prote_lib['bg_gif'].append(particle_after)
 
         def form_plugin():
             self.prote_lib['form'] = []
@@ -6609,7 +6969,9 @@ Definition? Mechanism? Lore? Yaaa```
             ranking_badges = {'iron': 'badge_IRON.png', 'bronze': 'badge_BRONZE.png', 'silver': 'badge_SILVER.png', 'gold': 'badge_GOLD.png', 'adamantite': 'badge_ADAMANTITE.png', 'mithryl': 'badge_MITHRYL.png'}
             self.prote_lib['badge'] = {}
             for key, dir in ranking_badges.items():
-                self.prote_lib['badge'][key] = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/badges/{dir}').convert('RGBA')
+                badge_img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/badges/{dir}').convert('RGBA')
+                badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)))
+                self.prote_lib['badge'][key] = badge_img
 
         def font_plugin():
             self.prote_lib['font'] = {}
