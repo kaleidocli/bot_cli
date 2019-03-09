@@ -65,12 +65,18 @@ class avasoul:
                     'OCEAN': 'https://imgur.com/fQFO2b4.png'}
 
     async def on_ready(self):
+        if self.thepoof: return
         await self.client.loop.run_in_executor(None, self.avatars_plugin)
         await self.data_plugin()
         await self.client.loop.run_in_executor(None, self.avatars_plugin_2)
         #await self.intoSQL()
         print(self.thepoof)
         self.thepoof += 1
+        await self.prote_plugin()
+
+    @commands.command()
+    @check_id()
+    async def spinthewheel(self, ctx):
         await self.prote_plugin()
 
     async def __cd_check(self, MSG, cmd_tag, warn):
@@ -3548,6 +3554,69 @@ Definition? Mechanism? Lore? Yaaa```
     async def npc(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
+        if not args:
+            npcs = await self.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc;", type='all')
+
+            def makeembed(curp, pages, currentpage):
+                npc = npcs[curp]
+
+                temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}**\n━━━━━━━ {npc[2].capitalize()} NPC-{npc[3]}", description = f"""```dsconfig
+    {npc[1]}```""", colour = discord.Colour(0x011C3A))
+                temb.set_image(url=random.choice(npc[4].split(' <> ')))
+
+                return temb
+
+            async def attachreaction(msg):
+                await msg.add_reaction("\U000023ee")    #Top-left
+                await msg.add_reaction("\U00002b05")    #Left
+                await msg.add_reaction("\U000027a1")    #Right
+                await msg.add_reaction("\U000023ed")    #Top-right
+
+            pages = len(npcs)
+            currentpage = 1
+            cursor = 0
+
+            emli = []
+            for curp in range(pages):
+                myembed = makeembed(curp, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
+
+            if pages > 1: 
+                msg = await ctx.send(embed=emli[cursor])
+                await attachreaction(msg)
+            else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
+
+            def UM_check(reaction, user):
+                return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+            while True:
+                try:    
+                    reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                        cursor += 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U00002b05" and cursor > 0:
+                        cursor -= 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ee" and cursor != 0:
+                        cursor = 0
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                        cursor = pages - 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                except asyncio.TimeoutError:
+                    await msg.delete(); return
+
+
         try: npc = await self.quefe(f"SELECT name, description, branch, EVO, illulink FROM model_npc WHERE npc_code='{args[0]}';")
         except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing npc's code"); return
 
@@ -3560,7 +3629,7 @@ Definition? Mechanism? Lore? Yaaa```
         await ctx.send(embed=temb)
 
     @commands.command(aliases=['I'])
-    @commands.cooldown(1, 30, type=BucketType.user)
+    @commands.cooldown(1, 15, type=BucketType.user)
     async def interact(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
@@ -3600,12 +3669,12 @@ Definition? Mechanism? Lore? Yaaa```
             await self.trigg[trigg](pack)
             return
 
-        async def line_gen():
+        async def line_gen(first_time=False):
             linu = random.choice(lines.split(' ||| '))
             line = linu.split(' <> ')
             dura = round(len(line[0])/10)
 
-            if await self.percenter(value_chem - limit_chem, total=100):
+            if await self.percenter(value_chem - limit_chem, total=100) or first_time:
                 temb = discord.Embed(title=f"`{entity_code}` <:__:544354428338044929> **{entity_name}**", description=f"""```css
     {line[0]}```""", colour = 0x36393E)
 
@@ -3631,8 +3700,9 @@ Definition? Mechanism? Lore? Yaaa```
         if effect_query: await _cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{random.choice([-10, -5, -2, -1, 0, 1, 2, 5])}+{round(charm/50)} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
         else: await _cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{random.choice([-1, 0, 0, 1])}+{round(charm/50)} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
 
-        temb, dura, checkk = await line_gen()
+        temb, dura, checkk = await line_gen(first_time=True)
         msg = await ctx.send(embed=temb)
+        await msg.add_reaction(':__:544354428338044929')
 
         while True:
             def RUM_check(reaction, user):
