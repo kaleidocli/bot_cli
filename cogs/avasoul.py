@@ -54,6 +54,7 @@ class avasoul:
         self.client_id = '594344297452325'
         self.client_secret = '2e29f3c50797fa6d5aad8b5bef527b214683a3ff'
         self.imgur_client = ImgurClient(self.client_id, self.client_secret)
+        self.thepoof = 0
 
         self.biome = {'SAVANNA': 'https://imgur.com/qc1NNIu.png',
                     'JUNGLE': 'https://imgur.com/3j786qW.png',
@@ -68,6 +69,8 @@ class avasoul:
         await self.data_plugin()
         await self.client.loop.run_in_executor(None, self.avatars_plugin_2)
         #await self.intoSQL()
+        print(self.thepoof)
+        self.thepoof += 1
         await self.prote_plugin()
 
     async def __cd_check(self, MSG, cmd_tag, warn):
@@ -3552,12 +3555,12 @@ Definition? Mechanism? Lore? Yaaa```
 
         temb = discord.Embed(title = f"`{args[0]}` | **{npc[0].upper()}**\n━━━━━━━ {npc[2].capitalize()} NPC-{npc[3]}", description = f"""```dsconfig
 {npc[1]}```""", colour = discord.Colour(0x011C3A))
-        temb.set_image(url=npc[4])
+        temb.set_image(url=random.choice(npc[4].split(' <> ')))
 
         await ctx.send(embed=temb)
 
     @commands.command(aliases=['I'])
-    @commands.cooldown(1, 5, type=BucketType.user)
+    @commands.cooldown(1, 30, type=BucketType.user)
     async def interact(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
 
@@ -3565,17 +3568,17 @@ Definition? Mechanism? Lore? Yaaa```
         except IndexError: intera_kw = 'talk'
 
         # User's info
-        cur_PLACE, cur_X, cur_Y = await self.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
+        cur_PLACE, cur_X, cur_Y, charm = await self.quefe(f"SELECT cur_PLACE, cur_X, cur_Y, charm FROM personal_info WHERE id='{ctx.author.id}';")
 
         # NPC / Item
         try:
             try: entity_code, entity_name, illulink = await self.quefe(f"SELECT item_id, name, illulink FROM pi_inventory WHERE item_id='{int(args[0])}' AND user_id='n/a' AND existence='GOOD';")
             # E: Item not found --> Silently ignore
-            except TypeError: return
+            except TypeError: await ctx.message.add_reaction('\U00002754'); return
         except ValueError:
             try: entity_code, entity_name, illulink = await self.quefe(f"SELECT npc_code, name, illulink FROM model_npc WHERE npc_code='{args[0]}' OR name LIKE '%{args[0]}%'")
             # E: NPC not found --> Silently ignore
-            except TypeError: return
+            except TypeError: await ctx.message.add_reaction('\U00002754'); return
 
         # Relationship's info
         try: value_chem, value_impression, flag = await self.quefe(f"SELECT value_chem, value_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
@@ -3585,8 +3588,8 @@ Definition? Mechanism? Lore? Yaaa```
             await _cursor.execute(f"INSERT INTO pi_relationship VALUES ('{ctx.author.id}', '{entity_code}', {value_chem}, {value_impression}, '{flag}');")
 
         # Interaction's info
-        try: entity_code, trigg, data_goods, effect_query, line = await self.quefe(f"SELECT entity_code, trigg, data_goods, effect_query, line FROM environ_interaction WHERE entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' AND {value_chem}>=limit_chem AND limit_impression>={value_impression} AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC LIMIT 1;")
-        except TypeError: return         # Silently ignore         #await ctx.send("<:osit:544356212846886924> Entity not found!"); return
+        try: entity_code, trigg, data_goods, effect_query, lines, limit_chem = await self.quefe(f"SELECT entity_code, trigg, data_goods, effect_query, line, limit_chem FROM environ_interaction WHERE entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' AND {value_chem}>=limit_chem AND limit_impression>={value_impression} AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC LIMIT 1;")
+        except TypeError: await ctx.message.add_reaction('\U00002754'); return         # Silently ignore         #await ctx.send("<:osit:544356212846886924> Entity not found!"); return
 
         # TRIGGER !!!!!!!!!!!!!!!!!!!
         if trigg != 'n/a':
@@ -3597,15 +3600,52 @@ Definition? Mechanism? Lore? Yaaa```
             await self.trigg[trigg](pack)
             return
 
-        temb = discord.Embed(title=f"""```css
-[{entity_code}] | {entity_name}```\n\t{random.choice(line.split(' ||| '))}""", colour = 0x36393E)
-        temb.set_thumbnail(url=illulink)
+        async def line_gen():
+            linu = random.choice(lines.split(' ||| '))
+            line = linu.split(' <> ')
+            dura = round(len(line[0])/10)
 
-        if effect_query: await _cursor.execute(effect_query)
+            if await self.percenter(value_chem - limit_chem, total=100):
+                temb = discord.Embed(title=f"`{entity_code}` <:__:544354428338044929> **{entity_name}**", description=f"""```css
+    {line[0]}```""", colour = 0x36393E)
 
-        await ctx.send(embed=temb, delete_after=30)
+                try:
+                    temb.set_image(url=line[1])
+                    dura += 10
+                except IndexError: pass
+                temb.set_thumbnail(url=random.choice(illulink.split(' <> ')))
+                temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
+                return temb, dura, True
 
+            else:
+                temb = discord.Embed(title=f"`{entity_code}` <:__:544354428338044929> **{entity_name}**", description=f"""```css
+    Oops sorry. I gotta go. Bai ya~```""", colour = 0x36393E)
+                try:
+                    temb.set_image(url=line[1])
+                    dura += 10
+                except IndexError: pass
+                temb.set_thumbnail(url=random.choice(illulink.split(' <> ')))
+                temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
+                return temb, dura, False
 
+        if effect_query: await _cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{random.choice([-10, -5, -2, -1, 0, 1, 2, 5])}+{round(charm/50)} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
+        else: await _cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{random.choice([-1, 0, 0, 1])}+{round(charm/50)} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
+
+        temb, dura, checkk = await line_gen()
+        msg = await ctx.send(embed=temb)
+
+        while True:
+            def RUM_check(reaction, user):
+                return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) == "<:__:544354428338044929>"
+
+            try:
+                await self.client.wait_for('reaction_add', check=RUM_check, timeout=dura)
+                temb, dura, checkk = await line_gen()
+                if checkk: await msg.edit(embed=temb)
+                else: await msg.edit(embed=temb, delete_after=5); return
+
+            except asyncio.TimeoutError:
+                await msg.delete(); return
 
 
 
@@ -4449,9 +4489,10 @@ Definition? Mechanism? Lore? Yaaa```
 
         # =========== PREPARE 2 ===========
         limit = round(o_dura/10)
+        if l_productive == 0: l_productive = random.choice([0, 1])
         try: duration = round((o_dura/cost_entity*o_enr)/1000)
         except ZeroDivisionError: duration = round((o_dura*o_enr)/1000)
-        duration += round((l_productive/1000*(1000 - l_productive)) + duration/(asp + 1))
+        duration += round(abs(l_productive/1000*(1000 - l_productive)) + duration/(asp + 1))
         dis_sta = o_ursta - u_sta
         if dis_sta > 5000: await ctx.send("<:osit:544356212846886924> Your unit. Needs. Rest."); return
         elif dis_sta > 0: duration = duration + dis_sta*10
@@ -4463,10 +4504,10 @@ Definition? Mechanism? Lore? Yaaa```
         else: cost_pol = o_lpol - round((abs(l_productive - 1000)/(asp + 1)))
         temp = l_productive - cost_pol
         if temp <= 0:
-            if l_gov == 'COMMUNISM': xtra = f", v_HEALTH=v_HEALTH+{temp}, v_productive=0"
-            elif l_gov == 'DEMOCRACY': xtra = f", v_HAPPY=v_HAPPY+{temp}, v_productive=0"
-            else: xtra = ", v_productive=0"
-        else: xtra = f", v_productive=v_productive-{cost_pol}"
+            if l_gov == 'COMMUNISM': xtra = f", v_HEALTH=v_HEALTH+{temp}, v_productive={temp}"
+            elif l_gov == 'DEMOCRACY': xtra = f", v_HAPPY=v_HAPPY+{temp}, v_productive={temp}"
+            else: f", v_productive={temp}"
+        else: xtra = f", v_productive={temp}"
 
         # =========== CONFIRM ==============
         temb = discord.Embed(title=f":crown: From **{ctx.author.name}** ➠ to `{raw[0]}`|**{u_name}** of `{land_code}`|**{l_name}**", description=f"""```dsconfig
@@ -4642,8 +4683,8 @@ Definition? Mechanism? Lore? Yaaa```
                 tax = taxes[curp]
 
                 reembed = discord.Embed(title = f":crown: T A X || **`{tax[0]}`**⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", description = f"""```prolog
-        Treasury/Resource: {tax[1]}/{tax[2]} %
-        Happy/Faith: {tax[3]}/{tax[4]} %```""", colour = discord.Colour(0x011C3A))
+    Treasury/Resource: {tax[1]}/{tax[2]} %
+    Happy/Faith: {tax[3]}/{tax[4]} %```""", colour = discord.Colour(0x011C3A))
 
                 return reembed
 
@@ -6410,8 +6451,10 @@ Definition? Mechanism? Lore? Yaaa```
         await ctx.send(embed=reembed)
 
     async def percenter(self, percent, total=10):
+        total = range(total)
+        if len(total) <= 0 or percent <= 0: return False
         if random.choice(total) <= percent: return True
-        else: False
+        else: return False
 
     async def inj_filter(self, text):
         text = text.replace("'", ' ')
