@@ -3654,10 +3654,10 @@ Definition? Mechanism? Lore? Yaaa```
         # E: Relationship not initiated. Init one.
         except TypeError:
             value_chem = 0; value_impression = 0; flag = 'n/a'
-            await _cursor.execute(f"INSERT INTO pi_relationship VALUES ('{ctx.author.id}', '{entity_code}', {value_chem}, {value_impression}, '{flag}');")
+            await _cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{entity_code}', {value_chem}, {value_impression}, '{flag}');")
 
         # Interaction's info
-        try: entity_code, trigg, data_goods, effect_query, lines, limit_chem = await self.quefe(f"SELECT entity_code, trigg, data_goods, effect_query, line, limit_chem FROM environ_interaction WHERE entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' AND {value_chem}>=limit_chem AND limit_impression>={value_impression} AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC LIMIT 1;")
+        try: entity_code, trigg, data_goods, effect_query, lines, limit_chem, effect_line = await self.quefe(f"SELECT entity_code, trigg, data_goods, effect_query, line, limit_chem, effect_line FROM environ_interaction WHERE entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' AND (({value_chem}>=limit_chem AND chem_compasign='>=') OR ({value_chem}<limit_chem AND chem_compasign='<')) AND (({value_impression}>=limit_impression AND imp_compasign='>=') OR ({value_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC, limit_chem DESC, limit_impression DESC LIMIT 1;")
         except TypeError: await ctx.message.add_reaction('\U00002754'); return         # Silently ignore         #await ctx.send("<:osit:544356212846886924> Entity not found!"); return
 
         # TRIGGER !!!!!!!!!!!!!!!!!!!
@@ -3669,9 +3669,12 @@ Definition? Mechanism? Lore? Yaaa```
             await self.trigg[trigg](pack)
             return
 
-        async def line_gen(first_time=False):
-            linu = random.choice(lines.split(' ||| '))
-            line = linu.split(' <> ')
+        async def line_gen(first_time=False, effect_line=None):
+            if effect_line:
+                line = [effect_line]
+            else:
+                linu = random.choice(lines.split(' ||| '))
+                line = linu.split(' <> ')
             dura = round(len(line[0])/10)
 
             if await self.percenter(value_chem - limit_chem, total=100) or first_time:
@@ -3697,7 +3700,11 @@ Definition? Mechanism? Lore? Yaaa```
                 temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
                 return temb, dura, False
 
-        if effect_query: await _cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{random.choice([-10, -5, -2, -1, 0, 1, 2, 5])}+{round(charm/50)} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
+        if effect_query:
+            effect_query = effect_query.replace('user_id_here', f"{ctx.author.id}")
+            await _cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+1+{round(charm/50)} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
+            temb, dura, checkk = await line_gen(first_time=True, effect_line=effect_line)
+            msg = await ctx.send(embed=temb, delete_after=dura+5); return
         else: await _cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{random.choice([-1, 0, 0, 1])}+{round(charm/50)} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
 
         temb, dura, checkk = await line_gen(first_time=True)
