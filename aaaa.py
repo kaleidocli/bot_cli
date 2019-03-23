@@ -12,6 +12,7 @@ import random
 import asyncio
 import json
 from datetime import datetime
+from nltk import word_tokenize
 
 from PIL import Image
 import emoji
@@ -23,6 +24,7 @@ help_dict = {}
 ava_dict = {}
 bulb = True
 blacklist = []
+minikeylist = []
 char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U0001f1e9', 'e': '\U0001f1ea', 'f': '\U0001f1eb', 'g': '\U0001f1ec', 'h': '\U0001f1ed', 'i': '\U0001f1ee', 'j': '\U0001f1ef', 'k': '\U0001f1f0',
             'l': '\U0001f1f1', 'm': '\U0001f1f2', 'n': '\U0001f1f3', 'o': '\U0001f1f4', 'p': '\U0001f1f5', 'q': '\U0001f1f6', 'r': '\U0001f1f7', 's': '\U0001f1f8', 't': '\U0001f1f9', 'u': '\U0001f1fa', 'v': '\U0001f1fb', 'w': '\U0001f1fc', 'x': '\U0001f1fd', 'y': '\U0001f1fe', 'z': '\U0001f1ff'}
 
@@ -118,9 +120,20 @@ async def megaturn(ctx, *args):
     except IndexError: pass
 
 @client.command()
+@check_id()
+async def megarestart(ctx, *args):
+    await ctx.send(f"<a:dukwalk:555241951390334998> **Okai!**")
+    os.system("python C:/Users/DELL/Desktop/bot_cli/aaaa.py")
+    await client.logout()
+
+@client.command()
 async def invite(ctx):
     #await ctx.send("Hey use this to invite me -> https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=238157120&scope=bot")
-    await ctx.send("This bot is still underconstruction!\nJoin my support server --> https://discord.gg/4wJHCBp")
+    temb = discord.Embed(description="""[===== Invite =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=104193344&scope=bot)\n◈ Before inviting this bot, you must acknowledge and accept the following:\n· High-ratio shutdown session, with random length and for **no reason**.\n| Any DM-ed complaints relevant to the incident will result in a ban.\nHowever, compensation with evidences will be responsed and should be sent in *support server*.\nTrying to DM twice on the above problem will result in a ban.\nDM abusing will result in a **"Enemy of the Pralaeyr"**.
+                                \n· Buggy gameplay, low latency.\n| Any bot-abusing activities will result in a ban.\nHowever, *bot-breaking* is encouraged, and any bugs should be reported in *support server/Bug-report*
+                                \n· Violation in data, balance and activities of the players.\n| This is a testing bot. You are the guinea pig. Oink <:fufu:508437298808094742>
+                                \n[===== Support Server =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=238157120&scope=bot)""")
+    await ctx.send(embed=temb)
 
 @client.command()
 @check_id()
@@ -130,7 +143,7 @@ async def leave_guild(ctx):
 
 @client.command()
 async def ping(ctx, *args):
-    embed = discord.Embed(description=f":stopwatch: **`{round(client.latency*1000, 2)}`** ms", color=0xFFC26F)
+    embed = discord.Embed(description=f":stopwatch: **`-{round(client.latency*1000, 2)}`** ms", color=0xFFC26F)
     await ctx.send(embed=embed)
 
 @client.command()
@@ -299,25 +312,70 @@ async def swear(ctx, *args):
     resp = ''; resp2 = ''
     swears = {'vn': ['địt', 'đĩ', 'đụ', 'cặc', 'cằc', 'đéo', 'cứt', 'lồn', 'nứng', 'vãi', 'lồn má', 'đĩ lồn', 'tét lồn', 'dí lồn'],
             'en': ['fucking', 'cunt', 'shit', 'motherfucker', 'faggot', 'retard', 'goddamn', 'jerk']}
-    subj = ['fucking', 'faggot', 'goddamn', 'jerk', 'asshole', 'freaking']
-    endp = [', you fucking hear me?', ' faggot', ' fucking gay', ' fucking retard', ' motherfucker', ' bitch', ' faggot', ' asshole', ', dickkk', ', and fuck you', ', fucking idiots', ' you shitty head']
+    subj = ['fucking', 'faggot', 'goddamn', 'jerk', 'asshole', 'freaking', 'son of the bitch']
+    endp = [', you fucking hear me?', ' faggot', ', you fucking gay', ' fucking retard', ' motherfucker', ' bitch', ' faggot', ' asshole', ', dickkk', ', and fuck you', ', fucking idiots', ' you shitty head']
     expp = ['sucking', 'orally fucking', 'killing', 'fucking', 'jerking']
+    fl_fuck = ['your mom', 'the whole world just to', 'sick little bastard', 'the hell outa', 'my ass']
+
+    #model_subject = ('i', 'he', 'she', 'you', 'they', 'it', "you're", "youre", 'we', "it's", "i'm", "im", 'i')
+    #model_questionWH = ('what', 'why', 'where', 'when', 'how', 'which', 'who', 'y', 'wat', 'wot')
+    #model_questionYN = ('is', 'are', 'were', 'have', 'has', 'was', 'do', 'does', 'did')
+    #model_sentenceNEGATIVE = ('not', "didn't", "don't", "doesn't", "isn't", "aren't", "haven't", "hasn't", "wasn't", "weren't", "didn't", "dont", "doesnt", "isnt", "arent", "havent", "hasnt", "wasnt", "werent", "hadn't", "hadnt")
 
     # Swear
     if args[0] not in swears.keys(): lang = 'en'
     else: lang = args[0]; args.pop(0)
 
+    args = word_tokenize(' '.join(args).lower())
+
     if lang == 'en':
         for word in args:
+            ## SUBJECT scan
+            #if word in model_subject:
+            #    scursor = args.index(word)
+            #    SUBJECT = args[scursor]
+            #    OBJECT = args[scursor+1:]
+            #    preSUB = args[:scursor-1]
+            #    _mode = 'ENGLISH'
+            #    break
+
+            _mode = 'ENGRISK'
             if random.choice([True, False]):
-                if word.lower() in ['i', 'he', 'she', 'you', 'they', 'it', "you're", "youre", 'we', "it's", "i'm", "im", 'is', 'are', 'will', 'so']:
+                if word.lower() in ['i', 'he', 'she', 'you', 'they', 'it', "you're", "youre", 'we', "it's", "i'm", "im", 'is', 'are', 'will', 'so', "don't", 'not']:
                     resp += f" {word} {random.choice(subj)}"; continue
                 elif word.lower() == args[-1]:
                     resp += f" {word}{random.choice(endp)}"; continue
                 elif word.lower() in ['love', 'like', 'hate', 'luv']:
                     resp += f" {word} {random.choice(expp)}"; continue
+                elif word.lower() in ['fuck', 'fck', 'suck']:
+                    resp += f" {word} {random.choice(fl_fuck)}"; continue
+                elif word.lower() in ['bastard', 'dick', 'shit', 'bitch', 'jerk']:
+                    resp += f" {word} {random.choice(['like you', 'filthy like you'])}"; continue
                 resp += f" {word} {random.choice(swears[lang])}"
             else: resp += f" {word}"
+        
+        #for word in args:
+        #    # SUBJECT scan
+        #    if word in model_subject:
+        #        scursor = args.index(word)
+        #        SUBJECT = args[scursor]
+        #        OBJECT = args[scursor+1:]
+        #        preSUB = args[:scursor-1]
+        #        _mode = 'ENGLISH'
+        #        break
+
+        #if _mode == 'ENGLISH':
+        #    a = set(preSUB).intersection(model_questionWH)
+        #    if set(preSUB).intersection(model_questionWH):
+        #        __form = 'WH'
+        #        preSUB.index(a[0])
+
+        #    elif set(preSUB).intersection(model_questionYN): __form = 'YN'
+        #    elif set(OBJECT).intersection(('?', '??', '???', '????', '..?')): __form = 'YN'
+        #    elif set(preSUB).intersection(model_sentenceNEGATIVE): __form = 'YN'
+        #    elif set(OBJECT).intersection(model_sentenceNEGATIVE): __form = 'NE'
+        #    else: __form = 'NORMAL'
+
     else:
         for word in args:
             if random.choice([True, False]): resp += f" {word} {random.choice(swears[lang])}"
@@ -464,6 +522,78 @@ async def block(ctx, *,args):
     blacklist.append(str(target.id))
     await ctx.send(':white_check_mark:')
     
+@client.command()
+@commands.cooldown(1, 10, type=BucketType.guild)
+async def minikey(ctx, *args):
+    global minikeylist
+    max_player = 3
+    players = {}
+
+    # Players get
+    try:
+        max_player = int(args[0])
+        if max_player < 2: max_player = 2
+    except (ValueError, IndexError): pass
+
+    if ctx.channel.id in minikeylist: await ctx.send(":warning: Game's already started in this channel!"); return
+    minikeylist.append(ctx.channel.id)
+
+    introm = await ctx.send(f":key:**`{max_player}`**:key: `minigame`|**WHO GOT THE KEY** :key:**`{max_player}`**:key:")
+    await introm.add_reaction('\U0001f511')
+    await asyncio.sleep(1)
+    def RC(reaction, user):
+        return reaction.emoji == '\U0001f511' and user.id not in list(players.keys())
+
+    # Queueing
+    while True:
+        try: pack = await client.wait_for('reaction_add', timeout=10, check=RC)       # reaction, user
+        except asyncio.TimeoutError:
+            if len(list(players.keys())) >= 3: max_player = len(list(players.keys()))
+            else: await ctx.send(f":warning: Requires **{max_player}** to start!"); minikeylist.remove(ctx.channel.id); return
+
+        cur_player = max_player
+        players[pack[1].id] = [False, pack[1]]
+        await introm.edit(content=introm.content+f"\n:key: [**{pack[1].name}**] has joined the game.")
+        if len(list(players.keys())) == max_player: break
+
+    # Whisper
+    while True:
+        KEYER = random.choice(list(players.keys()))
+        players[KEYER] = [True, players[KEYER][1]]
+        try: await players[KEYER][1].send(":key: <---- *Keep it*"); break
+        except discordErrors.Forbidden: pass
+
+    await ctx.send(f":key::key::key: Alright, **{max_player} seekers!** Ping who you doubt. Ping wrong, you're dead, or else, hoo-ray~~ **GAME START!!**")
+
+    def MC(message):
+        try: tar = message.mentions[0]
+        except (TypeError, IndexError): return False
+        return message.author.id in list(players.keys()) and tar.id in list(players.keys())
+
+    while True:
+        try: resp = await client.wait_for('message', timeout=180, check=MC)
+        except asyncio.TimeoutError: await ctx.send(":warning: Game ended due to afk."); break
+        
+        # SEEKER
+        if not players[resp.author.id][0]:
+            if players[resp.mentions[0].id][0]: await ctx.send(f"<:laurel:495914127609561098> **SEEKER WON!** Congrats, {resp.author.mention}! You caught the *keeper* ----> ||{resp.mentions[0]}||!!"); break
+            else:
+                await ctx.send(f"{resp.author.mention}... ***OOF***"); cur_player -= 1
+                del players[resp.author.id]
+        
+        # KEEPER
+        else:
+            pock = players[resp.mentions[0].id]
+            if pock[0]: await ctx.send(f"<:laurel:495914127609561098> **SEEKER WON!** The *keeper* killed themselves.. GG {resp.author.mention}"); break
+            else:
+                await ctx.send(f"{pock[1].mention}... ***KILLED***"); cur_player -= 1
+                del players[pock[1].id]
+
+        if cur_player == 1:
+            await ctx.send(f"<:laurel:495914127609561098> **KEEPER WON!** Nice one, {players[KEYER][1].mention}!"); break
+
+    minikeylist.remove(ctx.channel.id)
+
 
 
 # ==============================================

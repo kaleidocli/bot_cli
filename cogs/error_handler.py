@@ -20,6 +20,7 @@ class ErrorHandler:
             await ctx.channel.send(":no_entry_sign: You wish :>")
         elif isinstance(error, commands.errors.CommandOnCooldown):
             await ctx.channel.send(f"<a:ghostcat3:531060433927536650> Take a breath, **{ctx.author.name}**. Wait `{timedelta(seconds=int(error.retry_after))}`!", delete_after=5)
+            #await ctx.channel.send(f"<:fufu:508437298808094742> Etou... **{ctx.author.name}**? Can you not shut the fuck up for **`{timedelta(seconds=int(error.retry_after))}`**.", delete_after=5)
         elif isinstance(error, commands.errors.BadArgument):
             await ctx.channel.send(f"<a:ghostcat3:531060433927536650> {error}")
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
