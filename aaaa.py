@@ -20,6 +20,8 @@ import emoji
 import aiohttp
 import psutil
 
+import configs
+
 help_dict = {}
 ava_dict = {}
 bulb = True
@@ -30,8 +32,7 @@ char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U00
 
 #extensions = ['cogs.error_handler', 'cogs.ai', 'cogs.audio', 'cogs.pydanboo', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.avasoul', 'cogs.guess']
 extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.avasoul', 'cogs.audio']
-TOKEN = 'NDQ5Mjc4ODExMzY5MTExNTUz.Dl2k3A.pGUlnO4HDB2xCH31iXa3uTUJxqA'
-#TOKEN = 'NDQ2NDMxODcyNTQ1ODQ5MzU0.Dm4nJQ.KXmpoZjn47UMNoPSsT34hq_NiQo'                    #thebluecat
+TOKEN = configs.TOKEN
 
 prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
 async def get_pref(bot, message):
