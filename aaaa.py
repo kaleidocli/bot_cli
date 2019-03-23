@@ -595,6 +595,9 @@ async def minikey(ctx, *args):
 
     minikeylist.remove(ctx.channel.id)
 
+@client.command()
+async def source(ctx, *args):
+    await ctx.send('https://github.com/kaleidocli/bot_cli')
 
 
 # ==============================================
