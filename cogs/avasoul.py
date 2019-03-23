@@ -26,11 +26,12 @@ import numpy as np
 import aiomysql
 import redis
 import pymysql.err as mysqlError
+import config
 
 redio = redis.Redis('localhost')
 
 async def get_CURSOR():
-    conn = await aiomysql.connect(host='localhost', user='root', password='mysql', port=3307, db='mycli', autocommit=True)
+    conn = await aiomysql.connect(host=config.MySQL_host, user=config.MySQL_user, password=config.MySQL_pw, port=config.MySQL_port, db=config.MySQL_db, autocommit=True)
     _cursor = await conn.cursor()
     return conn, _cursor
 
@@ -54,8 +55,8 @@ class avasoul:
         self.data_ARSENAL = {}; self.data_SUPPLY = {}; self.data_AMMU = {}
         self.data = {}
         self.environ = {}
-        self.client_id = '594344297452325'
-        self.client_secret = '2e29f3c50797fa6d5aad8b5bef527b214683a3ff'
+        self.client_id = config.Imgur_id
+        self.client_secret = config.Imgur_secret
         self.imgur_client = ImgurClient(self.client_id, self.client_secret)
         self.thepoof = 0
 
