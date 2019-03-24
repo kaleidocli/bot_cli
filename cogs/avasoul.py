@@ -256,105 +256,27 @@ class avasoul:
 # =====================================================================================================================
 
 
-
-
     @commands.command()
     async def incarnate(self, ctx, *args):
-        id = str(ctx.message.author.id); name = ctx.message.author.name
+        id = str(ctx.author.id); name = ctx.author.name
 
         # Create a living entity (creator-only)
         if args:
-            if str(ctx.message.author.id) == '214128381762076672':
-                try: id = str(ctx.message.mentions[0].id); name = ctx.message.mentions[0].name
+            if str(ctx.author.id) == '214128381762076672':
+                try: id = str(ctx.mentions[0].id); name = ctx.mentions[0].name
                 except IndexError: id = ' '.join(args); name = id
             else: await ctx.send(":no_entry_sign: You wish :>"); return
-
+            
         resu = await self.quefe(f"SELECT stats FROM personal_info WHERE id='{id}'")
         try:
             if resu[0] != 'DEAD':
                 await ctx.send(f"<:osit:544356212846886924> You've already incarnate!"); return
         except TypeError: pass
-
-        ava = {}
+        
         year, month, day, hour, minute = await self.client.loop.run_in_executor(None, self.time_get)
-
-        if not resu:
-            ava['name'] = await self.inj_filter(name[0:20])
-            ava['dob'] = f"{day} - {month} - {year}"
-            ava['age'] = 0
-            ava['gender'] = random.choice(['m', 'f'])
-            ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
-            r_aura, r_min_H, r_max_H, r_min_W, r_max_W, r_size_1, r_size_2, r_size_3 = await self.quefe(f"SELECT aura, min_H, max_H, min_W, max_W, size_1, size_2, size_3 FROM model_race WHERE race_code='{ava['race']}';")
-            if ava['gender'] == 'm':
-                ava['height'] = random.choice(range(r_min_H + 10, r_max_H + 10))
-                ava['weight'] = random.choice(range(r_min_W + 10, r_max_W + 10))
-                ava['size'] = '78 - 80 - 90'
-            else:
-                ava['height'] = random.choice(range(r_min_H - 10, r_max_H - 10))
-                ava['weight'] = random.choice(range(r_min_W - 10, r_max_W - 10))
-                r_size_1 = r_size_1.split(' - '); r_size_2 = r_size_2.split(' - '); r_size_3 = r_size_3.split(' - ')
-                ava['size'] = f'{random.choice(range(int(r_size_1[0]), int(r_size_1[1])))} - {random.choice(range(int(r_size_2[0]), int(r_size_2[1])))} - {random.choice(range(int(r_size_3[0]), int(r_size_3[1])))}'
-
-            # Charm calc
-            ava['charm'] = 10
-            if ava['height'] >= 180: ava['charm'] += 5
-            elif ava['height'] <= 130: ava['charm'] -= 5
-            
-            if ava['weight'] <= 35 or ava['weight'] >= 90: ava['charm'] -= 5
-            else: ava['charm'] += 5
-
-            szl = ava['size'].split(' - ')
-            if int(szl[0]) >= 25: ava['charm'] += 5
-            if int(szl[1]) >= 75: ava['charm'] -= 5
-            if int(szl[2]) >= 115: ava['charm'] += 5
-            
-            ava['partner'] = 'n/a'
-            ava['avatar'] = 'av0'
-            ava['avatars'] = ['av0', 'av1', 'av2']
-            ava['EVO'] = 0
-            ava['INTT'] = 0
-            ava['STA'] = 100
-            ava['MAX_STA'] = 100
-            ava['STR'] = 0.5
-            ava['LP'] = 1000
-            ava['MAX_LP'] = 1000        
-            ava['kills'] = 0; ava['deaths'] = 0
-            ava['money'] = 100
-            ava['merit'] = 0
-            ava['perks'] = 5
-            auras = {'FLAME': [0.5, 0, 0, 0], 'ICE': [0, 0.5, 0, 0], 'HOLY': [0, 0, 0.5, 0], 'DARK': [0, 0, 0, 0.5]}
-            ava['auras'] = auras[r_aura]
-
-            ava['arts'] = {'sword_art': {'chain_attack': 4}, 'pistol_art': {}}
-
-            ava['cur_PLACE'] = 'region.0'
-            ava['cur_MOB'] = 'n/a'
-            ava['cur_USER'] = 'n/a'
-            ava['cur_X'] = -1
-            ava['cur_Y'] = -1
-            ava['cur_QUEST'] = 'n/a'
-            ava['combat_HANDLING'] = 'both'
-            ava['right_hand'] = 'ar13'
-            ava['left_hand'] = 'ar13'
-
-            await self.quefe(f"INSERT INTO personal_info VALUES ('{id}', '{ava['name']}', '{ava['dob']}', {ava['age']}, '{ava['gender']}', '{ava['race']}', {ava['height']}, {ava['weight']}, '{ava['size']}', 'GREEN', {ava['kills']}, {ava['deaths']}, {ava['charm']}, '{ava['partner']}', {ava['money']}, {ava['merit']}, {ava['perks']}, {ava['EVO']}, {ava['STR']}, {ava['INTT']}, {ava['STA']}, {ava['MAX_STA']}, {ava['LP']}, {ava['MAX_LP']}, {ava['auras'][0]}, {ava['auras'][1]}, {ava['auras'][2]}, {ava['auras'][3]}, '{ava['cur_MOB']}', '{ava['cur_USER']}', '{ava['cur_PLACE']}', {ava['cur_X']}, {ava['cur_Y']}, '{ava['cur_QUEST']}', '{ava['combat_HANDLING']}', '{ava['right_hand']}', '{ava['left_hand']}');")
-            await self.quefe(f"INSERT INTO pi_degrees VALUES ('{id}', 'Instinct', NULL);")
-            # Guild
-            await _cursor.execute(f"INSERT INTO pi_guild VALUES ('{id}', 'region.0', 'iron', 0, 0);")
-            # Avatars
-            for ava_code in ava['avatars']: await _cursor.execute(f"INSERT INTO pi_avatars VALUES ('{id}', '{ava_code}');")
-            await _cursor.execute(f"INSERT INTO pi_backgrounds VALUES ('{id}', 'bg0');")
-            await _cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{ctx.author.id}', 'default of {ava['name']}','DEFAULT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
-            await _cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{ctx.author.id}', 'default of {ava['name']}', 'CURRENT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
-            # Arts
-            await _cursor.execute(f"INSERT INTO pi_arts VALUES ('{ctx.author.id}', 'sword', 'chain_attack', 5)")
-            # Inventory     |      Add fist as a default weapon
-            await _cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'ar13', 1);")
-            #self.ava_dict[id] = ava 
-            await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully incarnated. **Welcome to this world!**\n· You are currently logged out. Use `teleport 1 1` to log in. Then you may check our profile by `profile`.\n· Info? `help`. Concepts? `concept`. And, you're **highly recommended to check the `tutorial`.")
-        else:
-            await _cursor.execute(f"UPDATE personal_info SET LP=1, STA=1, stats='GREEN' WHERE id='{id}'; UPDATE pi_inventory SET existence='GOOD' WHERE user_id='{id}' AND item_code='ar13';")
-            await ctx.send(f":white_check_mark: {ctx.message.author.mention} has successfully incarnated. **WELCOME BACK!**")            
+        bump = await self.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu)
+        if not bump: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully incarnated. **Welcome to this world!**\n· You are currently logged out. Use `teleport 1 1` to log in. Then you may check our profile by `profile`.\n· Info? `help`. Concepts? `concept`. And, you're **highly recommended** to check the `tutorial`.")
+        else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
 
     @commands.command()
     async def kms(self, ctx, *args):
@@ -390,12 +312,9 @@ class avasoul:
         await self.ava_scan(ctx.message, type='all')
 
         try:
-            member = await commands.UserConverter().convert(ctx, args[0])
-            id = member.id
-            name = member.name
+            id = args[0]
             _vmode = 'INDIRECT'
-        except IndexError: id = str(ctx.message.author.id); name = ctx.message.author.name; _vmode = 'DIRECT'
-        except commands.CommandError: await ctx.send("<:osit:544356212846886924> Invalid user"); return
+        except IndexError: id = str(ctx.message.author.id); _vmode = 'DIRECT'
         
         # Data get and paraphrase
         try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo = await self.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo FROM personal_info WHERE id='{id}'")        
@@ -453,7 +372,10 @@ class avasoul:
         async def magiking(ctx):
 
             # Info get
-            age, evo, kill, death, money, name, partner = await self.quefe(f"SELECT age, evo, kills, deaths, money, name, (SELECT name FROM personal_info WHERE id=partner) FROM personal_info WHERE id='{user_id}';")
+            #pylint: disable=unused-variable
+            age, evo, kill, death, money, name, partner_temp, partner = await self.quefe(f"SELECT age, evo, kills, deaths, money, name, partner AS prtn, (SELECT name FROM personal_info WHERE id=prtn) FROM personal_info WHERE id='{user_id}';")
+            if not partner: partner = '---------------------'
+            #pylint: enable=unused-variable
             guild_region, rank = await self.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{user_id}';")
             g_region_name = await self.quefe(f"SELECT name FROM environ WHERE environ_code='{guild_region}';"); g_region_name = g_region_name[0]
 
@@ -898,7 +820,7 @@ Definition? Mechanism? Lore? Yaaa```
 
         await ctx.send(embed=temb)
 
-
+    # pylint: disable=unused-variable
     @commands.command(aliases=['wb'])
     @commands.cooldown(1, 5, type=BucketType.user)
     async def wardrobe(self, ctx, *args):
@@ -1177,7 +1099,7 @@ Definition? Mechanism? Lore? Yaaa```
         else: await self.tut_basic_status(ctx)
 
 
-
+    # pylint: enable=unused-variable
 # ============= ACTIVITIES ==================
 
     @commands.command(aliases=['job'])
@@ -2725,7 +2647,7 @@ Definition? Mechanism? Lore? Yaaa```
 
         # Distance check
         if cur_PLACE != t_cur_PLACE:
-            if not (partner == str(receiver.id) and t_partner == str(ctx.author.id)):
+            if not (partner == str(receiver.id) and not t_partner == str(ctx.author.id)):
                 await ctx.send(f"<:osit:544356212846886924> You need to be in the same region with the receiver, **{ctx.author.name}**!"); return
         if await self.distance_tools(cur_X, cur_Y, t_cur_X, t_cur_Y) > 50:
             if not (partner == str(receiver.id) and t_partner == str(ctx.author.id)):
@@ -3312,7 +3234,7 @@ Definition? Mechanism? Lore? Yaaa```
 
             elif raw[0] == 'claim':
                 # Check if the quest is ONGOING     |      Get stuff too :>
-                try: snapshot, snap_query, quest_sample, stats, eval_meth, effect_query, reward_query = await self.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, effect_query, reward_query FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
+                try: snapshot, snap_query, quest_sample, stats, eval_meth, effect_query, reward_query, quest_line = await self.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, effect_query, reward_query, (SELECT quest_line FROM model_quest WHERE quest_code=pi_quests.quest_code) FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
                 except TypeError: await ctx.send(f"<:osit:544356212846886924> Quest not found, **{ctx.author.name}**")
                 snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
                 effect_query = effect_query.replace('user_id_here', f'{ctx.author.id}')
@@ -3355,9 +3277,9 @@ Definition? Mechanism? Lore? Yaaa```
                 if quest_line == 'DAILY': await _cursor.execute(f"DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
                 else: await _cursor.execute(f"UPDATE pi_quests SET stats='DONE' WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
                 # Inform
-                await ctx.send(f":european_castle: Glad we can work out well, {ctx.author.id}. May the Olds look upon you!")
+                await ctx.send(f":european_castle: Glad we can work out well, **{ctx.author.name}**. May the Olds look upon you!")
                 # Ranking check
-                sample2 = {'iron': ['bronze', 155], 'bronze': ['silver', 310], 'silver': ['gold', 465], 'gold': ['adamantite', 620], 'adamantite': ['mithryl', 755], 'mithryl': ['n/a', 0]}
+                sample2 = {'iron': ['bronze', 20], 'bronze': ['silver', 120], 'silver': ['gold', 350], 'gold': ['adamantite', 620], 'adamantite': ['mithryl', 755], 'mithryl': ['n/a', 980]}
                 if await _cursor.execute(f"UPDATE pi_guild SET rank='{sample2[rank][0]}' WHERE user_id='{str(ctx.message.author.id)}' AND total_quests>={sample2[rank][1]};") == 1:
                     await ctx.send(f":beginner: Congrats, {ctx.message.author.mention}! You've been promoted to **{sample2[rank][0].upper()}**!")                         
 
@@ -3911,11 +3833,12 @@ Definition? Mechanism? Lore? Yaaa```
         try: target = ctx.message.mentions[0]
         except IndexError: await ctx.send(f":revolving_hearts: Please tell us your love one, **{ctx.message.author.name}**!"); return
 
-        name, partner, cur_PLACE = await self.quefe(f"SELECT name, partner, cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
-        try: t_name, t_partner, t_cur_PLACE = await self.quefe(f"SELECT name, partner, cur_PLACE FROM personal_info WHERE id='{target.id}';")
-        except TypeError: await ctx.send(f"<:osit:544356212846886924> User has not incarnated yet, {ctx.message.author.name}!"); return
+        try: name, partner, cur_PLACE = await self.quefe(f"SELECT name, partner, cur_PLACE FROM personal_info WHERE id='{ctx.author.id}' AND partner='n/a';")
+        except TypeError: await ctx.send(f"<:osit:544356212846886924> Hey no cheating, {ctx.message.author.name}!"); return
+        try: t_name, t_partner, t_cur_PLACE = await self.quefe(f"SELECT name, partner, cur_PLACE FROM personal_info WHERE id='{target.id}' AND partner='n/a';")
+        except TypeError: await ctx.send(f"<:osit:544356212846886924> User has already married, {ctx.message.author.name}!"); return
 
-        if 'n/a' not in [partner, t_partner]: await ctx.send(f":revolving_hearts: One of you has already been married, {ctx.author.name}!"); return
+        if ctx.author == target: await ctx.send(f":revolving_hearts: **I know this is wrong but...**"); await asyncio.sleep(3)
         if cur_PLACE != t_cur_PLACE: await ctx.send(f":revolving_hearts: You two need to be in the same region!"); return
 
         line = f"""```css
@@ -3944,6 +3867,71 @@ Definition? Mechanism? Lore? Yaaa```
 
         # Add partner
         await _cursor.execute(f"UPDATE personal_info SET partner='{target.id}' WHERE id='{ctx.author.id}'; UPDATE personal_info SET partner='{str(ctx.message.author.id)}' WHERE id='{target.id}';")
+
+    @commands.command(aliases=['unsure'])
+    @commands.cooldown(1, 15, type=BucketType.user)
+    async def sex(self, ctx, *args): 
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+        cmd_tag = 'sex'
+        if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:508437298808094742> Calm your lewdness, **{ctx.author.name}**~~"): return
+
+        # User info
+        try: LP, max_LP, STA, max_STA, charm, partner, gender = await self.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, partner, gender FROM personal_info WHERE id='{ctx.author.id}' AND partner!='n/a';")
+        except TypeError: await ctx.send("<:osit:544356212846886924> Get yourself a partner first :>"); return
+
+        # Partner info
+        t_LP, t_max_LP, t_STA, t_max_STA, t_charm, t_partner, t_gender, t_name = await self.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, partner, gender, name FROM personal_info WHERE id='{partner}';")
+        #tar = self.client.get_user(int(partner))
+        tar = await self.client.loop.run_in_executor(None, partial(self.client.get_user, int(partner)))
+
+        # ================== BIRTH
+        if await self.percenter(charm+t_charm, total=200) and gender != t_gender:
+            await ctx.send(f"||:bell: Name your child. Timeout=30s||\n<:sailu:559155210384048129> Among these dark of the age, a new life has enlighten...\n⠀⠀⠀⠀**{ctx.author.name}** and {tar.mention}, how will you christen your little?\n⠀⠀⠀⠀⠀⠀⠀⠀Won't you do, keep shut and remain silence.")
+
+            def UMCc_check(m):
+                return m.channel == ctx.channel and m.author in [tar, ctx.author]
+
+            try: resp = await self.client.wait_for('message', timeout=30, check=UMCc_check)
+            except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Life arrived, yet no place for it to harbor..."); return
+
+            if gender == 'm': father = f"{ctx.author.id}"; mother = f"{tar.id}"
+            else: father = f"{ctx.author.id}"; mother = f"{tar.id}"            
+
+            year, month, day, hour, minute = await self.client.loop.run_in_executor(None, self.time_get)
+            id = f"{''.join([str(year), str(month), str(day), str(hour), str(minute)])}{datetime.now().microsecond}"
+            await self.character_generate(id, resp.content, dob=[year, month, day, hour, minute], resu=False)
+            await self.hierarchy_generate(id, father_id=father, mother_id=mother, guardian_id='n/a', chem_value=0)
+            await ctx.send(f"<:sailu:559155210384048129> The whole Pralaeyr welcomes you, **{resp.content}**! May the Olds look upon you, {ctx.author.mention} and **{t_name}**.")
+
+            # DAMAGING
+            #if gender == 'f':
+            #    LP = await self.division_LP(LP, max_LP, time=8)
+            #    await _cursor.execute(f"UPDATE personal_info SET LP={LP} WHERE id='{ctx.author.id}';")
+            #else:
+            #    t_LP = await self.division_LP(t_LP, t_max_LP, time=8)
+            #    await _cursor.execute(f"UPDATE personal_info SET LP={t_LP} WHERE id='{partner}';")
+
+        # ================== SEX
+        else:
+            await ctx.send(f":heart: {tar.mention}, **{ctx.author.name}** is feeling *unsure*.\nType `sure` to make {ctx.author.name} sure, 20 secs left to grab your chance!")
+
+            def UMCc_check(m):
+                return m.channel == ctx.channel and m.author == tar
+
+            try: resp = await self.client.wait_for('message', timeout=20, check=UMCc_check)
+            except asyncio.TimeoutError: await ctx.send("<:gees:559192536195923999> Neither of them are sure..."); return
+
+            slib = {'mf': ['https://media.giphy.com/media/HocMFeabR7rKU/giphy.gif', 'https://imgur.com/lA3AxJB.gif'],
+            'fm': ['https://media.giphy.com/media/HocMFeabR7rKU/giphy.gif'],
+            'mm': ['https://media.giphy.com/media/Ta8nU0hjzCB6o/giphy.gif'],
+            'ff': ['https://media.giphy.com/media/4Al6v0Mmu20gg/giphy.gif', 'https://media.giphy.com/media/rvOyFjbMz86Mo/giphy.gif']}
+            reco_percent = (STA / max_STA + t_STA / t_max_STA) / 2
+            
+            await ctx.send(embed=discord.Embed(description="""```The two got closer, and closer, and closer, and close--...```""", colour=0xFFEFFF).set_image(url=random.choice(slib[gender+t_gender])), delete_after=10)
+
+            await _cursor.execute(f"UPDATE personal_info SET STA=0, LP=IF(id='{ctx.author.id}', {int(LP + LP * reco_percent)}, {int(t_LP + t_LP * reco_percent)}) WHERE id IN ('{ctx.author.id}', '{partner}');")
+
+        await self.client.loop.run_in_executor(None, partial(redio.set, f'{cmd_tag}{ctx.author.id}', 'sex', ex=86400, nx=True))
 
     @commands.command()
     @commands.cooldown(1, 10, type=BucketType.user)
@@ -7754,8 +7742,97 @@ Definition? Mechanism? Lore? Yaaa```
         # remove `foo`
         return content.strip('` \n')
 
+    async def character_generate(self, id, name, dob=[0, 0, 0, 0, 0], player=True, resu=True):
+        "MMHHDDMMYY"
 
+        ava = {}
 
+        if not resu:
+            ava['name'] = await self.inj_filter(name[0:20])
+            ava['dob'] = f"{dob[2]} - {dob[3]} - {dob[4]}"
+            ava['age'] = 0
+            ava['gender'] = random.choice(['m', 'f'])
+            ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
+            r_aura, r_min_H, r_max_H, r_min_W, r_max_W, r_size_1, r_size_2, r_size_3 = await self.quefe(f"SELECT aura, min_H, max_H, min_W, max_W, size_1, size_2, size_3 FROM model_race WHERE race_code='{ava['race']}';")
+            if ava['gender'] == 'm':
+                ava['height'] = random.choice(range(r_min_H + 10, r_max_H + 10))
+                ava['weight'] = random.choice(range(r_min_W + 10, r_max_W + 10))
+                ava['size'] = '78 - 80 - 90'
+            else:
+                ava['height'] = random.choice(range(r_min_H - 10, r_max_H - 10))
+                ava['weight'] = random.choice(range(r_min_W - 10, r_max_W - 10))
+                r_size_1 = r_size_1.split(' - '); r_size_2 = r_size_2.split(' - '); r_size_3 = r_size_3.split(' - ')
+                ava['size'] = f'{random.choice(range(int(r_size_1[0]), int(r_size_1[1])))} - {random.choice(range(int(r_size_2[0]), int(r_size_2[1])))} - {random.choice(range(int(r_size_3[0]), int(r_size_3[1])))}'
+
+            # Charm calc
+            ava['charm'] = 10
+            if ava['height'] >= 180: ava['charm'] += 5
+            elif ava['height'] <= 130: ava['charm'] -= 5
+            
+            if ava['weight'] <= 35 or ava['weight'] >= 90: ava['charm'] -= 5
+            else: ava['charm'] += 5
+
+            szl = ava['size'].split(' - ')
+            if int(szl[0]) >= 25: ava['charm'] += 5
+            if int(szl[1]) >= 75: ava['charm'] -= 5
+            if int(szl[2]) >= 115: ava['charm'] += 5
+            
+            ava['partner'] = 'n/a'
+            ava['avatar'] = 'av0'
+            ava['avatars'] = ['av0', 'av1', 'av2']
+            ava['EVO'] = 0
+            ava['INTT'] = 0
+            ava['STA'] = 100
+            ava['MAX_STA'] = 100
+            ava['STR'] = 0.5
+            ava['LP'] = 1000
+            ava['MAX_LP'] = 1000        
+            ava['kills'] = 0; ava['deaths'] = 0
+            ava['money'] = 100
+            ava['merit'] = 0
+            ava['perks'] = 5
+            auras = {'FLAME': [0.5, 0, 0, 0], 'ICE': [0, 0.5, 0, 0], 'HOLY': [0, 0, 0.5, 0], 'DARK': [0, 0, 0, 0.5]}
+            ava['auras'] = auras[r_aura]
+
+            ava['arts'] = {'sword_art': {'chain_attack': 4}, 'pistol_art': {}}
+
+            ava['cur_PLACE'] = 'region.0'
+            ava['cur_MOB'] = 'n/a'
+            ava['cur_USER'] = 'n/a'
+            ava['cur_X'] = -1
+            ava['cur_Y'] = -1
+            ava['cur_QUEST'] = 'n/a'
+            ava['combat_HANDLING'] = 'both'
+            ava['right_hand'] = 'ar13'
+            ava['left_hand'] = 'ar13'
+
+            await self.quefe(f"INSERT INTO personal_info VALUES ('{id}', '{ava['name']}', '{ava['dob']}', {ava['age']}, '{ava['gender']}', '{ava['race']}', {ava['height']}, {ava['weight']}, '{ava['size']}', 'GREEN', {ava['kills']}, {ava['deaths']}, {ava['charm']}, '{ava['partner']}', {ava['money']}, {ava['merit']}, {ava['perks']}, {ava['EVO']}, {ava['STR']}, {ava['INTT']}, {ava['STA']}, {ava['MAX_STA']}, {ava['LP']}, {ava['MAX_LP']}, {ava['auras'][0]}, {ava['auras'][1]}, {ava['auras'][2]}, {ava['auras'][3]}, '{ava['cur_MOB']}', '{ava['cur_USER']}', '{ava['cur_PLACE']}', {ava['cur_X']}, {ava['cur_Y']}, '{ava['cur_QUEST']}', '{ava['combat_HANDLING']}', '{ava['right_hand']}', '{ava['left_hand']}');")
+            await self.quefe(f"INSERT INTO pi_degrees VALUES ('{id}', 'Instinct', NULL);")
+            # Guild
+            await _cursor.execute(f"INSERT INTO pi_guild VALUES ('{id}', 'region.0', 'iron', 0, 0);")
+            # Avatars
+            for ava_code in ava['avatars']: await _cursor.execute(f"INSERT INTO pi_avatars VALUES ('{id}', '{ava_code}');")
+            await _cursor.execute(f"INSERT INTO pi_backgrounds VALUES ('{id}', 'bg0');")
+            await _cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}','DEFAULT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
+            await _cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'CURRENT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
+            # Arts
+            await _cursor.execute(f"INSERT INTO pi_arts VALUES ('{id}', 'sword', 'chain_attack', 5)")
+            # Inventory     |      Add fist as a default weapon
+            await _cursor.execute(f"SELECT func_it_reward('{id}', 'ar13', 1);")
+            #self.ava_dict[id] = ava
+            if player: return 0
+            else: return 2
+        else:
+            await _cursor.execute(f"UPDATE personal_info SET LP=1, STA=1, stats='GREEN' WHERE id='{id}'; UPDATE pi_inventory SET existence='GOOD' WHERE user_id='{id}' AND item_code='ar13';")
+            return 1
+
+    async def hierarchy_generate(self, child_id, father_id='n/a', mother_id='n/a', guardian_id='n/a', chem_value=0):
+        await _cursor.execute(f"INSERT INTO environ_hierarchy VALUES (0, '{child_id}', '{father_id}', '{mother_id}', '{guardian_id}', {chem_value});")
+
+    async def division_LP(self, b, mb, time=2):
+        loss = int(mb / time)
+        if loss > b: return 1
+        return b - loss
 
 
 # ================ TUTORIAL MODULES ======================
