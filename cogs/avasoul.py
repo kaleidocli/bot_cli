@@ -76,7 +76,7 @@ class avasoul:
         #await self.intoSQL()
         print(self.thepoof)
         self.thepoof += 1
-        await self.prote_plugin()
+        #await self.prote_plugin()
 
     @commands.command()
     @check_id()
@@ -317,10 +317,11 @@ class avasoul:
         except IndexError: id = str(ctx.message.author.id); _vmode = 'DIRECT'
         
         # Data get and paraphrase
-        try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo = await self.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo FROM personal_info WHERE id='{id}'")        
+        # pylint: disable=unused-variable
+        try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, thisid, father_id, mother_id = await self.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, id AS thisid, (SELECT father_id FROM environ_hierarchy WHERE child_id=thisid), (SELECT mother_id FROM environ_hierarchy WHERE child_id=thisid) FROM personal_info WHERE id='{id}' OR name LIKE '%{id}%';")
         except TypeError: await ctx.send("<:osit:544356212846886924> User has not incarnated!"); return
-
-        if str(ctx.message.author.id) not in ['214128381762076672', partner, f'{ctx.author.id}']: await ctx.send("<:osit:544356212846886924> You have to be user's *partner* to view their status!"); return
+        # pylint: enable=unused-variable
+        if str(ctx.message.author.id) not in ['214128381762076672', partner, f'{ctx.author.id}', father_id, mother_id]: await ctx.send("<:osit:544356212846886924> You have to be user's *partner*, *mother* or *father* to view their status!"); return
 
         degrees = '` `'.join(await self.quefe(f"SELECT degree FROM pi_degrees WHERE user_id='{id}';"))
         
@@ -356,9 +357,8 @@ class avasoul:
         try:
             if raw[0] == 'gif': __mode = 'gif'; user_id = ctx.author.id
             else:
-                try: 
-                    member = await commands.UserConverter().convert(ctx, raw[0])
-                    user_id = member.id
+                try:
+                    user_id = args[0]
                 except IndexError: user_id = ctx.author.id
                 except commands.CommandError: await ctx.send("<:osit:544356212846886924> User not found"); return
         except IndexError: user_id = ctx.author.id
@@ -1195,11 +1195,12 @@ Definition? Mechanism? Lore? Yaaa```
         cursor = 0
 
         emli = []
+        # pylint: disable=unused-variable
         for curp in range(pages):
             myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
             emli.append(myembed)
             currentpage += 1
-
+        # pylint: enable=unused-variable
         if pages > 1:
             msg = await ctx.send(embed=emli[cursor])
             await attachreaction(msg)
@@ -1740,11 +1741,12 @@ Definition? Mechanism? Lore? Yaaa```
                 cursor = 0
 
                 emli = []
+                # pylint: disable=unused-variable
                 for curp in range(pages):
                     myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
                     emli.append(myembed)
                     currentpage += 1
-
+                # pylint: enable=unused-variable
                 if pages > 1: 
                     msg = await ctx.send(embed=emli[cursor])
                     await attachreaction(msg)
@@ -1980,11 +1982,12 @@ Definition? Mechanism? Lore? Yaaa```
             cursor = 0
 
             emli = []
+            # pylint: disable=unused-variable
             for curp in range(pages):
                 myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
                 emli.append(myembed)
                 currentpage += 1
-
+            # pylint: enable=unused-variable
             msg = await ctx.send(embed=emli[cursor])
             if pages > 1: await attachreaction(msg)
             else: return
@@ -2074,13 +2077,14 @@ Definition? Mechanism? Lore? Yaaa```
         await ctx.send(f":white_check_mark: `{quantity}` item **{name}** is successfully added to your inventory! Thank you for shoping!")
 
         # INCONSUMABLE
+        # pylint: disable=unused-variable
         if 'inconsumable' in i_tags:
             # Create item in inventory. Ignore the given quantity please :>
             #await _cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{str(ctx.message.author.id)}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, quantity, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_item WHERE item_code='{item_code}';")
             for i in range(quantity):
                 await _cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', '{item_code}', 1);")
             # (MODEL FOR QUERY RECORD-TRANSFERING) ------- await _cursor.execute(f"INSERT INTO pi_inventory SELECT 0, {str(ctx.message.author.id)}, item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, quantity, price, dmg, stealth FROM model_item WHERE item_code='{item_code}';")
-
+        # pylint: enable=unused-variable
         # CONSUMABLE
         else:
             await _cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', '{item_code}', {quantity});")
@@ -2197,11 +2201,12 @@ Definition? Mechanism? Lore? Yaaa```
             cursor = 0
 
             emli = []
+            # pylint: disable=unused-variable
             for curp in range(pages):
                 myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
                 emli.append(myembed)
                 currentpage += 1
-
+            # pylint: enable=unused-variable
             if pages > 1:
                 msg = await ctx.send(embed=emli[cursor])
                 await attachreaction(msg)
@@ -2327,10 +2332,11 @@ Definition? Mechanism? Lore? Yaaa```
                 # Prepair query
                 w_eq = w_eq.replace("user_id_here", target_id)
                 af_query = ''
+                # pylint: disable=unused-variable
                 for time in range(quantity):
                     # Affect
                     af_query = af_query + w_eq
-
+                # pylint: enable=unused-variable
                 # Weight check :">
                 ex_query = ''
                 if t_STA > t_MAX_STA:
@@ -2403,9 +2409,10 @@ Definition? Mechanism? Lore? Yaaa```
 
         # Get menu
         menu = []
+        # pylint: disable=unused-variable
         for count in range(5):
             menu.append(random.choice(cuisine.split(' - ')))
-
+        # pylint: enable=unused-variable
         # Get items
         items = {}
         for item in set(menu):
@@ -3927,7 +3934,7 @@ Definition? Mechanism? Lore? Yaaa```
             'ff': ['https://media.giphy.com/media/4Al6v0Mmu20gg/giphy.gif', 'https://media.giphy.com/media/rvOyFjbMz86Mo/giphy.gif']}
             reco_percent = (STA / max_STA + t_STA / t_max_STA) / 2
             
-            await ctx.send(embed=discord.Embed(description="""```The two got closer, and closer, and closer, and close--...```""", colour=0xFFEFFF).set_image(url=random.choice(slib[gender+t_gender])), delete_after=10)
+            await ctx.send(embed=discord.Embed(description="""```The two got closer, and closer, and closer, and close--...```""", colour=0xFFE2FF).set_image(url=random.choice(slib[gender+t_gender])), delete_after=10)
 
             await _cursor.execute(f"UPDATE personal_info SET STA=0, LP=IF(id='{ctx.author.id}', {int(LP + LP * reco_percent)}, {int(t_LP + t_LP * reco_percent)}) WHERE id IN ('{ctx.author.id}', '{partner}');")
 
@@ -3954,8 +3961,93 @@ Definition? Mechanism? Lore? Yaaa```
             await self.client.wait_for('message', timeout=15, check=UMCc_check)
         except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request times out!"); return
 
-        await _cursor.execute(f"UPDATE personal_info SET partner='n/a' WHERE id IN ('{ctx.author.id}', '{partner[0]}');")
+        await _cursor.execute(f"UPDATE personal_info SET partner='n/a' WHERE id IN ('{ctx.author.id}', '{partner[0]}'); UPDATE environ_hierarchy SET father_id=IF(father_id='{ctx.author.id}', 'n/a', father_id), mother_id=IF(mother_id='{ctx.author.id}', 'n/a', mother_id), guardian_id=IF(guardian_id='{ctx.author.id}', 'n/a', guardian_id) WHERE '{ctx.author.id}' IN (father_id, mother_id, guardian_id);")
         await ctx.send(":broken_heart: You are now strangers, to each other.")
+
+    @commands.command()
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def family(self, ctx, *args):
+        if not await self.ava_scan(ctx.message, type='life_check'): return
+
+        # Get info
+        id, name, t_id, t_name = await self.quefe(f"SELECT id, name, partner AS prtn, (SELECT name FROM personal_info WHERE id=prtn) FROM personal_info WHERE id='{ctx.author.id}';")
+        if t_name: target_addon = f" AND '{t_id}' IN (mother_id, father_id, guardian_id))"
+        else: target_addon = ''
+        children = await self.quefe(f"SELECT id, name, gender, age FROM personal_info WHERE id IN (SELECT child_id FROM environ_hierarchy WHERE '{id}' IN (mother_id, father_id, guardian_id) {target_addon};")
+        gengen = {'m': 'Male', 'f': 'Female'}
+
+        def makeembed(top, least, pages, currentpage):
+            line = '\n'
+
+            for child in children[top:least]:
+                line = line + f"""<:sailu:559155210384048129> **{child[1]}** ({child[3]}), {gengen[child[2]]}\n      ╟||`{child[0]}`||\n"""
+
+            if t_name: reembed = discord.Embed(title = f"{name.capitalize()} :heart: {t_name.capitalize()}", description=line, colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url)
+            else: reembed = discord.Embed(title = f"{name.capitalize()}... . . .. .   .  .", description=line, colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url)
+            return reembed
+            #else:
+            #    await ctx.send("*Nothing but dust here...*")
+        
+        async def attachreaction(msg):
+            await msg.add_reaction("\U000023ee")    #Top-left
+            await msg.add_reaction("\U00002b05")    #Left
+            await msg.add_reaction("\U000027a1")    #Right
+            await msg.add_reaction("\U000023ed")    #Top-right
+
+        try: pages = len(children)//4
+        except TypeError:
+            if t_name: reembed = discord.Embed(colour = discord.Colour(0xFFE2FF)).set_author(name=f"{name.capitalize()} & {t_name.capitalize()}", icon_url='https://imgur.com/jkznAfT.png')
+            else: reembed = discord.Embed(colour = discord.Colour(0xFFE2FF)).set_author(name=f"{name.capitalize()}... . . .. .   .  .", icon_url='https://imgur.com/jkznAfT.png')
+            await ctx.send(embed=reembed)
+            return
+        if len(children)%4 != 0: pages += 1
+        currentpage = 1
+        cursor = 0
+
+        # pylint: disable=unused-variable
+        emli = []
+        for curp in range(pages):
+            myembed = makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
+            emli.append(myembed)
+            currentpage += 1
+        # pylint: enable=unused-variable
+
+        if not emli: await ctx.send(":crown: All orders are fulfilled!"); return
+        if pages > 1: 
+            await attachreaction(msg)
+            msg = await ctx.send(embed=emli[cursor])
+        else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
+
+        def UM_check(reaction, user):
+            return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+        while True:
+            try:    
+                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                    cursor += 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U00002b05" and cursor > 0:
+                    cursor -= 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ee" and cursor != 0:
+                    cursor = 0
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                    cursor = pages - 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+            except asyncio.TimeoutError:
+                await msg.delete(); return
+
+
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -4839,11 +4931,13 @@ Definition? Mechanism? Lore? Yaaa```
         currentpage = 1
         cursor = 0
 
+        # pylint disable=unused-variable
         emli = []
         for curp in range(pages):
             myembed = makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
             emli.append(myembed)
             currentpage += 1
+        # pylint enable=unused-variable
 
         if not emli: await ctx.send(":crown: All orders are fulfilled!"); return
         if pages > 1: 

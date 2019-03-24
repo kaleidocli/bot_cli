@@ -671,8 +671,6 @@ def help_dict_plugin():
 async def on_message(message):
     global bulb; global prefixes; global blacklist
 
-    if message.author == client.user:
-        return
     if message.author.bot: return
     #if str(message.author.id) in blacklist: return
 
