@@ -20,6 +20,7 @@ class audio:
         self.player_socket = []
         self.task_socket = []
         self.voice_socket = []
+        self.volo = []
         self.vol = 1.0
 
     async def on_ready(self):
@@ -52,6 +53,11 @@ class audio:
         channel = ctx.author.voice.channel
         server = ctx.guild
         voice_client = server.voice_client
+        await ctx.invoke(self.client.get_command("stop"))
+
+        if voice_client.channel != channel: await ctx.send(':x:'); return
+        if voice_client.is_playing(): await ctx.send('Unable to interupt the audio session'); return
+
         if ctx.author.voice.channel:
             await self.play(ctx, await self.path_gen_from_FGR('audio/sfx/_asys/leaving'))
 
@@ -63,10 +69,18 @@ class audio:
     @commands.command(aliases=['>sto'])
     async def stop(self, ctx):
         #Stop the player (and cancel tasks, if available)
-        if self.player_socket: self.player_socket[0].stop()
+
+        try:
+            self.volo.pop(self.volo.index(ctx.guild))
+        except ValueError: pass
+
+        if self.player_socket:
+            ctx.guild.voice_client.stop()
+            try: self.player_socket.pop(0)
+            except: pass
         else: await ctx.send("Nothing to be *stopped*!")
         print("<!> PLAYER STOPPED!")
-        if self.task_socket: self.task_socket[0].cancel(); print("<!> TASK STOPPED!")
+        #if self.task_socket: self.task_socket[0].cancel(); print("<!> TASK STOPPED!")
 
     #Pause the current audio
     @commands.command(aliases=['>pau'])
@@ -97,70 +111,95 @@ class audio:
                 if self.player_socket:
                     if ctx.guild.voice_client.is_playing():
                         self.player_socket[0].volume = a/100
-                await self.client.send_message(ctx.message.channel, f":white_check_mark: Volume set to {a}%")
-            else: await self.client.send_message(ctx.message.channel, "Please give a value from `0` - `200` (1 == 1%).")
+                await ctx.send(f":white_check_mark: Volume set to {a}%")
+            else: await ctx.send("Please give a value from `0` - `200` (1 == 1%).")
         except TypeError:
-            await self.client.send_message(ctx.message.channel, "Please use an `integer`.")
+            await ctx.send("Please use an `integer`.")
 
+    @commands.command()
+    async def move_here(self, ctx):
+        try: ctx.guild.voice_client.move_to(ctx.author.VoiceState.channel.id)
+        except: pass
 
     @commands.command(pass_context=True)
     @commands.cooldown(1, 2.5, type=BucketType.channel)
     async def cli(self, ctx, *args):
-        paths = []
         raw = list(args)
         if not ctx.author.voice.channel:
             await ctx.send(f":warning: Please join a voice channel to use this command, {ctx.author.mention}!")
-        if ctx.guild.voice_client.is_playing(): await ctx.send("Please wait for the audio to end, or use `-stop` to end the current audio."); return
+        try: 
+            if ctx.guild.voice_client.is_playing(): await ctx.send("Please wait for the audio to end, or use `-stop` to end the current audio."); return
+        except AttributeError: await ctx.author.voice.channel.connect()
 
+        try:
+            if args[0] == 'stop': self.volo.pop(self.volo.index(ctx.guild))
+        except ValueError: await ctx.send("Stop WHAT?"); return
 
-        for voice_tag in raw:
-            #Random audio file name.
-            voice_tag = voice_tag.lower()
-            if voice_tag == 'moan':
-                paths.append(await self.path_gen_from_FGR('audio/sfx/moan'))  
-            elif voice_tag == 'asillya':
-                paths.append(await self.path_gen_from_FGR('audio/bot_voice/illya/Dialogue'))      
-            elif voice_tag == 'astohsaka':
-                paths.append(await self.path_gen_from_FGR('audio/bot_voice/rin_tohsaka/Dialogue'))             
-            elif voice_tag == 'asaudrey':
-                paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/audrey'))     
-            elif voice_tag == 'asbeli':
-                paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/beli'))     
-            elif voice_tag == 'asaiko':
-                paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/aiko'))     
-            elif voice_tag == 'asceleste':
-                paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/celeste'))   
-            elif voice_tag == 'asjessie':
-                paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/jessie'))                
-                
-            elif voice_tag == 'gig':
-                paths.append(await self.path_gen_from_FGR('audio/sfx/gig'))  
-            elif voice_tag == 'ohaiyo':
-                paths.append(await self.path_gen_from_FGR('audio/sfx/ohaiyo'))  
-            elif voice_tag == 'konichiwa':
-                paths.append(await self.path_gen_from_FGR('audio/sfx/konichiwa'))  
-            elif voice_tag == 'hen':
-                paths.append(await self.path_gen_from_FGR('audio/sfx/hen'))
-            elif voice_tag == 'hi':
-                paths.append(await self.path_gen_from_FGR('audio/sfx/hi'))  
-            elif voice_tag == 'thanks':
-                paths.append(await self.path_gen_from_FGR('audio/sfx/thanks'))
+        async def pathenerator(raw):
+            paths = []
+            for voice_tag in raw:
+                #Random audio file name.
+                voice_tag = voice_tag.lower()
+                if voice_tag == 'moan':
+                    paths.append(await self.path_gen_from_FGR('audio/sfx/moan'))  
+                elif voice_tag == 'asillya':
+                    paths.append(await self.path_gen_from_FGR('audio/bot_voice/illya/Dialogue'))      
+                elif voice_tag == 'astohsaka':
+                    paths.append(await self.path_gen_from_FGR('audio/bot_voice/rin_tohsaka/Dialogue'))             
+                elif voice_tag == 'asaudrey':
+                    paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/audrey'))     
+                elif voice_tag == 'asbeli':
+                    paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/beli'))     
+                elif voice_tag == 'asaiko':
+                    paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/aiko'))     
+                elif voice_tag == 'asceleste':
+                    paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/celeste'))   
+                elif voice_tag == 'asjessie':
+                    paths.append(await self.path_gen_from_FGR('audio/bot_voice/Huney_Pop/jessie'))                
+                    
+                elif voice_tag == 'gig':
+                    paths.append(await self.path_gen_from_FGR('audio/sfx/gig'))  
+                elif voice_tag == 'ohaiyo':
+                    paths.append(await self.path_gen_from_FGR('audio/sfx/ohaiyo'))  
+                elif voice_tag == 'konichiwa':
+                    paths.append(await self.path_gen_from_FGR('audio/sfx/konichiwa'))  
+                elif voice_tag == 'hen':
+                    paths.append(await self.path_gen_from_FGR('audio/sfx/hen'))
+                elif voice_tag == 'hi':
+                    paths.append(await self.path_gen_from_FGR('audio/sfx/hi'))  
+                elif voice_tag == 'thanks':
+                    paths.append(await self.path_gen_from_FGR('audio/sfx/thanks'))
 
-            #Specific audio file name.
-            elif voice_tag.startswith('meme'):
-                if voice_tag == 'meme':
-                    paths.append(await self.path_gen_from_FGR('audio/meme'))  
-                else:
-                    try: fname = voice_tag.split('=')[1]
-                    except IndexError: await ctx.send(f"{ctx.author.mention}, you're missing `=`. E.g `meme=error` not `meme error`")
-                    paths.append(f'audio/meme/{fname}.mp3')
-            #elif raw[0] == 'gif':
+                #Specific audio file name.
+                elif voice_tag.startswith('meme'):
+                    if voice_tag == 'meme':
+                        paths.append(await self.path_gen_from_FGR('audio/meme'))  
+                    else:
+                        try: fname = voice_tag.split('=')[1]
+                        except IndexError: await ctx.send(f"{ctx.author.mention}, you're missing `=`. E.g `meme=error` not `meme error`")
+                        paths.append(f'audio/meme/{fname}.mp3')
+                #elif raw[0] == 'gif':
 
-            #elif voice_tag == 'playpath' and len(raw) >= 2:
-            #    path = ' '.join(raw[2:])
-            #else:
-            #    await ctx.send(":no_entry: Please use the correct syntax!")
-        await self.appendingplayer_engine(ctx, paths)
+                #elif voice_tag == 'playpath' and len(raw) >= 2:
+                #    path = ' '.join(raw[2:])
+                #else:
+                #    await ctx.send(":no_entry: Please use the correct syntax!")
+
+            return paths
+
+        try:
+            if raw[0] == 'loop' and len(args) > 1 and ctx.guild not in self.volo:
+                raw.pop(0)
+                self.volo.append(ctx.guild)
+                while ctx.guild in self.volo:
+                    paths = await pathenerator(raw)
+                    await self.appendingplayer_engine(ctx, paths)
+            else:
+                paths = await pathenerator(raw)
+                await self.appendingplayer_engine(ctx, paths)
+        except IndexError:
+            paths = await pathenerator(raw)
+            await self.appendingplayer_engine(ctx, paths)
 
     @commands.command(pass_context=True)
     @check_id()
@@ -181,8 +220,9 @@ class audio:
             else: path_in = ' '.join(raw)
         print(path_in)
         #Create and put the task in the <task_socket> list
+        #await self.get_play_vc(ctx, path_in, delay)
         pler = self.client.loop.create_task(self.get_play_vc(ctx, path_in, delay))
-        if self.task_socket:    
+        if self.task_socket:
             self.task_socket[0] = pler
         else:
             self.task_socket.append(pler)
@@ -367,11 +407,12 @@ class audio:
 
     #This one is specifically for <yolo> (Looping the audio)
     async def get_play_vc(self, ctx, folder, delay=4):
-        while not self.client.is_closed:
+        self.volo.append(ctx.guild)
+        while ctx.guild in self.volo:
             aufile_name = await self.file_gen_random(folder)
-            await self.client.send_message(ctx.message.channel, f":arrow_forward: **NOW PLAYING:** `{aufile_name.capitalize()}`")
+            await ctx.send(f":arrow_forward: **NOW PLAYING:** `{aufile_name.capitalize()}`")
             await self.play_vc(ctx, f"{folder}/{aufile_name}", delay)
-            #await asyncio.sleep(2)
+            #await asyncio.sleep(delay)
 
     #This one is specifically for <yolo> (Looping the audio)
     async def play_vc(self, ctx, path, delay=4):
@@ -387,7 +428,7 @@ class audio:
             #vc = asdlnfle.sdkjn(self.client.get_server(id='493467473870454785'))
             vc = ctx.guild.voice_client
             print(f"Channel: JOINED <{vc.channel.name}>")
-            ctx.send("Cli's already been in the same channel as you!")
+            #await ctx.send("Cli's already been in the same channel as you!")
         async def a(vc, path):
             #Check if <player_socket> is not empty, else create and put in new player
             if self.player_socket:
@@ -395,18 +436,16 @@ class audio:
                 if not vc.is_playing():
                     print(f"=======PLAYER is_done=========== {self.player_socket}")
                     #Create a <player>. Then replace the old one in <player_socket>
-                    player = discord.FFmpegPCMAudio(path)
-                    self.player_socket[0] = player
+                    self.player_socket[0] = discord.FFmpegPCMAudio(path)
                 else: 
                     await self.client.send_message(ctx.message.channel, "Please wait for the audio to end.")
                     return   
             else:
-                player = discord.FFmpegPCMAudio(path)
-                self.player_socket.append(player)
+                self.player_socket.append(discord.FFmpegPCMAudio(path))
                 print(f"=======PLAYER start=========== {self.player_socket}")
 
             #player.volume = self.vol                         #Volume set
-            vc.start()
+            vc.play(self.player_socket[0])
             #Check every x seconds if the player/stream is done. If True, move on, else, again
             while vc.is_playing():
                 await asyncio.sleep(2)
@@ -457,31 +496,31 @@ class audio:
     # Appending (queued) style player. Best for text-to-speech type, like <tts> and <cli>.
     # INCLUDE: <player_socket> check, <voice_socket> check, <user_in_any_channel> check
     async def appendingplayer_engine(self, ctx, paths):
-            # CHECKERS
-            try:
-                if self.player_socket:
-                    if not self.player_socket[0].is_done:                 
-                        await self.client.send_message(ctx.message.channel, "Another audio session is currently playing. Please wait or use `stop` to end the current audio.")
-                        return
-                if self.voice_socket:
-                    if not self.voice_socket[0].is_done:                 
-                        await self.client.send_message(ctx.message.channel, "Another audio session is currently playing. Please wait or use `stop` to end the current audio.")
-                        return
-            except: pass 
-            if not ctx.author.voice.channel:
-                await self.client.send_message(ctx.message.channel, ":warning: You're currently not in any voice channel.")
-            try:
-                vc = await ctx.author.voice.channel.connect(ctx.author.voice.channel)
-                await ctx.send(f"```Successfully joined voice channel [{ctx.author.voice.channel.name}]!```")
-            except:
-                vc = ctx.guild.voice_client
-                ctx.send("Cli's already been in the same channel as you!")
-                pass
+        # CHECKERS
+        try:
+            if self.player_socket:
+                if not self.player_socket[0].is_done:                 
+                    await self.client.send_message(ctx.message.channel, "Another audio session is currently playing. Please wait or use `stop` to end the current audio.")
+                    return
+            if self.voice_socket:
+                if not self.voice_socket[0].is_done:                 
+                    await self.client.send_message(ctx.message.channel, "Another audio session is currently playing. Please wait or use `stop` to end the current audio.")
+                    return
+        except: pass 
+        if not ctx.author.voice.channel:
+            await self.client.send_message(ctx.message.channel, ":warning: You're currently not in any voice channel.")
+        try:
+            vc = await ctx.author.voice.channel.connect(ctx.author.voice.channel)
+            await ctx.send(f"```Successfully joined voice channel [{ctx.author.voice.channel.name}]!```")
+        except:
+            vc = ctx.guild.voice_client
+            #await ctx.send("Cli's already been in the same channel as you!")
+            pass
 
-            for path in paths:
-                await self.ttsplayer_get(ctx, vc, path)
+        for path in paths:
+            if await self.ttsplayer_get(ctx, vc, path): print(f"XXXX Unknown: {path}")
 
-            await self.ttsplayer_play(ctx, path)
+        await self.ttsplayer_play(ctx)
        
     #Text-to-speech player get, then append to voice_socket
     async def ttsplayer_get(self, ctx, vc, path):
@@ -489,18 +528,19 @@ class audio:
         if not ctx.author.voice.channel: return               # Check if user in a voice_channel
         try:                                                                # If file not found, pass
             player = discord.FFmpegPCMAudio(path)
-        except: pass
+        except: return False
         self.voice_socket.append(player)
 
     #Get Text-to-speech player from voice_socket, then play
-    async def ttsplayer_play(self, ctx, path):
+    async def ttsplayer_play(self, ctx):
         vc = ctx.guild.voice_client
 
         while self.voice_socket:
-            #voice = self.voice_socket.pop(0)
+            voice = self.voice_socket.pop(0)
             #voice.volume = self.vol                         #Volume set
 
-            vc.play(discord.FFmpegPCMAudio(path)); break
+            #vc.play(discord.FFmpegPCMAudio(path))
+            vc.play(voice)
             #Check every x seconds if the player/stream is done. If True, move on, else, again
             while vc.is_playing():
                 await asyncio.sleep(0)
@@ -517,8 +557,8 @@ class audio:
 
     #Generate path directly from <file_gen_random>
     async def path_gen_from_FGR(self, folder):
-            aufile_name = await self.file_gen_random(folder)
-            return f"{folder}/{aufile_name}"
+        aufile_name = await self.file_gen_random(folder)
+        return f"{folder}/{aufile_name}"
     
 
 def setup(client):

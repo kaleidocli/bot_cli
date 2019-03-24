@@ -76,7 +76,7 @@ class avasoul:
         #await self.intoSQL()
         print(self.thepoof)
         self.thepoof += 1
-        #await self.prote_plugin()
+        await self.prote_plugin()
 
     @commands.command()
     @check_id()
@@ -295,7 +295,7 @@ class avasoul:
                     DELETE FROM pi_quests WHERE user_id='{ctx.author.id}';
                     DELETE FROM personal_info WHERE id='{ctx.author.id}';"""
         
-        await ctx.send(":bell: Please type `deletion confirm` to proceed.")
+        await ctx.send("<a:RingingBell:559282950190006282> Please type `deletion confirm` to proceed.")
 
         def UMCc_check(m):
             return m.channel == ctx.channel and m.author == ctx.author and m.content.lower() == 'deletion confirm'
@@ -1283,7 +1283,7 @@ Definition? Mechanism? Lore? Yaaa```
             if money < price: await ctx.send(f"<:osit:544356212846886924> You need **<:36pxGold:548661444133126185>{price}** to enroll this program!"); return
             if INTT < INTT_require: await ctx.send(f"<:osit:544356212846886924> You need **{INTT_require}**`INT` to enroll this program!"); return
             
-            temp2 = await ctx.send(f":books: Program for `{resp.capitalize()} of {resp2.content.capitalize()}`:\n| **Price:** <:36pxGold:548661444133126185>{price}\n| **Duration:** {duration/7200} months\n**Result:** · **`{resp.capitalize()} of {resp2.content.capitalize()}`** · `{INTT_reward}` INT. \n:bell: Do you wish to proceed? (Key: `enroll confirm` | Timeout=15s)")
+            temp2 = await ctx.send(f":books: Program for `{resp.capitalize()} of {resp2.content.capitalize()}`:\n| **Price:** <:36pxGold:548661444133126185>{price}\n| **Duration:** {duration/7200} months\n**Result:** · **`{resp.capitalize()} of {resp2.content.capitalize()}`** · `{INTT_reward}` INT. \n<a:RingingBell:559282950190006282> Do you wish to proceed? (Key: `enroll confirm` | Timeout=15s)")
 
             def UMCc_check(m):
                 return m.channel == ctx.channel and m.author == ctx.author and m.content.lower() == 'enroll confirm'
@@ -1376,7 +1376,7 @@ Definition? Mechanism? Lore? Yaaa```
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{loss} WHERE id='{ctx.author.id}' OR id='{target.name}';"); return
 
             elif raw[0] == 'mutate':
-                msg = await ctx.send(f"<:zapp:524893958115950603> All your basic status will *randomly change*. You may even die.\n:bell: **ARE**. **YOU**. **SURE**?")
+                msg = await ctx.send(f"<:zapp:524893958115950603> All your basic status will *randomly change*. You may even die.\n<a:RingingBell:559282950190006282> **ARE**. **YOU**. **SURE**?")
 
                 await msg.add_reaction("\U00002705")
 
@@ -1481,7 +1481,7 @@ Definition? Mechanism? Lore? Yaaa```
             def UMCc_check(m):
                 return m.channel == ctx.channel and m.content == 'merging confirm' and m.author == ctx.author
 
-            await ctx.send(f":tools: Merching these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n:bell: Proceed? (Key: `merging confirmation` | Timeout=20s)")
+            await ctx.send(f":tools: Merching these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirmation` | Timeout=20s)")
             try: await self.client.wait_for('message', timeout=20, check=UMCc_check)
             except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timeout!"); return
 
@@ -1635,7 +1635,7 @@ Definition? Mechanism? Lore? Yaaa```
         sta_receive = round(reco_rate*(duration/(charm/60)))
         if sta_receive > MAX_STA: sta_receive = MAX_STA
 
-        msg = await ctx.send(f":bell: You've rested for `{duration}` minutes, **{ctx.author.name}**. Get **{sta_receive} STA**?")
+        msg = await ctx.send(f"<a:RingingBell:559282950190006282> You've rested for `{duration}` minutes, **{ctx.author.name}**. Get **{sta_receive} STA**?")
         def UM_check(reaction, user):
             return user.id == ctx.author.id and reaction.message.id == msg.id and reaction.emoji == '\U00002600'
 
@@ -2425,7 +2425,7 @@ Definition? Mechanism? Lore? Yaaa```
             
         reembed = discord.Embed(title = f"------------- KINUKIZA's MARKET of `{cur_PLACE}`|**{r_name}** -----------", colour = discord.Colour(0x011C3A), description=line)
         temp1 = await ctx.send(embed=reembed)
-        await ctx.send(':bell: Syntax: `!buy` `[item_code]` |  Time out: 60s')
+        await ctx.send('<a:RingingBell:559282950190006282> Syntax: `!buy` `[item_code]` |  Time out: 60s')
 
         def UMCc_check(m):
             return m.channel == ctx.channel and m.content.startswith('!buy') and m.author == ctx.author
@@ -2456,7 +2456,7 @@ Definition? Mechanism? Lore? Yaaa```
             return m.channel == ctx.channel and m.content == 'trade confirm' and m.author == ctx.author
 
         price = int(items[ig_code][2]*random.choice([0.1, 0.2, 0.5, 1, 2, 5, 10]))
-        await ctx.send(f"{ctx.message.author.mention}, the dealer set the price of **<:36pxGold:548661444133126185>{price}** for __each__ item `{ig_code}`|**{items[ig_code][0]}**. \nThat would cost you **<:36pxGold:548661444133126185>{price*quantity}** in total.\n:bell: Proceed? (Key: `trade confirm` | Timeout=10s)")
+        await ctx.send(f"{ctx.message.author.mention}, the dealer set the price of **<:36pxGold:548661444133126185>{price}** for __each__ item `{ig_code}`|**{items[ig_code][0]}**. \nThat would cost you **<:36pxGold:548661444133126185>{price*quantity}** in total.\n<a:RingingBell:559282950190006282> Proceed? (Key: `trade confirm` | Timeout=10s)")
         try: await self.client.wait_for('message', check=UMCc_check2, timeout=10)
         except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request declined!"); return
         
@@ -2750,7 +2750,7 @@ Definition? Mechanism? Lore? Yaaa```
             def UMCc_check(m):
                 return m.channel == ctx.channel and m.content == 'account confirm' and m.author == ctx.author
 
-            await ctx.send(f":bank: Greeting, {ctx.message.author.mention}. It seems that there's no account has your id on it. Perhaps, would you like to open one?\n:bell: *Proceed?* (Key: `account confirm` | Timeout=10s)")
+            await ctx.send(f":bank: Greeting, {ctx.message.author.mention}. It seems that there's no account has your id on it. Perhaps, would you like to open one?\n<a:RingingBell:559282950190006282> *Proceed?* (Key: `account confirm` | Timeout=10s)")
             try: await self.client.wait_for('message', timeout=10, check=UMCc_check)
             except asyncio.TimeoutError: await ctx.send(f":bank: Indeed. Why would mongrels need a bank account..."); return
             
@@ -2824,7 +2824,7 @@ Definition? Mechanism? Lore? Yaaa```
                     def UMCc_check2(m):
                         return m.channel == ctx.channel and m.content == 'transfer confirm' and m.author == ctx.author
 
-                    await ctx.send(f":credit_card: | **{ctx.message.author.name}**⠀⠀>>>⠀⠀**{target.name}**\n{line}:bell: Proceed? (Key: `transfer confirm` | Timeout=15s)")
+                    await ctx.send(f":credit_card: | **{ctx.message.author.name}**⠀⠀>>>⠀⠀**{target.name}**\n{line}<a:RingingBell:559282950190006282> Proceed? (Key: `transfer confirm` | Timeout=15s)")
                     try: await self.client.wait_for('message', timeout=15, chec=UMCc_check2)
                     except asyncio.TimeoutError: await ctx.send(f":credit_card: Aborted!"); return
 
@@ -2943,7 +2943,7 @@ Definition? Mechanism? Lore? Yaaa```
                 def UMCc_check(m):
                     return m.channel == ctx.channel and m.content == 'joining confirm' and m.author == ctx.author
 
-                await ctx.send(f":scales: **G.U.I.L.D** of `{current_place} | {self.environ[current_place]['name']}` :scales:\n------------------------------------------------\nJoining will require **<:36pxGold:548661444133126185>{cost}** as a deposit which will be returned when you leave guild if: \n· You don't have any bad records.\n· You're alive.\n· You leave the guild before joining others\n------------------------------------------------\n:bell: **Do you wish to proceed?** (key: `joining confirm` | timeout=20s)")
+                await ctx.send(f":scales: **G.U.I.L.D** of `{current_place} | {self.environ[current_place]['name']}` :scales:\n------------------------------------------------\nJoining will require **<:36pxGold:548661444133126185>{cost}** as a deposit which will be returned when you leave guild if: \n· You don't have any bad records.\n· You're alive.\n· You leave the guild before joining others\n------------------------------------------------\n<a:RingingBell:559282950190006282> **Do you wish to proceed?** (key: `joining confirm` | timeout=20s)")
                 try: await self.client.wait_for('message', timeout=20, check=UMCc_check)           
                 except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timed out!"); return
 
@@ -2960,7 +2960,7 @@ Definition? Mechanism? Lore? Yaaa```
                 def UMCc_check(m):
                     return m.channel == ctx.channel and m.content == 'leaving confirm' and m.author == ctx.author
 
-                await ctx.send(f":bell: {ctx.message.author.mention}, leaving `{current_place}|{self.environ[current_place]['name']}` guild? (key: `leaving confirm` | timeout=5s)")
+                await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, leaving `{current_place}|{self.environ[current_place]['name']}` guild? (key: `leaving confirm` | timeout=5s)")
                 try: await self.client.wait_for('message', timeout=5, check=UMCc_check)
                 except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timed out!"); return
 
@@ -3492,7 +3492,7 @@ Definition? Mechanism? Lore? Yaaa```
                 def UMC_check(m):
                     return m.channel == ctx.channel and m.author == ctx.author and m.content == 'dismiss confirm'
 
-                await ctx.send(":fleur_de_lis: Dismissing the party will force other members to leave it too.\n:bell: Are you sure? (Key=`dismiss confirm` | Timeout=10s)")
+                await ctx.send(":fleur_de_lis: Dismissing the party will force other members to leave it too.\n<a:RingingBell:559282950190006282> Are you sure? (Key=`dismiss confirm` | Timeout=10s)")
                 try: await self.client.wait_for('message', timeout=10, check=UMC_check)
                 except asyncio.TimeoutError: await ctx.send(f"<:osit:544356212846886924> Request time-out!"); return
 
@@ -3536,7 +3536,7 @@ Definition? Mechanism? Lore? Yaaa```
                     await ctx.send(f":fleur_de_lis: User has already been a {trole.lower()} of party `{tparty_id}`!"); return
                 except TypeError: pass
 
-                msg = await ctx.send(f":fleur_de_lis: Hey {user.mention}, you received a party `{party_id}` invitation from **{ctx.author.name}**!\n:bell: React :white_check_mark: to accept! (Timeout=30s)")
+                msg = await ctx.send(f":fleur_de_lis: Hey {user.mention}, you received a party `{party_id}` invitation from **{ctx.author.name}**!\n<a:RingingBell:559282950190006282> React :white_check_mark: to accept! (Timeout=30s)")
         
                 def RUM_check(reaction, u):
                     return u == user and reaction.message.id == msg.id and str(reaction.emoji) == "\U00002705"
@@ -3592,7 +3592,7 @@ Definition? Mechanism? Lore? Yaaa```
                     if rally == 'ACTIVE': await ctx.send(f":fleur_de_lis: Your party has already rallied, **{ctx.author.name}**!"); return
                     elif RP < 200: await ctx.send(f":fleur_de_lis: Your party's **RP** is **{RP}**, which is lower than **200 RP** required."); return
 
-                    msg = await ctx.send(f":fleur_de_lis: Rallying in 15 secs and **all** members in this region will be teleported to your coordinates. \n:bell: React :x: to *cancel*.")
+                    msg = await ctx.send(f":fleur_de_lis: Rallying in 15 secs and **all** members in this region will be teleported to your coordinates. \n<a:RingingBell:559282950190006282> React :x: to *cancel*.")
 
                     def RUM_check(reaction, u):
                         return u == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) == "\U0000274c"
@@ -3893,7 +3893,7 @@ Definition? Mechanism? Lore? Yaaa```
 
         # ================== BIRTH
         if await self.percenter(charm+t_charm, total=200) and gender != t_gender:
-            await ctx.send(f"||:bell: Name your child. Timeout=30s||\n<:sailu:559155210384048129> Among these dark of the age, a new life has enlighten...\n⠀⠀⠀⠀**{ctx.author.name}** and {tar.mention}, how will you christen your little?\n⠀⠀⠀⠀⠀⠀⠀⠀Won't you do, keep shut and remain silence.")
+            await ctx.send(f"||<a:RingingBell:559282950190006282> Name your child. Timeout=30s||\n<:sailu:559155210384048129> Among these dark of the age, a new life has enlighten...\n⠀⠀⠀⠀**{ctx.author.name}** and {tar.mention}, how will you christen your little?\n⠀⠀⠀⠀⠀⠀⠀⠀Won't you do, keep shut and remain silence.")
 
             def UMCc_check(m):
                 return m.channel == ctx.channel and m.author in [tar, ctx.author]
@@ -3956,7 +3956,7 @@ Definition? Mechanism? Lore? Yaaa```
             return m.channel == ctx.channel and m.author == ctx.author and m.content == "let's fcking divorce"
 
         # NAME
-        await ctx.send(f":broken_heart: Divorce with **{partner[1]}**?\n||:bell: Timeout=15s · Key=`let's fcking divorce`||")
+        await ctx.send(f":broken_heart: Divorce with **{partner[1]}**?\n||<a:RingingBell:559282950190006282> Timeout=15s · Key=`let's fcking divorce`||")
         try: 
             await self.client.wait_for('message', timeout=15, check=UMCc_check)
         except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request times out!"); return
@@ -4126,7 +4126,7 @@ Definition? Mechanism? Lore? Yaaa```
                     return m.channel == ctx.channel and m.author == ctx.author
 
                 # NAME
-                msg = await ctx.send(":crown: Shall speak your wish, the name is asked?\n||:bell: Timeout=30s · Please give a name||")
+                msg = await ctx.send(":crown: Shall speak your wish, the name is asked?\n||<a:RingingBell:559282950190006282> Timeout=30s · Please give a name||")
                 try: 
                     resp = await self.client.wait_for('message', timeout=30, check=UMCc_check)
                     l_name = resp.content
@@ -4143,7 +4143,7 @@ Definition? Mechanism? Lore? Yaaa```
                     return m.channel == ctx.channel and m.author == ctx.author and m.content.upper() in govs.keys()
 
                 # GOVERNMENT
-                msg = await ctx.send(f":crown: This territory of yours, how would you rule?\n:bell: Timeout=30s || **May your choice be thorough**, reversion is unable: **`{'` · `'.join(govs.keys())}`**")
+                msg = await ctx.send(f":crown: This territory of yours, how would you rule?\n<a:RingingBell:559282950190006282> Timeout=30s || **May your choice be thorough**, reversion is unable: **`{'` · `'.join(govs.keys())}`**")
                 try:
                     resp = await self.client.wait_for('message', timeout=30, check=UMCc_check2)
                     l_gov = resp.content.upper()
@@ -4155,7 +4155,7 @@ Definition? Mechanism? Lore? Yaaa```
                 def UMCc_check3(m):
                     return m.channel == ctx.channel and m.author == ctx.author and m.content == 'founding confirm'
                 
-                msg = await ctx.send(f":crown: Then **{l_name}** it is - a **{l_gov.capitalize()}** government - in the middle of `{biome.capitalize()}` biome.\n:bell: Proceed? (Key=`founding confirm`||Timeout=30s)")
+                msg = await ctx.send(f":crown: Then **{l_name}** it is - a **{l_gov.capitalize()}** government - in the middle of `{biome.capitalize()}` biome.\n<a:RingingBell:559282950190006282> Proceed? (Key=`founding confirm`||Timeout=30s)")
                 try:
                     resp = await self.client.wait_for('message', timeout=30, check=UMCc_check3)
                     await msg.delete()
@@ -4711,7 +4711,7 @@ Definition? Mechanism? Lore? Yaaa```
             return m.channel == ctx.channel and m.author == ctx.author and m.content == 'union confirm'
 
         # NAME
-        await ctx.send(f":crown: {ctx.author.mention} requrest to union unit `{u2_id}` to unit `{u1_id}`, which will disband the prior. Proceed?\n||:bell: Timeout=15s · Key=`union confirm`||")
+        await ctx.send(f":crown: {ctx.author.mention} requrest to union unit `{u2_id}` to unit `{u1_id}`, which will disband the prior. Proceed?\n||<a:RingingBell:559282950190006282> Timeout=15s · Key=`union confirm`||")
         try: 
             await self.client.wait_for('message', timeout=15, check=UMCc_check)
         except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request times out!"); return
@@ -8016,7 +8016,7 @@ Definition? Mechanism? Lore? Yaaa```
         try: reembed.set_thumbnail(url=pack[4])
         except discordErrors.HTTPException: pass
         temp1 = await pack[0].send(embed=reembed)
-        await pack[0].send(':bell: Syntax: `!buy` `[item_code]` |  Time out: 25s')
+        await pack[0].send('<a:RingingBell:559282950190006282> Syntax: `!buy` `[item_code]` |  Time out: 25s')
 
         await self.client.loop.run_in_executor(None, partial(redio.set, f'{cmd_tag}{pack[0].author.id}', 'trading', ex=1800, nx=True))
         def UMCc_check(m):
@@ -8048,7 +8048,7 @@ Definition? Mechanism? Lore? Yaaa```
             return m.channel == pack[0].channel and m.content == 'trade confirm' and m.author == pack[0].author
 
         price = int(items[ig_code][2]*random.choice([0.2, 1, 2, 5]))
-        await pack[0].send(f"Yo {pack[0].message.author.mention}! I'll sell ya **<:36pxGold:548661444133126185>{price}** for each item `{ig_code}`|**{items[ig_code][0]}**. \nIn total, the cost will be **<:36pxGold:548661444133126185>{price*quantity}**.\n:bell: Proceed? (Key: `trade confirm` | Timeout=10s)")
+        await pack[0].send(f"Yo {pack[0].message.author.mention}! I'll sell ya **<:36pxGold:548661444133126185>{price}** for each item `{ig_code}`|**{items[ig_code][0]}**. \nIn total, the cost will be **<:36pxGold:548661444133126185>{price*quantity}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `trade confirm` | Timeout=10s)")
         try: await self.client.wait_for('message', check=UMCc_check2, timeout=10)
         except asyncio.TimeoutError: await pack[0].send("<:osit:544356212846886924> Request declined!"); return
         
