@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from io import BytesIO
 from os import listdir
-from utils import format
 
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import imageio
@@ -26,26 +25,28 @@ import numpy as np
 import aiomysql
 import redis
 import pymysql.err as mysqlError
-import configs
 
-redio = redis.Redis('localhost')
+from . import configs as configClass
 
 async def get_CURSOR():
     conn = await aiomysql.connect(host=configs.MySQL_host, user=configs.MySQL_user, password=configs.MySQL_pw, port=configs.MySQL_port, db=configs.MySQL_db, autocommit=True)
     _cursor = await conn.cursor()
     return conn, _cursor
 
-loop = asyncio.get_event_loop()    
-conn, _cursor = loop.run_until_complete(get_CURSOR())
+redio = redis.Redis('localhost')
 
 def check_id():
     def inner(ctx):
-        return ctx.message.author.id == 214128381762076672
+        return ctx.author.id == 214128381762076672
     return commands.check(inner)
 
 class avasoul:
     def __init__(self, client):
         self.client = client
+
+        self.loop = asyncio.get_event_loop()    
+        conn, _cursor = self.loop.run_until_complete(get_CURSOR())
+
         self.ava_dict = {}
         self.prote_lib = {}
         self.jobs_dict = {}
@@ -275,7 +276,8 @@ class avasoul:
         
         year, month, day, hour, minute = await self.client.loop.run_in_executor(None, self.time_get)
         bump = await self.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu)
-        if not bump: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully incarnated. **Welcome to this world!**\n· You are currently logged out. Use `teleport 1 1` to log in. Then you may check our profile by `profile`.\n· Info? `help`. Concepts? `concept`. And, you're **highly recommended** to check the `tutorial`.")
+        if not bump:
+            await ctx.send(f"{ctx.author.mention}", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
         else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
 
     @commands.command()
@@ -318,10 +320,10 @@ class avasoul:
         
         # Data get and paraphrase
         # pylint: disable=unused-variable
-        try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, thisid, father_id, mother_id = await self.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, id AS thisid, (SELECT father_id FROM environ_hierarchy WHERE child_id=thisid), (SELECT mother_id FROM environ_hierarchy WHERE child_id=thisid) FROM personal_info WHERE id='{id}' OR name LIKE '%{id}%';")
+        try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo = await self.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo FROM personal_info WHERE id='{id}' OR name LIKE '%{id}%';")
         except TypeError: await ctx.send("<:osit:544356212846886924> User has not incarnated!"); return
         # pylint: enable=unused-variable
-        if str(ctx.message.author.id) not in ['214128381762076672', partner, f'{ctx.author.id}', father_id, mother_id]: await ctx.send("<:osit:544356212846886924> You have to be user's *partner*, *mother* or *father* to view their status!"); return
+        if str(ctx.message.author.id) not in ['214128381762076672', partner, f'{ctx.author.id}']: await ctx.send("<:osit:544356212846886924> You have to be user's *partner*, *mother* or *father* to view their status!"); return
 
         degrees = '` `'.join(await self.quefe(f"SELECT degree FROM pi_degrees WHERE user_id='{id}';"))
         
@@ -579,26 +581,26 @@ class avasoul:
     @commands.cooldown(1, 7, type=BucketType.user)
     async def help(self, ctx, *args):
         raw = list(args); temb_socket = []
-        prefixes = {336642139381301249: 'cli '}
+        #prefixes = {336642139381301249: 'cli '}
 
-        try: prefix = prefixes[ctx.guild.id]
-        except KeyError: prefix = '>'
+        #try: prefix = prefixes[ctx.guild.id]
+        #except KeyError: prefix = '>'
 
+        #prefix = 'cli '
         if not raw:
             temball = discord.Embed(
                 title = '**G U I D E**⠀⠀|⠀⠀**R P G  C O M M A N D S**',
                 description = f"""
-                                 ```dsconfig
-⠀| For RPG commands, please use: {prefix}help
-⠀| For RPG concepts, please use: {prefix}concept```
-                                **『Lore』**
-                                \tYou - a Remnant as many others - woke up in the middle of an unreal world, where reality mixed with fantasy, where space and time were torn apart into *regions*.
-                                \tSince the Seraph, human have fought their way to reunite its race and called themselves, **"United Regions of The Pralaeyr"**, later pointed their swords at the pit and the summit of Pralaeyr.
-                                \t"To fight the darkness of the fantasy and to free the human race from the Pralaeyr", firsts of the Remnants have sworn.
+                                 ```ini
+⠀| [help <command>] for more info.
+⠀| [tutorial] if you are beginner.```
+                                ╟ **NEW?** Use **`incarnate`** right away!
+                                ╟ Already incarnated? [Join the Pralaeyr!](https://discord.gg/NGtXxXj)
 
-                                **『Overall』**
-                                \tCli nee-chan is updated *daily*. Hence this helper will daily become more and more outdated.
-                                \tUp until March 18 2019, Cli supports 100+ commands for RPG parts!
+                                ╟ **『LORE』**
+                                ⠀⠀You - a Remnant as many others - woke up in the middle of an unreal world, where reality mixed with fantasy, where space and time were torn apart into *regions*.
+                                ⠀⠀Since the Seraph, human have fought their way to reunite its race and called themselves, **"United Regions of The Pralaeyr"**, later pointed their swords at the pit and the summit of Pralaeyr.
+                                ⠀⠀"To fight the darkness of the fantasy and to free the human race from the Pralaeyr", firsts of the Remnants have sworn.
                                 """,
                 colour = discord.Colour(0xB1F1FA)
             )
@@ -608,26 +610,32 @@ class avasoul:
             #**>** **`TAGS`** are placed at the very end.
             #**>** To inspect a command: `guide [command]`
             temball.set_thumbnail(url='https://imgur.com/EQsptpa.png')
-            temball.set_image(url="https://imgur.com/OGs47ty.png")
+            alk = random.choice(["https://imgur.com/D1Ld5A7.gif", "https://imgur.com/e8cIazx.gif"])
+            temball.set_image(url=alk)
             temball.set_footer(text=f"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
             temb_socket.append(temball)
 
-            tembs = [['**P E R S O N A L  I N F O**', "| **`profile` \n::** DM you your status \n| **`avatar` \n::** Display your avatar\n| **`incarnate` \n::** Create a character\n| **`rename` \n::** Renaming your character"],
-                    ['**A C T I O N S**', "| **`teleport` \n::** Teleport\n| **`use` \n::** Equip items. Consume items. Switch weapons' slot\n| **`interact` \n::** Interact to NPCs"],
-                    ['**I N F O R M A T I O N**', "| **`works` \n::** View all jobs\n| **`maps` \n::** View all regions\n| **`formulas` \n::** Some model formulas for crafting\n| **`quests` \n::** View all quests available in region\n| **`npc` \n::** Show NPCs"],
-                    ['**T R A N S F O R M A T I N G**', '| **`evolve` \n::** Evolve/Upgrade your status\n| **`medication` \n::** Healing\n| **`wardrobe` \n::** Manipulating elements of your avatar card'],
-                    ['**A C T I V I T I E S**', "| **`daily` \n::** Daily cakes!\n| **`work` \n::** Sign up for a job\n| **`rest` \n::** Resting for STA\n| **`wake` \n::** Waking from rest"],
-                    ['**M A N I P U L A T I N G**', '| **`infuse` \n::** Infusing two items\n| **`merge` \n::** Merging two items\n| **`craft` \n::** Crafting items'],
-                    ['**L I F E**', "| **`guild` \n::** <GUILD> master command\n| **`bank`\n::** <BANK> master command\n| **`quest`\n::** <QUEST> master command\n| **`party`\n::** <PARTY> master command\n| **`education` \n::** Learning a new degree\n| **`marry` \n::** Marry someone\n| **`divorce` \n::** Divorce your partner\n| **`like` \n::** Give merit\n| **`dislike` \n::** Decrease merit"],
-                    ['**C O M M E R C I A L**', "| **`shop` \n::** View region's shop\n| **`buy` \n::** Buy items from shop\n| **`inventory` \n::** View your inventory\n| **`trader` \n::** View/Buy what the traders sell\n| **`trade` \n::** Trade items with a player\n| **`sell` \n::** Sell items\n| **`give` \n::** Give money to a player"],
-                    ['**C O M B A T**', "| **`attack` \n::** Attack someone/something. Change pose\n| **`aim` \n::** Shoot someone/something. Change pose"],
-                    ['**S T A T I S T I C S**', "| **`sekaitime` \n::**View current time of Pralaeyr\n| **`worldinfo` \n::** Info of Pralaeyr\n| **`toprich` \n::** Top 10 richest\n| **`topmerit` \n::** Top 10 merit\n| **`topkill` \n::** Top 10 PVP\n| **`topdeath` \n::** Top 10 awkward deaths\n| **`topwin` \n::** Top 10 dueling winners"],
-                    ['**T O O L S**', "| **`radar` \n::** Scan map for players\n| **`mdist` \n::** Calculate distance"]]
+            tembs = [['P E R S O N A L  I N F O', {"profile": 'DM you your status', 'avatar': 'Display your avatar', 'incarnate': 'Create a character', 'rename': 'Renaming your character'}],
+                    ['A C T I O N S', {'teleport': 'Teleport', 'use': 'Equip items. Consume items. Switch weapons slot', 'interact': 'Interact to NPCs'}],
+                    ['I N F O R M A T I O N', {'works': 'View all jobs', 'maps': 'View all regions', 'formulas': 'Some model formulas for crafting', 'quests': 'View all quests available in region', 'npc': 'Show NPCs'}],
+                    ['T R A N S F O R M I N G', {'evolve': 'Evolve/Upgrade your status', 'medication': 'Healing', 'wardrobe': 'Manipulating elements of your avatar card'}],
+                    ['A C T I V I T I E S', {'daily': 'Daily cakes', 'work': 'Sign up for a job', 'rest': 'Resting for STA', 'wake': 'Waking from rest'}],
+                    ['M A N I P U L A T I N G', {'infuse': 'Infusing two items', 'merge': 'Merging two items', 'craft': 'Crafting items'}],
+                    ['L I F E', {'guild': '<GUILD> master command', 'bank': '<BANK> master command', 'quest': '<QUEST> master command', 'party': '<PARTY> master command', 'education': 'Learning a new degree', 'marry': 'Marry someone', 'divorce': 'Divorce your partner', 'like': 'Give merit', 'dislike': 'Decrease merit'}],
+                    ['C O M M E R C I A L', {'shop': "View region's shop", 'buy': 'Buy items from shop', 'inventory': 'View your inventory', 'trader': 'View/Buy what the traders sell', 'trade': 'Trade items with a player', 'sell': 'Sell items', 'give': 'Give money to a player'}],
+                    ['C O M B A T', {'attack': 'Attack someone/something. Change pose', 'aim': 'Shoot someone/something. Change pose'}],
+                    ['S T A T I S T I C S', {'sekaitime': 'View current time of Pralaeyr', 'worldinfo': 'Info of Pralaeyr', 'toprich': 'Top 10 richest', 'topmerit': 'Top 10 merit', 'topkill': 'Top 10 PVP', 'topdeath': 'Top 10 awkward deaths', 'topwin': 'Top 10 dueling winners'}],
+                    ['T O O L S', {'radar': 'Scan map for players', 'mdist': 'Calculate distance'}]]
             for stuff in tembs:
+                line = ''
+                for k, v in stuff[1].items():
+                    line = line + f"╔**`{k}`**\n╚╡{v}\n"
                 tembeach = discord.Embed(
-                    title = stuff[0],
-                    description = f"""______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ 
-                    {stuff[1]}""",
+                    description = f"""
+                    ```ini
+[ {stuff[0]} ]```
+    ━━━━━━━━━━━━━
+                    {line}""",
                     colour = discord.Colour(0xB1F1FA)
                 )
                 tembeach.set_thumbnail(url='https://imgur.com/EQsptpa.png')
@@ -1095,8 +1103,19 @@ Definition? Mechanism? Lore? Yaaa```
     @commands.cooldown(1, 3, type=BucketType.user)
     async def tutorial(self, ctx, *args):
 
-        if args: await self.tut_basic_status(ctx, box=args[0])
-        else: await self.tut_basic_status(ctx)
+        #if args: await self.tut_basic_status(ctx, box=args[0])
+        #else: await self.tut_basic_status(ctx)
+
+        try: bundle = await self.quefe(f"SELECT line, timeout, trg, illulink FROM sys_tutorial WHERE tutorial_code='{args[0]}' ORDER BY ordera ASC;", type='all')
+        except IndexError: await ctx.send("<:osit:544356212846886924> Missing tutorial_code"); return
+        await ctx.send(f"{ctx.author.mention}, let's move to a more silent place like in DM!")
+        for pack in bundle:
+            try: trg = pack[2].split(' || ')
+            except AttributeError: trg = []
+            await self.engine_waitor(ctx, pack[0], t=pack[1], keylist=trg, DM=True, illulink=pack[3])
+
+
+
 
 
     # pylint: enable=unused-variable
@@ -3400,7 +3419,8 @@ Definition? Mechanism? Lore? Yaaa```
             emli.append(myembed)
             currentpage += 1
 
-        msg = await ctx.send(embed=emli[cursor])
+        try: msg = await ctx.send(embed=emli[cursor])
+        except IndexError: await ctx.send("<:osit:544356212846886924> Please join a guild..."); return
         if pages > 1: await attachreaction(msg)
         else: return
 
@@ -3877,7 +3897,7 @@ Definition? Mechanism? Lore? Yaaa```
 
     @commands.command(aliases=['unsure'])
     @commands.cooldown(1, 15, type=BucketType.user)
-    async def sex(self, ctx, *args): 
+    async def sex(self, ctx, *args):
         if not await self.ava_scan(ctx.message, type='life_check'): return
         cmd_tag = 'sex'
         if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:508437298808094742> Calm your lewdness, **{ctx.author.name}**~~"): return
@@ -3887,7 +3907,7 @@ Definition? Mechanism? Lore? Yaaa```
         except TypeError: await ctx.send("<:osit:544356212846886924> Get yourself a partner first :>"); return
 
         # Partner info
-        t_LP, t_max_LP, t_STA, t_max_STA, t_charm, t_partner, t_gender, t_name = await self.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, partner, gender, name FROM personal_info WHERE id='{partner}';")
+        t_LP, t_max_LP, t_STA, t_max_STA, t_charm, t_gender, t_name = await self.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, gender, name FROM personal_info WHERE id='{partner}';")
         #tar = self.client.get_user(int(partner))
         tar = await self.client.loop.run_in_executor(None, partial(self.client.get_user, int(partner)))
 
@@ -3911,12 +3931,12 @@ Definition? Mechanism? Lore? Yaaa```
             await ctx.send(f"<:sailu:559155210384048129> The whole Pralaeyr welcomes you, **{resp.content}**! May the Olds look upon you, {ctx.author.mention} and **{t_name}**.")
 
             # DAMAGING
-            #if gender == 'f':
-            #    LP = await self.division_LP(LP, max_LP, time=8)
-            #    await _cursor.execute(f"UPDATE personal_info SET LP={LP} WHERE id='{ctx.author.id}';")
-            #else:
-            #    t_LP = await self.division_LP(t_LP, t_max_LP, time=8)
-            #    await _cursor.execute(f"UPDATE personal_info SET LP={t_LP} WHERE id='{partner}';")
+            if gender == 'f':
+                LP = await self.division_LP(LP, max_LP, time=8)
+                await _cursor.execute(f"UPDATE personal_info SET LP={LP} WHERE id='{ctx.author.id}';")
+            else:
+                t_LP = await self.division_LP(t_LP, t_max_LP, time=8)
+                await _cursor.execute(f"UPDATE personal_info SET LP={t_LP} WHERE id='{partner}';")
 
         # ================== SEX
         else:
@@ -3937,8 +3957,9 @@ Definition? Mechanism? Lore? Yaaa```
             await ctx.send(embed=discord.Embed(description="""```The two got closer, and closer, and closer, and close--...```""", colour=0xFFE2FF).set_image(url=random.choice(slib[gender+t_gender])), delete_after=10)
 
             await _cursor.execute(f"UPDATE personal_info SET STA=0, LP=IF(id='{ctx.author.id}', {int(LP + LP * reco_percent)}, {int(t_LP + t_LP * reco_percent)}) WHERE id IN ('{ctx.author.id}', '{partner}');")
+            await self.ava_scan(ctx.message, type='life_check')
 
-        await self.client.loop.run_in_executor(None, partial(redio.set, f'{cmd_tag}{ctx.author.id}', 'sex', ex=86400, nx=True))
+        await self.client.loop.run_in_executor(None, partial(redio.set, f'{cmd_tag}{ctx.author.id}', 'sex', ex=3600, nx=True))
 
     @commands.command()
     @commands.cooldown(1, 10, type=BucketType.user)
@@ -3971,19 +3992,20 @@ Definition? Mechanism? Lore? Yaaa```
 
         # Get info
         id, name, t_id, t_name = await self.quefe(f"SELECT id, name, partner AS prtn, (SELECT name FROM personal_info WHERE id=prtn) FROM personal_info WHERE id='{ctx.author.id}';")
-        if t_name: target_addon = f" AND '{t_id}' IN (mother_id, father_id, guardian_id))"
+        if t_name: target_addon = f" AND '{t_id}' IN (mother_id, father_id, guardian_id)"
         else: target_addon = ''
-        children = await self.quefe(f"SELECT id, name, gender, age FROM personal_info WHERE id IN (SELECT child_id FROM environ_hierarchy WHERE '{id}' IN (mother_id, father_id, guardian_id) {target_addon};")
+        children = await self.quefe(f"SELECT id, name, gender, age FROM personal_info WHERE id IN (SELECT child_id FROM environ_hierarchy WHERE '{id}' IN (mother_id, father_id, guardian_id) {target_addon});", type='all')
         gengen = {'m': 'Male', 'f': 'Female'}
 
         def makeembed(top, least, pages, currentpage):
             line = '\n'
 
             for child in children[top:least]:
+                print(children, child)
                 line = line + f"""<:sailu:559155210384048129> **{child[1]}** ({child[3]}), {gengen[child[2]]}\n      ╟||`{child[0]}`||\n"""
 
-            if t_name: reembed = discord.Embed(title = f"{name.capitalize()} :heart: {t_name.capitalize()}", description=line, colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url)
-            else: reembed = discord.Embed(title = f"{name.capitalize()}... . . .. .   .  .", description=line, colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url)
+            if t_name: reembed = discord.Embed(description=line, colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url).set_author(name=f"{name.capitalize()} & {t_name.capitalize()}", icon_url='https://imgur.com/jkznAfT.png')
+            else: reembed = discord.Embed(description=line, colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url).set_author(name=f"{name.capitalize()}... . . .. .   .  .", icon_url='https://imgur.com/jkznAfT.png')
             return reembed
             #else:
             #    await ctx.send("*Nothing but dust here...*")
@@ -4012,7 +4034,7 @@ Definition? Mechanism? Lore? Yaaa```
             currentpage += 1
         # pylint: enable=unused-variable
 
-        if not emli: await ctx.send(":crown: All orders are fulfilled!"); return
+        if not emli: await ctx.send(":crown: No child!"); return
         if pages > 1: 
             await attachreaction(msg)
             msg = await ctx.send(embed=emli[cursor])
@@ -5489,8 +5511,8 @@ Definition? Mechanism? Lore? Yaaa```
                 # Decks quantity check
                 if deck_q >= 3: await ctx.send("<:osit:544356212846886924> You cannot maintain more than 3 decks at a time."); return
 
-                if deck_q == 0: await _cursor.execute(f"INSERT INTO pi_deck VALUES (0, 'Untitled', '{ctx.author.id}', 'MAIN', 'n/a', NULL, NULL, NULL, NULL, NULL, NULL);")
-                else: await _cursor.execute(f"INSERT INTO pi_deck VALUES (0, 'Untitled', '{ctx.author.id}', 'NORMAL', 'n/a', NULL, NULL, NULL, NULL, NULL, NULL);")
+                if deck_q == 0: await _cursor.execute(f"INSERT INTO pi_deck VALUES (0, 'Untitled', '{ctx.author.id}', 'MAIN', NULL, NULL, NULL, NULL, NULL, NULL);")
+                else: await _cursor.execute(f"INSERT INTO pi_deck VALUES (0, 'Untitled', '{ctx.author.id}', 'NORMAL', NULL, NULL, NULL, NULL, NULL, NULL);")
 
                 await ctx.send("<a:yy32:555244228217798673> Deck created!"); return
 
@@ -5681,7 +5703,7 @@ Definition? Mechanism? Lore? Yaaa```
                 try: hid = slot.split(' || ')[0]
                 # E: Slot is None
                 except AttributeError: cdict[counter] = None; counter += 1; continue
-                cdict[hid] = await self.quefe(f"SELECT lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, name FROM pi_hero WHERE user_id='{user.id}' AND hero_id={hid};")
+                cdict[hid] = await self.quefe(f"""SELECT lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, name FROM pi_hero WHERE user_id='{user.id}' AND hero_id="{hid}";""")
                 counter += 1
 
             return cdict
@@ -5693,7 +5715,7 @@ Definition? Mechanism? Lore? Yaaa```
         # DUEL inform
         key = (f'duel <@{ctx.author.id}>', f'duel <@!{ctx.author.id}>')
         def UCc_check(m):
-            return m.channel == ctx.channel and m.content in key and m.author != ctx.author
+            return m.channel == ctx.channel and m.content in key #and m.author != ctx.author
         await ctx.send(f"<a:yy32:555244228217798673> **{ctx.author.name}** is offering a card duel, with a bet of <:36pxGold:548661444133126185>**{money}**\n|| Type **`duel @{str(ctx.author)}`** to accept!")
         await self.client.loop.run_in_executor(None, partial(redio.set, f'{cmd_tag}{ctx.author.id}', 'working', ex=180, nx=True))
 
@@ -5702,6 +5724,7 @@ Definition? Mechanism? Lore? Yaaa```
             while True:
                 msg = await self.client.wait_for('message', timeout=30, check=UCc_check)
                 op_deck = await fuldek(msg.author)
+                print(op_deck)
                 if op_deck: break
                 else: return
         except asyncio.TimeoutError: await ctx.send(f"<:osit:544356212846886924> It seems no one give a poop about you, {ctx.author.mention}..."); return
@@ -6738,7 +6761,7 @@ Definition? Mechanism? Lore? Yaaa```
             elif msg.content.startswith('!switch'):
                 # E: No switchee found
                 try: switchee = msg.mentions[0]
-                except IndexError: 
+                except IndexError:
                     dmgdeal = round(dmg*len(mmove))*2
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
                     pack_1 = f"\n:dagger::dagger: As **{name}** found no one to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
@@ -6749,7 +6772,7 @@ Definition? Mechanism? Lore? Yaaa```
                     return msg_pack
                 # E: Different region
                 try:
-                    sw_cur_PLACE, sw_cur_X, sw_cur_Y = await self.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{switchee.id}'; ")
+                    sw_cur_PLACE, sw_cur_X, sw_cur_Y = await self.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{switchee.id}' AND cur_MOB='n/a'; ")
                     if cur_PLACE != sw_cur_PLACE: 
                         await MSG.channel.send(f"<:osit:544356212846886924> {switchee.mention} and {MSG.author.mention}, you have to be in the same region!")
                         dmgdeal = round(dmg*len(mmove))*2
@@ -6762,7 +6785,7 @@ Definition? Mechanism? Lore? Yaaa```
                         return msg_pack                        
                 ## E: Switchee doesn't have ava
                 except TypeError:
-                    await MSG.channel.send(f"<:osit:544356212846886924> User **{switchee.name}** doesn't have an *ava*!")
+                    await MSG.channel.send(f"<:osit:544356212846886924> User **{switchee.name}** is busy!")
                     dmgdeal = round(dmg*len(mmove))*2
                     await _cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
                     pack_1 = f"\n:dagger::dagger: As **{name}** tried to switch with a ghost, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
@@ -6785,7 +6808,8 @@ Definition? Mechanism? Lore? Yaaa```
 
                 # Wait for response
                 def UC_check2(m):
-                    return m.author == switchee and m.channel == MSG.channel and m.content.startswith('!')
+                    return m.author == switchee and m.channel == MSG.channel and m.mentions
+
 
                 try: switch_resp = await self.client.wait_for('message', timeout=5, check=UC_check2)
                 # E: No response
@@ -6814,7 +6838,7 @@ Definition? Mechanism? Lore? Yaaa```
                 await self.tele_procedure(cur_PLACE, user_id, sw_cur_X, sw_cur_Y)
                 # End the switcher PVE-session
                 ## Remove the current_enemy lock-on of the switcher
-                await _cursor.execute(f"UPDATE personal_info SET cur_MOB='n/a' WHERE id='{user_id}'; ")
+                await _cursor.execute(f"UPDATE personal_info SET cur_MOB='n/a' WHERE id='{user_id}'; UPDATE environ_mob SET lockon='n/a' WHERE mob_id='{target_id}';")
                 # Proceed PVE-session re-focus
                 await MSG.channel.send(f":arrows_counterclockwise: {MSG.author.mention} and {switchee.mention}, **SWITCH!!**")
                 return [switch_resp, target_id]
@@ -6891,7 +6915,9 @@ Definition? Mechanism? Lore? Yaaa```
             message_obj = await battle(message_obj)
             while isinstance(message_obj, discord.message.Message):
                 message_obj = await battle(message_obj)
-            if message_obj: 
+            print(message_obj)
+            if message_obj:
+                print("SSSSSSSSSSSSSSSSSSSSSSSSSS")
                 await self.PVE(message_obj[0], message_obj[1])
         else:
             await _cursor.execute(f"UPDATE personal_info SET cur_MOB='{target_id}' WHERE id='{user_id}'; ")
@@ -7550,11 +7576,21 @@ Definition? Mechanism? Lore? Yaaa```
         target = MSG.author
         target_id = str(target.id)
 
+        # Readjust the incorrect value
+        if type == 'normalize':
+            query = ''
+            #if STA > MAX_STA: query = query + f"UPDATE personal_info SET STA=IF(STA>MAX_STA, MAX_STA, STA) WHERE id='{target_id}';"
+            #if LP > MAX_LP: query = query + f"UPDATE personal_info SET LP=IF(LP>MAX_LP, MAX_LP, LP) WHERE id='{target_id}';"
+            try: await _cursor.execute(f"UPDATE personal_info SET LP=IF(LP>MAX_LP, MAX_LP, LP), STA=IF(STA>MAX_STA, MAX_STA, STA) WHERE id='{target_id}';")
+            except mysqlError.InternalError: pass
+            return True
+
         # Status check
         try:
-            aaapp = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'"); print(aaapp)
+            # pylint: disable=unused-variable
+            LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'")
             #LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'")
-            LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = aaapp
+            # pylint: enable=unused-variable
         except TypeError: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. Use `incarnate` to create one."); return
         if stats == 'DEAD': 
             #if target_id == MSG.author.id: await MSG.channel.say(f"<:tumbstone:544353849264177172> You. Are. Dead, **{target.mention}**. Have a nice day!"); return
@@ -7582,14 +7618,6 @@ Definition? Mechanism? Lore? Yaaa```
 
                 await MSG.channel.send(f"<:tumbstone:544353849264177172> {target.mention}, you are dead. Please re-incarnate.")
                 return False
-            return True
-        # Readjust the incorrect value
-        elif type == 'normalize':
-            query = ''
-            if STA > MAX_STA: query = query + f"UPDATE personal_info SET STA=MAX_STA WHERE id='{target_id}';"
-            if LP > MAX_LP: query = query + f"UPDATE personal_info SET LP=MAX_LP WHERE id='{target_id}';"
-            try: await _cursor.execute(query)
-            except mysqlError.InternalError: pass
             return True
 
     async def area_scan(self, ctx, x, y):
@@ -7929,6 +7957,11 @@ Definition? Mechanism? Lore? Yaaa```
         return b - loss
 
 
+
+
+
+
+
 # ================ TUTORIAL MODULES ======================
 
     async def engine_roller(self, ctx, tut_code, headers, box='direct'):
@@ -7963,7 +7996,17 @@ Definition? Mechanism? Lore? Yaaa```
         await self.engine_roller(ctx, 'basic_status', ['intro_1', 'lp', 'sta', 'degree', 'evo'], box=box)
 
 
+    async def engine_waitor(self, ctx, line, t=20, keylist=[], DM=False, illulink=None):
 
+        if DM: await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
+        else: await ctx.send(embed=discord.Embed(description=line).set_image(url=illulink))
+
+        def UMCc_check(m):
+            if keylist: return m.author == ctx.author and m.content in keylist
+            return m.author == ctx.author
+
+        try: await self.client.wait_for('message', check=UMCc_check, timeout=t); return True
+        except asyncio.TimeoutError: return False
 
 
 
@@ -8187,7 +8230,6 @@ Definition? Mechanism? Lore? Yaaa```
 
     async def quefe(self, query, args=None, type='one'):
         """args ---> tuple"""
-        global conn
         global _cursor
 
         try: await _cursor.execute(query, args=args)
@@ -8521,7 +8563,8 @@ Definition? Mechanism? Lore? Yaaa```
                         'Djeeta': 'av19',
                         'Ricka': 'av20',
                         'Ricka_Cosplay': 'av21',
-                        'Ricka_NSFW': 'av22'}
+                        'Ricka_NSFW': 'av22',
+                        'set_FURRY': 'av23'}
 
         ##bg_codes = {'LoveRibbon/evening': 'bg0'}
         bg_codes = {'medieval_indoor': 'bg0',

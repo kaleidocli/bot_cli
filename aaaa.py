@@ -31,18 +31,20 @@ char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U00
             'l': '\U0001f1f1', 'm': '\U0001f1f2', 'n': '\U0001f1f3', 'o': '\U0001f1f4', 'p': '\U0001f1f5', 'q': '\U0001f1f6', 'r': '\U0001f1f7', 's': '\U0001f1f8', 't': '\U0001f1f9', 'u': '\U0001f1fa', 'v': '\U0001f1fb', 'w': '\U0001f1fc', 'x': '\U0001f1fd', 'y': '\U0001f1fe', 'z': '\U0001f1ff'}
 
 #extensions = ['cogs.error_handler', 'cogs.ai', 'cogs.audio', 'cogs.pydanboo', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.avasoul', 'cogs.guess']
+#extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.audio']
 extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.avasoul', 'cogs.audio']
 TOKEN = configs.TOKEN
 
-prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
-async def get_pref(bot, message):
-    if not message.guild:  # dms
-        return ">"
-    try: prefix = prefixes[message.guild.id]   # could also use a list of prefixes
-    except KeyError: prefix = '>'
-    return commands.when_mentioned_or(prefix)(bot, message)
+#prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
+#async def get_pref(bot, message):
+#    if not message.guild:  # dms
+#        return ">"
+#    try: prefix = prefixes[message.guild.id]   # could also use a list of prefixes
+#    except KeyError: prefix = '>'
+#    return commands.when_mentioned_or(prefix)(bot, message)
 
-client = commands.Bot(command_prefix=get_pref)
+#client = commands.Bot(command_prefix=get_pref)
+client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')
 
 @client.event
@@ -51,6 +53,14 @@ async def on_ready():
     await client.loop.run_in_executor(None, settings_plugin)
     await client.change_presence(activity=discord.Game(name='with aknalumos <3'))
     print("|||||   THE BOT IS READY   |||||")
+
+@client.event
+async def on_guild_join(guild):
+    await client.get_channel(563592973170769922).send(f":white_check_mark: **JOINED -->** `{guild.id}` | {guild.name}")
+
+@client.event
+async def on_guild_remove(guild):
+    await client.get_channel(563592973170769922).send(f":x: **LEFT -->** `{guild.id}` | {guild.name}")
 
 def check_id():
     def inner(ctx):
@@ -61,8 +71,7 @@ async def help(ctx, *args):
     global help_dict
     raw = list(args)
 
-    try: prefix = prefixes[ctx.guild.id]
-    except KeyError: prefix = '>'
+    prefix = 'cli '
 
     # Overall help
     if not raw:
@@ -130,10 +139,10 @@ async def megarestart(ctx, *args):
 @client.command()
 async def invite(ctx):
     #await ctx.send("Hey use this to invite me -> https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=238157120&scope=bot")
-    temb = discord.Embed(description="""[===== Invite =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=104193344&scope=bot)\n◈ Before inviting this bot, you must acknowledge and accept the following:\n· High-ratio shutdown session, with random length and for **no reason**.\n| Any DM-ed complaints relevant to the incident will result in a ban.\nHowever, compensation with evidences will be responsed and should be sent in *support server*.\nTrying to DM twice on the above problem will result in a ban.\nDM abusing will result in a **"Enemy of the Pralaeyr"**.
+    temb = discord.Embed(description="""[===== Support Server =====](https://discord.gg/wvz6bps)\n◈ Before inviting this bot, you must acknowledge and accept the following:\n· High-ratio shutdown session, with random length and for **no reason**.\n| Any DM-ed complaints relevant to the incident will result in a ban.\nHowever, compensation with evidences will be responsed and should be sent in *support server*.\nTrying to DM twice on the above problem will result in a ban.\nDM abusing will result in a *boop*.
                                 \n· Buggy gameplay, low latency.\n| Any bot-abusing activities will result in a ban.\nHowever, *bot-breaking* is encouraged, and any bugs should be reported in *support server/Bug-report*
-                                \n· Violation in data, balance and activities of the players.\n| This is a testing bot. You are the guinea pig. Oink <:fufu:508437298808094742>
-                                \n[===== Support Server =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=238157120&scope=bot)""")
+                                \n· Violation in data, balance and activities of the players.\n| This is a testing bot. Have fun testing this <:fufu:508437298808094742>
+                                \n[===== Invite =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=104193344&scope=bot)""")
     await ctx.send(embed=temb)
 
 @client.command()
@@ -669,7 +678,7 @@ def help_dict_plugin():
 
 @client.event
 async def on_message(message):
-    global bulb; global prefixes; global blacklist
+    #global bulb; global blacklist
 
     if message.author.bot: return
     #if str(message.author.id) in blacklist: return
