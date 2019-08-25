@@ -11,6 +11,7 @@ import sys
 import random
 import asyncio
 import json
+import time
 from datetime import datetime
 from nltk import word_tokenize
 
@@ -32,7 +33,23 @@ char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U00
 
 #extensions = ['cogs.error_handler', 'cogs.ai', 'cogs.audio', 'cogs.pydanboo', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.avasoul', 'cogs.guess']
 #extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.audio']
-extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.avasoul', 'cogs.audio']
+extensions = ['cogs.error_handler', 
+                'cogs.tictactoe', 
+                'cogs.custom_speech', 
+                'cogs.hen', 
+                'cogs.guess', 
+                'jishaku', 
+                'cogs.audio', 
+                'cogs.avasoul', 
+                'cogs.avasoul_pack.avaAdmin', 
+                'cogs.avasoul_pack.avaTrivia', 
+                'cogs.avasoul_pack.avaGuild', 
+                'cogs.avasoul_pack.avaNPC', 
+                'cogs.avasoul_pack.avaCombat', 
+                'cogs.avasoul_pack.avaCommercial', 
+                'cogs.avasoul_pack.avaSocial',
+                'cogs.avasoul_pack.avaActivity',
+                'cogs.avasoul_pack.avaWorkshop']
 TOKEN = configs.TOKEN
 
 #prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
@@ -696,11 +713,21 @@ async def file_gen_random(path):
     file_name = await client.loop.run_in_executor(None, random.choice, await client.loop.run_in_executor(None, os.listdir, path))
     return file_name
 
+def prepformain():
+    try:
+        if client.load_count: return
+    except AttributeError: client.load_count = 0
+    client.extension_count = len(extensions)
+    client.load_extension('cogs.avasoul_pack.avaAvatar')
+    for extension in extensions:
+        print(client.load_count, extension)
+        if client.load_count == client.extension_count: break
+        client.load_extension(extension)
+        client.load_count += 1
+    client.run(TOKEN)
 
 if __name__ == '__main__':
-    for extension in extensions:
-        client.load_extension(extension)
-    client.run(TOKEN)
+    prepformain()
 
 
 

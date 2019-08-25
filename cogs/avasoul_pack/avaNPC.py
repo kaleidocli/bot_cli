@@ -1,0 +1,217 @@
+import discord
+from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
+import discord.errors as discordErrors
+
+import random
+import asyncio
+
+from .avaTools import avaTools
+from .avaUtils import avaUtils
+from .npcTriggers import npcTrigger
+
+class avaNPC:
+    def __init__(self, client):
+        self.client = client
+        self.npcTrigger = npcTrigger(self.client)
+        self.trigg = {'p0c0i0training': self.npcTrigger.p0c0i0training,
+                    'GE_trader': self.npcTrigger.GE_trader,
+                    'GE_inspect': self.npcTrigger.GE_inspect}
+
+        self.utils = avaUtils(self.client)
+        self.tools = avaTools(self.client, self.utils)
+
+
+
+    async def on_ready(self):
+        print("|| NPC ---- READY!")
+
+
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def npc(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        if not args:
+            npcs = await self.client.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc;", type='all')
+
+            def makeembed(curp, pages, currentpage):
+                npc = npcs[curp]
+
+                temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}**\n━━━━━━━ {npc[2].capitalize()} NPC-{npc[3]}", description = f"""```dsconfig
+        {npc[1]}```""", colour = discord.Colour(0x011C3A))
+                temb.set_image(url=random.choice(npc[4].split(' <> ')))
+
+                return temb
+
+            async def attachreaction(msg):
+                await msg.add_reaction("\U000023ee")    #Top-left
+                await msg.add_reaction("\U00002b05")    #Left
+                await msg.add_reaction("\U000027a1")    #Right
+                await msg.add_reaction("\U000023ed")    #Top-right
+
+            pages = len(npcs)
+            currentpage = 1
+            cursor = 0
+
+            emli = []
+            for curp in range(pages):
+                myembed = makeembed(curp, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
+
+            if pages > 1: 
+                msg = await ctx.send(embed=emli[cursor])
+                await attachreaction(msg)
+            else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
+
+            def UM_check(reaction, user):
+                return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+            while True:
+                try:    
+                    reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                        cursor += 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U00002b05" and cursor > 0:
+                        cursor -= 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ee" and cursor != 0:
+                        cursor = 0
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                        cursor = pages - 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                except asyncio.TimeoutError:
+                    await msg.delete(); return
+
+
+        try: npc = await self.client.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc WHERE npc_code='{args[0]}' OR name LIKE '%{args[0]}%';")
+        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing npc's code"); return
+
+        if not npc: await ctx.send("<:osit:544356212846886924> NPC not found!"); return
+
+        temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}**\n━━━━━━━ {npc[2].capitalize()} NPC-{npc[3]}", description = f"""```dsconfig
+        {npc[1]}```""", colour = discord.Colour(0x011C3A))
+        temb.set_image(url=random.choice(npc[4].split(' <> ')))
+
+        await ctx.send(embed=temb)
+
+    @commands.command(aliases=['I'])
+    @commands.cooldown(1, 8, type=BucketType.user)
+    async def interact(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        try: intera_kw = args[1]
+        except IndexError: intera_kw = 'talk'
+
+        # User's info
+        cur_PLACE, cur_X, cur_Y, charm = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y, charm FROM personal_info WHERE id='{ctx.author.id}';")
+
+        # NPC / Item
+        try:
+            try: entity_code, entity_name, illulink = await self.client.quefe(f"SELECT item_id, name, illulink FROM pi_inventory WHERE item_id='{int(args[0])}' AND user_id='n/a' AND existence='GOOD';")
+            # E: Item not found --> Silently ignore
+            except TypeError: await ctx.message.add_reaction('\U00002754'); return
+        except ValueError:
+            try: entity_code, entity_name, illulink = await self.client.quefe(f"SELECT npc_code, name, illulink FROM model_npc WHERE npc_code='{args[0]}' OR name LIKE '%{args[0]}%'")
+            # E: NPC not found --> Silently ignore
+            except TypeError: await ctx.message.add_reaction('\U00002754'); return
+
+        # Relationship's info
+        try: value_chem, value_impression, flag = await self.client.quefe(f"SELECT value_chem, value_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
+        # E: Relationship not initiated. Init one.
+        except TypeError:
+            value_chem = 0; value_impression = 0; flag = 'n/a'
+            await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{entity_code}', {value_chem}, {value_impression}, '{flag}');")
+
+        if intera_kw == 'inspect': await self.trigg['GE_inspect']([ctx, value_chem, value_impression, flag, entity_code, entity_name, cur_PLACE, cur_X, cur_Y]); return
+
+        # Interaction's info
+        try: entity_code, trigg, data_goods, effect_query, lines, limit_chem, effect_line, r_chem, r_imp = await self.client.quefe(f"SELECT entity_code, trigg, data_goods, effect_query, line, limit_chem, effect_line, reward_chem, reward_impression FROM environ_interaction WHERE entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' AND (({value_chem}>=limit_chem AND chem_compasign='>=') OR ({value_chem}<limit_chem AND chem_compasign='<')) AND (({value_impression}>=limit_impression AND imp_compasign='>=') OR ({value_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC, limit_chem DESC, limit_impression DESC LIMIT 1;")
+        except TypeError: await ctx.message.add_reaction('\U00002754'); return         # Silently ignore         #await ctx.send("<:osit:544356212846886924> Entity not found!"); return
+
+        # TRIGGER !!!!!!!!!!!!!!!!!!!
+        if trigg != 'n/a':
+            try: illulink = random.choice(illulink.split(' <> '))
+            except AttributeError: illulink = ''
+            pack = [ctx, data_goods, entity_code, entity_name, illulink, random.choice(lines.split(' ||| '))]
+            try: pack.append(args[2:])
+            except IndexError: pass
+
+            await self.trigg[trigg](pack)
+            return
+
+        async def line_gen(first_time=False, effect_line=None):
+            if effect_line:
+                line = [effect_line]
+            else:
+                linu = random.choice(lines.split(' ||| '))
+                line = linu.split(' <> ')
+            dura = round(len(line[0])/7)
+
+            if await self.utils.percenter(value_chem - limit_chem, total=100) or first_time:
+                temb = discord.Embed(title=f"`{entity_code}` <:__:544354428338044929> **{entity_name}**", description=f"""```css
+        {line[0]}```""", colour = 0x36393E)
+
+                try:
+                    temb.set_image(url=line[1])
+                    dura += 10
+                except IndexError: pass
+                temb.set_thumbnail(url=random.choice(illulink.split(' <> ')))
+                temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
+                if dura < 5: dura = 5
+                return temb, dura, True
+
+            else:
+                temb = discord.Embed(title=f"`{entity_code}` <:__:544354428338044929> **{entity_name}**", description=f"""```css
+        Oops sorry. I gotta go. Bai ya~```""", colour = 0x36393E)
+                try:
+                    temb.set_image(url=line[1])
+                    dura += 10
+                except IndexError: pass
+                temb.set_thumbnail(url=random.choice(illulink.split(' <> ')))
+                temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
+                return temb, dura, False
+
+        if effect_query:
+            effect_query = effect_query.replace('user_id_here', f"{ctx.author.id}")
+            await self.client._cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{int(random.choice(r_chem.split(' | ')))}+{round(charm/50)}, value_impression=value_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
+            temb, dura, checkk = await line_gen(first_time=True, effect_line=effect_line)
+            msg = await ctx.send(embed=temb, delete_after=dura+5); return
+        else: await self.client._cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{int(random.choice(r_chem.split(' | ')))}+{round(charm/50)}, value_impression=value_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
+
+        temb, dura, checkk = await line_gen(first_time=True)
+        msg = await ctx.send(embed=temb)
+        await msg.add_reaction(':__:544354428338044929')
+
+        while True:
+            def RUM_check(reaction, user):
+                return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) == "<:__:544354428338044929>"
+
+            try:
+                await self.client.wait_for('reaction_add', check=RUM_check, timeout=dura)
+                temb, dura, checkk = await line_gen()
+                if checkk: await msg.edit(embed=temb)
+                else: await msg.edit(embed=temb, delete_after=5); return
+
+            except asyncio.TimeoutError:
+                await msg.delete(); return
+
+
+
+
+
+
+def setup(client):
+    client.add_cog(avaNPC(client))
