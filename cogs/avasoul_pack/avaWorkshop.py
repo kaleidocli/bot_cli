@@ -19,7 +19,7 @@ class avaWorkshop:
 
 
 
-    def on_ready(self):
+    async def on_ready(self):
         print("|| Workshop --- READY!")
 
 
@@ -340,7 +340,6 @@ class avaWorkshop:
                         except discordErrors.Forbidden: pass
                 except asyncio.TimeoutError:
                     await msg.delete(); return
-
 
 
 

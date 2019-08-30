@@ -43,7 +43,7 @@ class avaActivity:
                     full_cheq = full_cheq + f" AND EXISTS (SELECT * FROM pi_degrees WHERE user_id='{ctx.author.id}' AND {cheq})"
 
                 STA, money = await self.client.quefe(f"""SELECT STA, money FROM personal_info WHERE id='{ctx.author.id}' {full_cheq};""")
-                if STA < sta: await ctx.send(f"Grab something to *eat*, **{ctx.author.name}** <:fufu:508437298808094742> You can't do anything with such STA."); return
+                if STA < sta: await ctx.send(f"Grab something to *eat*, **{ctx.author.name}** <:fufu:605255050289348620> You can't do anything with such STA."); return
 
                 await ctx.send(f":briefcase: **{ctx.author.name}** wants to be `{raw[0]}`|**{jname}** for `{int(duration/240)}` days. We'll prepay you **<:36pxGold:548661444133126185>{reward}**!")
                 await self.client._cursor.execute(f"UPDATE personal_info SET STA={STA - sta}, money={money + reward} WHERE id='{ctx.author.id}'")
@@ -174,7 +174,7 @@ class avaActivity:
                 if limit >= STA: limit = STA - 1
             except (IndexError, ValueError): limit = STA - 1
 
-            if limit <= 0: await ctx.send(f"Go *get some food*, **{ctx.message.author.name}** <:fufu:508437298808094742> We cannot start a hunt with you exhausted like that."); return
+            if limit <= 0: await ctx.send(f"Go *get some food*, **{ctx.message.author.name}** <:fufu:605255050289348620> We cannot start a hunt with you exhausted like that."); return
 
             # Get animals based on INTT
             anis = await self.client.quefe(f"SELECT ani_code, str, sta, aggro, rewards, reward_query FROM model_animal WHERE intt<={INTT};", type='all')

@@ -14,10 +14,12 @@ class dan:
 
     @commands.command(pass_context=True)
     async def yhen(self, ctx, *args):
+        """
         #Checking the nsfw_mode value
-        if not self.client.settings[ctx.message.server.id]['nsfw_mode']:
-            await self.client.say(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
+        if not self.client.settings[ctx.guild.id]['nsfw_mode']:
+            await ctx.channel.send(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
             return
+        """
 
         async def a(msg, post):
             check = '0'
@@ -66,7 +68,7 @@ class dan:
         
         async def generate():
             try: post = random.choice(all_posts)
-            except IndexError: await self.client.say(f":warning: {ctx.message.author.mention}, tags `{' '.join(tag_string)}` not found!"); return
+            except IndexError: await ctx.channel.send(f":warning: {ctx.message.author.mention}, tags `{' '.join(tag_string)}` not found!"); return
             #Send img
             #await self.client.send_message(ctx.message.channel, f"**Tags:** `{tag_string.replace(' ', '` `')}`")
             hen_box = discord.Embed(
@@ -81,13 +83,13 @@ class dan:
             return hen_box, post
         
         hen_box, post = await generate()
-        msg_console = await self.client.say(":keyboard: **CONSOLE**")
+        msg_console = await ctx.channel.send(":keyboard: **CONSOLE**")
         #Add emo to msg_console.
         await self.client.add_reaction(msg_console, '\U0001f4c4')   #Tag_emoji
         await self.client.add_reaction(msg_console, '\U000027a1')   #Next_emoji
         await self.client.add_reaction(msg_console, '\U0001f512')   #Lock_emoji
         #Send hen_box
-        msg = await self.client.say(embed=hen_box)
+        msg = await ctx.channel.send(embed=hen_box)
 
         while True:
             #Wait for the emo loop. If return True, break, else, continue
@@ -102,9 +104,11 @@ class dan:
     @commands.command(pass_context=True)
     async def dhen(self, ctx, *args):
         #Checking the nsfw_mode value
-        if not self.client.settings[ctx.message.server.id]['nsfw_mode']:
-            await self.client.say(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
+        """
+        if not self.client.settings[str(ctx.guild.id)]['nsfw_mode']:
+            await ctx.channel.send(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
             return
+        """
 
         async def a(msg, posts_list):
             check = '0'
@@ -120,14 +124,14 @@ class dan:
                     tags = f"`{posts_list[0]['tag_string_general'].replace(' ', '` `')}`"
                     await self.client.send_message(ctx.message.channel, tags)
                 elif reac[0].emoji == '\U0001f512':
-                    await self.client.remove_reaction(msg, '\U0001f512', msg.author)
-                    await self.client.remove_reaction(msg, '\U0001f512', ctx.message.author)
-                    await self.client.add_reaction(msg, '\U0001f513')
+                    await msg.remove_reaction('\U0001f512', msg.author)
+                    await msg.remove_reaction('\U0001f512', ctx.message.author)
+                    await msg.add_reaction('\U0001f513')
                     a = await self.client.wait_for_reaction(emoji='\U0001f513' ,message=msg, user=ctx.message.author, timeout=420)
                     if not a: break
-                    await self.client.remove_reaction(msg, '\U0001f513', msg.author)
-                    await self.client.remove_reaction(msg, '\U0001f513', ctx.message.author)
-                    await self.client.add_reaction(msg, '\U0001f512')
+                    await msg.remove_reaction('\U0001f513', msg.author)
+                    await msg.remove_reaction('\U0001f513', ctx.message.author)
+                    await msg.add_reaction('\U0001f512')
                 #Check if reac's string == <Next_emoji>. If true, quit the REACTION LOOP
                 elif reac[0].emoji == '\U000027a1':
                     break
@@ -157,18 +161,18 @@ class dan:
             try:
                 hen_box.set_image(url=posts_list[0]['file_url'])
             except KeyError: print(f"KEY_ERROR========================\n{posts_list[0]}")
-            except IndexError: await self.client.say(f":warning: {ctx.message.author.mention}, tags `{tag_string}` not found!"); return
+            except IndexError: await ctx.channel.send(f":warning: {ctx.message.author.mention}, tags `{tag_string}` not found!"); return
             print(posts_list[0])                
             return hen_box, posts_list
 
         hen_box, posts_list = await generate()
-        msg_console = await self.client.say(":keyboard: **CONSOLE**")
+        msg_console = await ctx.channel.send(":keyboard: **CONSOLE**")
         #Add emo to msg_console.
-        await self.client.add_reaction(msg_console, '\U0001f4c4')   #Tag_emoji
-        await self.client.add_reaction(msg_console, '\U000027a1')   #Next_emoji
-        await self.client.add_reaction(msg_console, '\U0001f512')   #Lock_emoji
+        await msg_console.add_reaction('\U0001f4c4')   #Tag_emoji
+        await msg_console.add_reaction('\U000027a1')   #Next_emoji
+        await msg_console.add_reaction('\U0001f512')   #Lock_emoji
         #Send hen_box
-        msg = await self.client.say(embed=hen_box)
+        msg = await ctx.channel.send(embed=hen_box)
 
         while True:
             hen_box, posts_list = await generate()
@@ -182,8 +186,8 @@ class dan:
     async def ddfadd(self, ctx, *args, aliases=['+d']):
 
         #Checking the nsfw_mode value
-        if not self.client.settings[ctx.message.server.id]['nsfw_mode']:
-            await self.client.say(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
+        if not self.client.settings[ctx.guild.id]['nsfw_mode']:
+            await ctx.channel.send(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
             return
 
         lenn = self.default_tags
@@ -198,8 +202,8 @@ class dan:
     async def ddfremove(self, ctx, *args, aliases=['-d']):
         
         #Checking the nsfw_mode value
-        if not self.client.settings[ctx.message.server.id]['nsfw_mode']:
-            await self.client.say(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
+        if not self.client.settings[ctx.guild.id]['nsfw_mode']:
+            await ctx.channel.send(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
             return
 
         if args:
@@ -211,8 +215,8 @@ class dan:
     async def drelevant(self, ctx, *args):
 
         #Checking the nsfw_mode value
-        if not self.client.settings[ctx.message.server.id]['nsfw_mode']:
-            await self.client.say(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
+        if not self.client.settings[ctx.guild.id]['nsfw_mode']:
+            await ctx.channel.send(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
             return
 
         raw = list(args)

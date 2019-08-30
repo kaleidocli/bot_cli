@@ -303,7 +303,7 @@ class avaGuild:
         name, rank = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{ctx.author.id}';")
 
         try:
-            if name == 'n/a' and raw[0] != 'join':
+            if name == 'n/a':
                 await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
         except IndexError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
 
@@ -317,7 +317,11 @@ class avaGuild:
                     if await self.client._cursor.execute(f"SELECT * FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_code='{raw[1]}';") >= 1: await ctx.send("<:osit:544356212846886924> Quest has already been taken or done"); return
                     if await self.client._cursor.execute(f"SELECT COUNT(user_id) FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='ONGOING'") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
 
-                    region, quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query = await self.client.quefe(f"SELECT region, quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query FROM model_quest WHERE quest_code='{raw[1]}';")
+                    region, quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, prerequisite = await self.client.quefe(f"SELECT region, quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, prerequisite FROM model_quest WHERE quest_code='{raw[1]}';")
+                    try:
+                        if await self.client._cursor.execute(prerequisite.replace('user_id_here', str(ctx.author.id))) == 0: await ctx.send("<:osit:544356212846886924> Prerequisite is not met!"); return
+                    # E: Query's empty
+                    except mysqlError.InternalError: pass
                     snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
                     # Region check
                     if region != current_place and quest_line != 'DAILY': await ctx.send(f":european_castle: Quest `{raw[1]}` is only available in `{region}`!"); return
@@ -352,7 +356,7 @@ class avaGuild:
 
             elif raw[0] == 'claim':
                 # Check if the quest is ONGOING     |      Get stuff too :>
-                try: snapshot, snap_query, quest_sample, stats, eval_meth, effect_query, reward_query, quest_line = await self.client.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, effect_query, reward_query, (SELECT quest_line FROM model_quest WHERE quest_code=pi_quests.quest_code) FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
+                try: snapshot, snap_query, quest_sample, stats, eval_meth, effect_query, reward_query, quest_line, quest_code = await self.client.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, effect_query, reward_query, (SELECT quest_line FROM model_quest WHERE quest_code=pi_quests.quest_code), quest_code FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
                 except TypeError: await ctx.send(f"<:osit:544356212846886924> Quest not found, **{ctx.author.name}**")
                 snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
                 effect_query = effect_query.replace('user_id_here', f'{ctx.author.id}')
@@ -389,13 +393,20 @@ class avaGuild:
 
                 # Reward n Affect
                 await self.client._cursor.execute(reward_query + effect_query)
-                # Increase total_quests by 1
-                await self.client._cursor.execute(f"UPDATE pi_guild SET total_quests=total_quests+1 WHERE user_id='{ctx.author.id}';")
+                # Increase pi_guild.total_quests by 1
+                # Remove quest
+                await self.client._cursor.execute(f"UPDATE pi_guild SET total_quests=total_quests+1 WHERE user_id='{ctx.author.id}'; DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
+                # Update finished_quest in pi_quest. If not exist, create one
+                if await self.client._cursor.execute(f"UPDATE pi_quest SET finished_quests=CONCAT(finished_quests, ' - {quest_code}') WHERE user_id='{ctx.author.id}' AND region='{current_place}';") == 0:
+                    await self.client._cursor.execute(f"INSERT INTO pi_quest VALUE (0, '{ctx.author.id}', '{current_place}', '{quest_code}');")
+
+                """
                 # Remove if daily, else keep
-                if quest_line == 'DAILY': await self.client._cursor.execute(f"DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
-                else: await self.client._cursor.execute(f"UPDATE pi_quests SET stats='DONE' WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
+                #if quest_line == 'DAILY': 
+                #else: await self.client._cursor.execute(f"UPDATE pi_quests SET stats='DONE' WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
+                """
                 # Inform
-                await ctx.send(f":european_castle: Glad we can work out well, **{ctx.author.name}**. May the Olds look upon you!")
+                await ctx.send(f":european_castle: Quest completion is confirmed. **{ctx.author.name}**, may the Olds look upon you!")
                 # Ranking check
                 sample2 = {'iron': ['bronze', 20], 'bronze': ['silver', 120], 'silver': ['gold', 350], 'gold': ['adamantite', 620], 'adamantite': ['mithryl', 755], 'mithryl': ['n/a', 980]}
                 if await self.client._cursor.execute(f"UPDATE pi_guild SET rank='{sample2[rank][0]}' WHERE user_id='{str(ctx.message.author.id)}' AND total_quests>={sample2[rank][1]};") == 1:
@@ -470,16 +481,17 @@ class avaGuild:
         name = await self.client.quefe(f"SELECT name FROM pi_guild WHERE user_id='{ctx.author.id}';"); name = name[0]
 
         try:
-            if name == 'n/a' and raw[0] != 'join':
+            if name == 'n/a':
                 await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
         except IndexError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
 
         current_place = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'"); current_place = current_place[0]
 
         bundle = await self.client.quefe(f"SELECT quest_code, name, description, quest_line FROM model_quest WHERE region='{current_place}';", type='all')
-        completed_bundle = await self.client.quefe(f"SELECT quest_code FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='DONE' AND EXISTS (SELECT * FROM model_quest WHERE model_quest.quest_code=pi_quests.quest_code AND region='{current_place}');")
-        # None check
-        if not completed_bundle: completed_bundle = []
+        #completed_bundle = await self.client.quefe(f"SELECT quest_code FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='DONE' AND EXISTS (SELECT * FROM model_quest WHERE model_quest.quest_code=pi_quests.quest_code AND region='{current_place}');")
+        completed_bundle = await self.client.quefe(f"SELECT finished_quests FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
+        try: completed_bundle[0].split(' - ')
+        except (TypeError, AttributeError): completed_bundle = []
 
         def makeembed(top, least, pages, currentpage):
             line = ''
@@ -569,7 +581,7 @@ class avaGuild:
                 try: 
                     mxmem = int(raw[1])
                     if mxmem >= 10: mxmem = 10
-                except (IndexError, TypeError): mxmem = 5
+                except (IndexError, TypeError): mxmem = 3
 
                 # Privacy
                 try:
@@ -593,7 +605,7 @@ class avaGuild:
 
                 await ctx.send(embed=discord.Embed(description=f":fleur_de_lis: Left party `{party_id}` as a {role}", colour=0xF4A400)); return
 
-            elif raw[0] == 'dismiss':
+            elif raw[0] in ['dismiss', 'disband']:
                 # Check if user has joined a party
                 try: party_id, role = await self.client.quefe(f"SELECT party_id, role FROM pi_party WHERE user_id='{ctx.author.id}';")
                 except TypeError: await ctx.send(f":fleur_de_lis: You have no party."); return

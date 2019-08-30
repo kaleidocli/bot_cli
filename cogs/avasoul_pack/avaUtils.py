@@ -86,7 +86,11 @@ class avaUtils:
             
             return C_x, C_y #round(C_x, 3) , round(C_y, 3)
 
-    async def percenter(self, percent, total=10):
+    async def percenter(self, percent, total=10, anti=False, anti_limit=90):
+        # Anti-100%
+        if anti:
+            if percent > anti_limit: percent = anti_limit
+
         total = range(total)
         if len(total) <= 0 or percent <= 0: return False
         if random.choice(total) <= percent: return True

@@ -33,7 +33,8 @@ char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U00
 
 #extensions = ['cogs.error_handler', 'cogs.ai', 'cogs.audio', 'cogs.pydanboo', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.avasoul', 'cogs.guess']
 #extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.audio']
-extensions = ['cogs.error_handler', 
+extensions = ['cogs.error_handler',
+                'cogs.pydanboo',
                 'cogs.tictactoe', 
                 'cogs.custom_speech', 
                 'cogs.hen', 
@@ -46,10 +47,11 @@ extensions = ['cogs.error_handler',
                 'cogs.avasoul_pack.avaGuild', 
                 'cogs.avasoul_pack.avaNPC', 
                 'cogs.avasoul_pack.avaCombat', 
-                'cogs.avasoul_pack.avaCommercial', 
+                'cogs.avasoul_pack.avaService', 
                 'cogs.avasoul_pack.avaSocial',
                 'cogs.avasoul_pack.avaActivity',
-                'cogs.avasoul_pack.avaWorkshop']
+                'cogs.avasoul_pack.avaWorkshop',
+                'cogs.avasoul_pack.avaPersonal']
 TOKEN = configs.TOKEN
 
 #prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
@@ -513,6 +515,8 @@ async def countdown(ctx, *args):
 @client.command()
 @commands.cooldown(1, 5, type=BucketType.guild)
 async def typestuff(ctx, *args):
+    try: await client.get_channel(int(args[0])).trigger_typing(); return
+    except (IndexError, TypeError): pass
     await ctx.trigger_typing()
 
 @client.command()

@@ -19,6 +19,7 @@ class avaSocial:
         self.tools = avaTools(self.client, self.utils)
 
 
+    # ========================= FAMILY ========================
 
     @commands.command()
     @commands.cooldown(1, 90, type=BucketType.user)
@@ -273,6 +274,258 @@ class avaSocial:
         await ctx.send(f"<:argh:544354429302865932> **{ctx.author.name}** has humiliated {target.mention}!")
         await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'dislike', ex=86400, nx=True))
 
+
+
+
+    # =========================== COMMERCIAL ===========================
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def sell(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+        raw = list(args)
+
+        # PLAYER SELL ===============================
+        try: item_id = int(raw[0])
+        except IndexError: await ctx.send("<:osit:544356212846886924> Missing item's id!"); return
+        except ValueError: await ctx.send("<:osit:544356212846886924> Invalid item's id!"); return
+
+        try:
+            if len(raw) >= 4:
+                receiver = await commands.MemberConverter().convert(ctx, raw[3])
+                try: quantity = int(raw[1])
+                except ValueError: await ctx.send("<:osit:544356212846886924> Invalid quantity"); return
+                try: price = int(raw[2])
+                except ValueError: await ctx.send("<:osit:544356212846886924> Invalid price"); return
+            elif len(raw) == 3:
+                receiver = await commands.MemberConverter().convert(ctx, raw[2])
+                quantity = 1
+                try: price = int(raw[1])
+                except ValueError: await ctx.send("<:osit:544356212846886924> Invalid price"); return
+            elif len(raw) == 2:
+                receiver = await commands.MemberConverter().convert(ctx, raw[1])
+                quantity = 1; price = 1
+            else: raise commands.CommandError
+
+            try:
+                t_cur_X, t_cur_Y, t_cur_PLACE, t_money = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE, money FROM personal_info WHERE id='{receiver.id}';")
+                cur_X, cur_Y, cur_PLACE = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
+            # E: Id not found
+            except TypeError: await ctx.send("<:osit:544356212846886924> User don't have an ava!"); return
+
+            # Get item's info
+            try: w_tags, w_name, w_quantity, w_code = await self.client.quefe(f"SELECT tags, name, quantity, item_code FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{item_id}';")
+            except TypeError: await ctx.send("<:osit:544356212846886924> You don't own this item!"); return
+
+            # Tradable check
+            if 'untradable' in w_tags: await ctx.send(f"<:osit:544356212846886924> You cannot trade this item, **{ctx.message.author.name}**. It's *untradable*, look at its tags."); return
+
+            msg = await ctx.send(f"**{ctx.author.name}** wants to sell you **{quantity}** `{w_code}`|**{w_name}**. Accept, {receiver.mention}?")
+            await msg.add_reaction('\U0001f6d2')
+
+            def RUM_check(reaction, user):
+                return user == receiver and reaction.message.id == msg.id and str(reaction.emoji) == '\U0001f6d2' 
+
+            try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=20)
+            except asyncio.TimeoutError: await ctx.send(":x: Deal cancelled"); return
+
+            # Money check
+            if price > t_money: await ctx.send("<:osit:544356212846886924> Insufficient ballance!"); return
+
+            # Distance check
+            if cur_PLACE != t_cur_PLACE:
+                await ctx.send(f"<:osit:544356212846886924> You need to be in the same region with the receiver, **{ctx.author.name}**!"); return
+            if await self.utils.distance_tools(cur_X, cur_Y, t_cur_X, t_cur_Y) > 50:
+                await ctx.send(f"<:osit:544356212846886924> You need to be within **50 m** range of the receiver, **{ctx.author.name}**!"); return
+
+            # INCONSUMABLE
+            if 'inconsumable' in w_tags:
+                await self.client._cursor.execute(f"UPDATE pi_inventory SET user_id='{receiver.id}' WHERE item_id='{item_id}';")
+            
+            # CONSUMABLE
+            else:
+                # Quantity given
+                try:
+                    quantity = int(raw[1])
+                    # SCAM :)
+                    if quantity <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return
+                    if w_code.startswith('ig'): await self.client._cursor.execute(f"SELECT func_ig_reward('{receiver.id}', '{w_code}', {quantity}); SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity});")
+                    else: await self.client._cursor.execute(f"SELECT func_it_reward('{receiver.id}', '{w_code}', {quantity}); SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity});")
+                    # Quantity check
+                    #if int(raw[1]) >= w_quantity:
+                    #    quantity = w_quantity
+                    #    # Check if receiver has already had the item
+                    #    if w_code.startswith('ig'): await self.client._cursor.execute(f"SELECT func_ig_reward('{receiver.id}', '{w_code}', {quantity}); UPDATE pi_inventory SET existence='BAD' WHERE user_id='{ctx.author.id}' AND item_code='{w_code}';")
+                    #    else: await self.client._cursor.execute(f"SELECT func_it_reward('{receiver.id}', '{w_code}', {quantity}); UPDATE pi_inventory SET existence='BAD' WHERE user_id='{ctx.author.id}' AND item_code='{w_code}';")
+
+                    #else:
+                    #    quantity = int(raw[1])
+                    #    # SCAM :)
+                    #    if quantity <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return
+                    #    # Check if receiver has already had the item
+                    #    if w_code.startswith('ig'): await self.client._cursor.execute(f"SELECT func_ig_reward('{receiver.id}', '{w_code}', {quantity}); UPDATE pi_inventory SET quantity=quantity-{quantity} WHERE user_id='{ctx.author.id}' AND item_code='{w_code}';")
+                    #    else: await self.client._cursor.execute(f"SELECT func_ig_reward('{receiver.id}', '{w_code}', {quantity}); UPDATE pi_inventory SET quantity=quantity-{quantity} WHERE user_id='{ctx.author.id}' AND item_code='{w_code}';")
+                # Quantity NOT given
+                except (ValueError, IndexError): 
+                    quantity = 1
+                    # Check if receiver has already had the item
+                    if w_code.startswith('ig'): await self.client._cursor.execute(f"SELECT func_ig_reward('{receiver.id}', '{w_code}', {quantity}); SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity});")
+                    else: await self.client._cursor.execute(f"SELECT func_it_reward('{receiver.id}', '{w_code}', {quantity}); SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity});")
+
+            # Inform, of course :>
+            await ctx.send(f":white_check_mark: You've been given `{quantity}` `{w_code}`|**{w_name}**, {receiver.mention}!"); return
+
+        except commands.CommandError:
+            try: quantity = int(raw[1])
+            except (IndexError, ValueError): quantity = 1
+
+        # BOT SELL ==================================
+        try: right_hand, left_hand = await self.client.quefe(f"SELECT right_hand, left_hand FROM personal_info WHERE id='{ctx.author.id}' AND cur_X<1 AND cur_Y<1;")
+        # E: Out of PB
+        except TypeError: await ctx.send("<:osit:544356212846886924> You think you can find customers outside of **Peace Belt**??"); return
+
+        quantity = 1
+        try: quantity = int(raw[1])
+        except (IndexError, ValueError): pass
+
+        # SCAM :)
+        if quantity <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return  
+
+        try: w_name, w_price, w_quantity, w_tags = await self.client.quefe(f"SELECT name, price, quantity, tags FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{item_id}';")
+        # E: Item_id not found
+        except TypeError: await ctx.send("<:osit:544356212846886924> You don't own this weapon!"); return      
+        # E: Item_id not given
+        except IndexError: await ctx.send("<:osit:544356212846886924> Missing argument"); return
+
+        if 'untradable' in w_tags: await ctx.send(f"<:osit:544356212846886924> You cannot sell this item, **{ctx.author.name}**."); return
+
+        try:
+            # Selling
+            # CONSUMABLE
+            if not 'inconsumable' in w_tags:
+                # Quantity check
+                if quantity >= w_quantity:
+                    quantity = w_quantity
+                    quantity_query = f"UPDATE pi_inventory SET existence='BAD' WHERE item_id={raw[0]} AND user_id='{ctx.author.id}';"
+                else: quantity_query = f"UPDATE pi_inventory SET quantity=quantity-{quantity} WHERE item_id={raw[0]} AND user_id='{ctx.author.id}';"
+
+                receive = int(w_price*random.choice([0.1, 0.2, 0.5, 0.6, 1, 1.5, 4])*quantity)
+                receive_query = f"UPDATE personal_info SET money=money+{receive} WHERE id='{ctx.author.id}';"
+             
+            # INCONSUMABLE
+            else:
+                # Equipped weapon check
+                if raw[0] in [right_hand, left_hand]: await ctx.send("<:osit:544356212846886924> You cannot sell an item that being equipped!"); return
+
+                quantity_query = f"UPDATE pi_inventory SET existence='BAD' WHERE item_id={raw[0]} AND user_id='{ctx.author.id}';"
+
+                receive = int(w_price*random.choice([0.1, 0.25, 0.2, 0.4, 0.5, 0.6, 0.75, 1, 4])*quantity)
+                receive_query = f"UPDATE personal_info SET money=money+{receive} WHERE id='{str(ctx.message.author.id)}';"
+
+        # E: Item_id not found
+        except KeyError: await ctx.send("<:osit:544356212846886924> You don't own this weapon!"); return
+
+        # Receiving money/Removing item
+        await self.client._cursor.execute(receive_query + quantity_query)
+
+        await ctx.send(f":white_check_mark: You received **<:36pxGold:548661444133126185>{receive}** from selling {quantity} `{item_id}`|**{w_name}**, **{ctx.message.author.name}**!")
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def give(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+        raw = list(args)
+
+        # Receiver check
+        try:
+            receiver = await commands.UserConverter().convert(ctx, raw[1])
+            try:
+                t_cur_X, t_cur_Y, t_cur_PLACE, t_partner = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE, partner FROM personal_info WHERE id='{receiver.id}';")
+                cur_X, cur_Y, cur_PLACE, money, partner = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE, money, partner FROM personal_info WHERE id='{ctx.author.id}';")
+            # E: Id not found
+            except TypeError: await ctx.send("<:osit:544356212846886924> User don't have an ava!"); return
+        except (commands.CommandError, IndexError): await ctx.send(f"<:osit:544356212846886924> Please provide a receiver, **{ctx.author.name}**!"); return
+
+        try: package = int(raw[0])
+        except (IndexError, ValueError): await ctx.send(f"<:osit:544356212846886924> Please provide an amount of money you want to give"); return
+
+        # Distance check
+        if cur_PLACE != t_cur_PLACE:
+            if not (partner == str(receiver.id) and not t_partner == str(ctx.author.id)):
+                await ctx.send(f"<:osit:544356212846886924> You need to be in the same region with the receiver, **{ctx.author.name}**!"); return
+        if await self.utils.distance_tools(cur_X, cur_Y, t_cur_X, t_cur_Y) > 50:
+            if not (partner == str(receiver.id) and t_partner == str(ctx.author.id)):
+                await ctx.send(f"<:osit:544356212846886924> You need to be within **50 m** range of the receiver, **{ctx.author.name}**!"); return
+
+        # Money check
+        try:
+            if package > money: await ctx.send("<:osit:544356212846886924> Insufficient balance!"); return
+            # SCAM :)
+            if package <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return
+        except ValueError: await ctx.send("<:osit:544356212846886924> Invalid syntax!"); return
+            
+        # Transfer
+        await self.client._cursor.execute(f"UPDATE personal_info SET money=money+IF(id='{ctx.author.id}', -{package}, {package}) WHERE id IN ('{ctx.author.id}', '{receiver.id}');")
+        await ctx.send(f":white_check_mark: You've been given **<:36pxGold:548661444133126185>{raw[0]}**, {receiver.mention}!")
+
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def trade(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+        raw = list(args)
+
+        # Receiver check
+        try: 
+            receiver = ctx.message.mentions[0]
+            try: 
+                t_cur_X, t_cur_Y, t_cur_PLACE, t_money = await self.client._cursor.execute(f"SELECT cur_X, cur_Y, cur_PLACE, money FROM personal_info WHERE id='{receiver.id}';")
+                cur_X, cur_Y, cur_PLACE = await self.client._cursor.execute(f"SELECT cur_X, cur_Y, cur_PLACE FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
+            # E: Id not found
+            except TypeError: await ctx.send("<:osit:544356212846886924> User don't have an ava!"); return
+        except IndexError: await ctx.send(f"<:osit:544356212846886924> Please provide a receiver, **{ctx.message.author.name}**!"); return
+
+        # Distance check
+        if cur_PLACE != t_cur_PLACE:
+            await ctx.send(f"<:osit:544356212846886924> You need to be in the same region with the receiver, **{ctx.message.author.name}**!"); return
+        if await self.utils.distance_tools(cur_X, cur_Y, t_cur_X, t_cur_Y, int(args[0])/1000, int(args[1])/1000) > 50:
+            await ctx.send(f"<:osit:544356212846886924> You need to be within **50 m** range of the receiver, **{ctx.message.author.name}**!"); return
+
+        # Get item's info
+        try: w_tags, w_name, w_quantity, w_code = await self.client.quefe(f"SELECT tags, name, quantity, item_code FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
+        except TypeError: await ctx.send("<:osit:544356212846886924> You don't own this item!"); return
+
+        if 'untradable' in w_tags: await ctx.send(f"<:osit:544356212846886924> You cannot trade this item, **{ctx.message.author.name}**. It's *untradable*, look at its tags."); return
+
+        # INCONSUMABLE
+        if 'inconsumable' in w_tags:
+            await self.client._cursor.execute(f"UPDATE pi_inventory SET user_id='{receiver.id}' WHERE item_id='{raw[0]}';")
+        
+        # CONSUMABLE
+        else:
+            # Quantity given
+            try:
+                # Quantity check
+                if int(raw[1]) >= w_quantity:
+                    quantity = w_quantity
+                    # Check if receiver has already had the item
+                    if await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{receiver.id}' AND item_code='{w_code}';") == 0:
+                        await self.client._cursor.execute(f"UPDATE pi_inventory SET user_id='{receiver.id}' WHERE item_id='{raw[0]}';")
+
+                else:
+                    quantity = int(raw[1])
+                    # SCAM :)
+                    if quantity <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return
+                    # Check if receiver has already had the item
+                    if await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{receiver.id}' AND item_code='{w_code}';") == 0:
+                        await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{receiver.id}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, order_query, passive_query, ultima_query, {quantity}, price, dmg, stealth, aura, craft_value, illulink FROM pi_inventory WHERE existence='GOOD' AND item_id='{w_code}' AND user_id='{str(ctx.message.author.id)}';")
+            # Quantit NOT given
+            except (ValueError, IndexError): 
+                quantity = 1
+                # Check if receiver has already had the item
+                if await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{receiver.id}' AND item_code='{w_code}';") == 0:
+                    await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{receiver.id}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, order_query, passive_query, ultima_query, {quantity}, price, dmg, stealth, aura, craft_value, illulink FROM pi_inventory WHERE existence='GOOD' AND item_id='{w_code}' AND user_id='{str(ctx.message.author.id)}';")
+
+        # Inform, of course :>
+        await ctx.send(f":white_check_mark: You've been given `{quantity}` `{w_code}`|**{w_name}**, {ctx.message.author.mention}!")
 
 
 

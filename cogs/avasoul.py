@@ -59,7 +59,6 @@ class avasoul:
         await self.data_plugin()
 
 
-
     @commands.command()
     async def incarnate(self, ctx, *args):
         id = str(ctx.author.id); name = ctx.author.name
@@ -194,7 +193,7 @@ class avasoul:
                     ['A C T I V I T I E S', {'daily': 'Daily cakes', 'work': 'Sign up for a job', 'rest': 'Resting for STA', 'wake': 'Waking from rest'}],
                     ['M A N I P U L A T I N G', {'infuse': 'Infusing two items', 'merge': 'Merging two items', 'craft': 'Crafting items'}],
                     ['L I F E', {'guild': '<GUILD> master command', 'bank': '<BANK> master command', 'quest': '<QUEST> master command', 'party': '<PARTY> master command', 'education': 'Learning a new degree', 'marry': 'Marry someone', 'divorce': 'Divorce your partner', 'like': 'Give merit', 'dislike': 'Decrease merit'}],
-                    ['C O M M E R C I A L', {'shop': "View region's shop", 'buy': 'Buy items from shop', 'inventory': 'View your inventory', 'trader': 'View/Buy what the traders sell', 'trade': 'Trade items with a player', 'sell': 'Sell items', 'give': 'Give money to a player'}],
+                    ['C O M M E R C I A L', {'shop': "View region's shop", 'buy': 'Buy items from shop', 'inventory': 'View your inventory', 'trader': 'View/Buy what the traders sell', 'sell': 'Sell items', 'give': 'Give money to a player'}],
                     ['C O M B A T', {'attack': 'Attack someone/something. Change pose', 'aim': 'Shoot someone/something. Change pose'}],
                     ['S T A T I S T I C S', {'sekaitime': 'View current time of Pralaeyr', 'worldinfo': 'Info of Pralaeyr', 'toprich': 'Top 10 richest', 'topmerit': 'Top 10 merit', 'topkill': 'Top 10 PVP', 'topdeath': 'Top 10 awkward deaths', 'topwin': 'Top 10 dueling winners'}],
                     ['T O O L S', {'radar': 'Scan map for players', 'mdist': 'Calculate distance'}]]
@@ -647,7 +646,7 @@ Definition? Mechanism? Lore? Yaaa```
     async def daily(self, ctx, *args):
         cmd_tag = 'daily'
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
-        if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:508437298808094742> Oops. It's not your birthday yet, **{ctx.author.name}**."): return
+        if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:605255050289348620> Oops. It's not your birthday yet, **{ctx.author.name}**."): return
 
         await self.client._cursor.execute(f"SELECT func_ig_reward('{ctx.author.id}', 'ig77', 1);")
         await ctx.send(f":cake: Happy birthday! Here's a `ig77`|**Cake**!")
@@ -678,9 +677,12 @@ Definition? Mechanism? Lore? Yaaa```
         #if args: await self.tut_basic_status(ctx, box=args[0])
         #else: await self.tut_basic_status(ctx)
 
-        try: bundle = await self.client.quefe(f"SELECT line, timeout, trg, illulink FROM sys_tutorial WHERE tutorial_code='{args[0]}' ORDER BY ordera ASC;", type='all')
-        except IndexError: await ctx.send("<:osit:544356212846886924> Missing tutorial_code"); return
-        await ctx.send(f"{ctx.author.mention}, let's move to a more silent place like in DM!")
+        try:
+            bundle = await self.client.quefe(f"SELECT line, timeout, trg, illulink FROM sys_tutorial WHERE tutorial_code='{args[0]}' ORDER BY ordera ASC;", type='all')
+            if not bundle: await ctx.send(":x: Tutorial's id not found"); return
+        except IndexError:
+            await ctx.send("<:9_:544354429055533068> Please use `tutorial 1` or `tutorial 2`"); return
+        #await ctx.send(f"{ctx.author.mention}, let's move to a more silent place like in DM!")
         for pack in bundle:
             try: trg = pack[2].split(' || ')
             except AttributeError: trg = []
@@ -2607,18 +2609,65 @@ Definition? Mechanism? Lore? Yaaa```
                 try: await ctx.send(f"<:dual_cyan_arrow:543662534612353044>`{distance}m`<:dual_cyan_arrow:543662534612353044> toward **`{prior_x:.3f}`** · **`{prior_y:.3f}`**\n:map: Now you're at **`{x:.3f}`** · **`{y:.3f}`** · `{cur_PLACE}`|**{r_name}**!", delete_after=5)
                 except NameError: await ctx.send(f":map: [{cur_X:.3f}, {cur_Y:.3f}] <:dual_cyan_arrow:543662534612353044> **`{x:.3f}`** · **`{y:.3f}`** · `{cur_PLACE}`|**{r_name}**!", delete_after=5)
             else: await ctx.send(f"<:osit:544356212846886924> Please use 5-digit coordinates!"); return
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> Out of map's range!"); return
+        except IndexError:
+            #await ctx.send(f"<:osit:544356212846886924> Out of map's range!"); return
+            # ONE coord only
+            if args[0].isdigit():
+                args = (args[0], args[0])
+                try:
+                    x = int(args[0])/1000; y = int(args[1])/1000
+
+                    # Region INFO
+                    if cur_PLACE.startswith('region.'): r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM environ WHERE environ_code='{cur_PLACE}'")
+                    # Land INFO
+                    else:
+                        try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{cur_PLACE}'")
+                        except TypeError: await ctx.send(f"**{cur_PLACE}**... There is no such place here, perhap it's from another era?"); return
+
+                    if len(args[0]) <= 5 and len(args[1]) <= 5:
+                        if x > border_X: x = border_X
+                        if y > border_Y: y = border_Y
+                        if x < 0: x = -1
+                        if y < 0: y = -1
+                        # Check if <distance> is provided
+                        try:
+                            distance = int(args[2])
+                            prior_x = x; prior_y = y
+                            x, y = await self.utils.distance_tools(cur_X, cur_Y, x, y, distance=distance, type='d-c')
+                            # Coord check
+                            if x > border_X: x = border_X
+                            if y > border_Y: y = border_Y
+                            if x < 0: x = 0
+                            if y < 0: y = 0
+                        except (IndexError, ValueError): pass
+                        
+                        # Procede teleportation
+                        await self.tools.tele_procedure(cur_PLACE, str(ctx.author.id), x, y)
+
+                        # Informmmm :>
+                        try: await ctx.send(f"<:dual_cyan_arrow:543662534612353044>`{distance}m`<:dual_cyan_arrow:543662534612353044> toward **`{prior_x:.3f}`** · **`{prior_y:.3f}`**\n:map: Now you're at **`{x:.3f}`** · **`{y:.3f}`** · `{cur_PLACE}`|**{r_name}**!", delete_after=5)
+                        except NameError: await ctx.send(f":map: [{cur_X:.3f}, {cur_Y:.3f}] <:dual_cyan_arrow:543662534612353044> **`{x:.3f}`** · **`{y:.3f}`** · `{cur_PLACE}`|**{r_name}**!", delete_after=5)
+                    else: await ctx.send(f"<:osit:544356212846886924> Please use 5-digit coordinates!"); return
+                except IndexError: await ctx.send(f"<:osit:544356212846886924> Out of map's range!"); return
+
 
         # PLACE
         except (KeyError, ValueError):
             if cur_PLACE == args[0]: await ctx.send("<:osit:544356212846886924> You're already there :|")
 
             # Region INFO
-            if args[0].startswith('region.'): r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM environ WHERE environ_code='{args[0]}'")
+            if args[0].startswith('region.'): r_name, border_X, border_Y, pass_query = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query FROM environ WHERE environ_code='{args[0]}'")
             # Land INFO
             else:
                 try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{args[0]}'")
                 except TypeError: await ctx.send(f"**{args[0]}**... There is no such place here, perhap it's from another era?"); return
+
+            # Region's pass check
+            if pass_query:
+                a = await self.client._cursor.execute(pass_query.replace('user_id_here', str(ctx.author.id)))
+                print(a)
+                if await self.client._cursor.execute(pass_query.replace('user_id_here', str(ctx.author.id))) == 0:
+                    await ctx.send(f"<:osit:544356212846886924> The requirements to join this region is not met!"); return
 
             if cur_X <= 1 and cur_Y <=1:
                 await self.client._cursor.execute(f"UPDATE personal_info SET cur_PLACE='{args[0]}' WHERE id='{ctx.author.id}';")
@@ -2635,109 +2684,6 @@ Definition? Mechanism? Lore? Yaaa```
             distance = await self.utils.distance_tools(cur_X, cur_Y, int(args[0])/1000, int(args[1])/1000)
             await ctx.send(f":straight_ruler\n::triangular_ruler: Result: **`{distance}m`**")
         except IndexError: pass
-
-    @commands.command(aliases=['map'])
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def regions(self, ctx, *args):
-        cur_PLACE = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
-        regions = await self.client.quefe(f"SELECT environ_code, name, description, illulink, border_X, border_Y, biome, land_slot, cuisine, goods FROM environ ORDER BY ord ASC;", type='all')
-
-        async def makeembed(curp, pages, currentpage):
-            region = regions[curp]; line = ''; swi = 0
-            players = await self.client._cursor.execute(f"SELECT * FROM personal_info WHERE cur_PLACE='{region[0]}';")
-            mobs = await self.client._cursor.execute(f"SELECT * FROM environ_mob WHERE region='{region[0]}';")
-            mob_types = await self.client.quefe(f"SELECT mob_code, quantity FROM environ_diversity WHERE environ_code='{region[0]}';", type='all')
-
-            for m in mob_types:
-                if swi == 0: line = line + f"╟**`{m[0]}`**`[{m[1]}]`"; swi += 2
-                elif swi < 4: line = line + f"⠀·⠀**`{m[0]}`**`[{m[1]}]`"; swi += 1
-                elif swi == 4: line = line + f"\n╟**`{m[0]}`**`[{m[1]}]`"; swi = 2
-
-            reembed = discord.Embed(title = f":map: `{region[0]}`|**{region[1]}**", description = f"""```dsconfig
-    {region[2]}```""", colour = discord.Colour(0x011C3A))
-            reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**", inline=True)
-            reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
-            reembed.add_field(name=f":smiling_imp: Diversity ({len(mob_types)})", value=line, inline=True)
-            reembed.add_field(name=":scales: Economy", value=f"╟`Shop` · Selling **{len(region[9].split(' - '))}** items\n╟`Traders` · Selling **{len(region[8].split(' - '))}** ingredients", inline=True)
-            reembed.set_thumbnail(url=self.biome[region[6].split(' - ')[0]])
-            reembed.set_image(url=region[3])
-            return reembed, region[0]
-            #else:
-            #    await ctx.send("*Nothing but dust here...*")
-        
-        async def attachreaction(msg):
-            await msg.add_reaction("\U000023ee")    #Top-left
-            await msg.add_reaction("\U00002b05")    #Left
-            await msg.add_reaction("\U000027a1")    #Right
-            await msg.add_reaction("\U000023ed")    #Top-right
-            await msg.add_reaction("\U0001f50e")    #Top-right
-
-        pages = len(regions)
-        currentpage = 1
-        cursor = 0
-
-        emli = []
-        for curp in range(pages):
-            myembed, region_tag = await makeembed(curp, pages, currentpage)
-            emli.append((myembed, region_tag))
-            currentpage += 1
-
-        if cur_PLACE:
-            for em in emli:
-                if em[1] == cur_PLACE[0]: cursor = emli.index(em); break
-        else:
-            for em in emli:
-                if em[1] == 'region.0': cursor = emli.index(em); break
-
-        msg = await ctx.send(embed=emli[cursor][0])
-        if pages > 1: await attachreaction(msg)
-        else: return
-
-        def UM_check(reaction, user):
-            return user.id == ctx.author.id and reaction.message.id == msg.id
-
-        while True:
-            try:
-                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
-                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                    cursor += 1
-                    await msg.edit(embed=emli[cursor][0])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U00002b05" and cursor > 0:
-                    cursor -= 1
-                    await msg.edit(embed=emli[cursor][0])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U0001f50e":
-                    temsg = await ctx.send(":mag_right: Please provide region's code (e.g. `region.0`)")
-
-                    def UMC_check(m):
-                        return m.channel == ctx.channel and m.author == ctx.author
-
-                    try: m = await self.client.wait_for('message', timeout=15, check=UMC_check)
-                    except asyncio.TimeoutError: await ctx.send(f"<:osit:544356212846886924> Requested time-out!"); return
-
-                    for em in emli:
-                        if em[1] == m.content: tembed = em[0]; break
-                    await temsg.delete()
-                    try: await msg.edit(embed=tembed)
-                    except NameError: await ctx.send("<:osit:544356212846886924> Region not found :<"); continue
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ee" and cursor != 0:
-                    cursor = 0
-                    await msg.edit(embed=emli[cursor][0])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                    cursor = pages - 1
-                    await msg.edit(embed=emli[cursor][0])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-            except asyncio.TimeoutError: 
-                await msg.delete(); return
-
 
 
 
@@ -3074,7 +3020,39 @@ Definition? Mechanism? Lore? Yaaa```
         await rtzone_refresh()
 
 
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    @checks.check_author()
+    async def ituda(self, ctx, *args):
 
+        codes = await self.client.quefe(f"SELECT item_code FROM pi_inventory WHERE item_code LIKE 'it%' OR item_code LIKE 'ar%' OR item_code LIKE 'am%';", type='all')
+
+        for code in codes:
+            await self.client._cursor.execute(f"UPDATE pi_inventory p INNER JOIN model_item m ON m.item_code='{code[0]}' SET p.tags=m.tags, p.weight=m.weight, p.defend=m.defend, p.multiplier=p.multiplier, p.str=m.str, p.intt=m.intt, p.sta=m.sta, p.speed=m.speed, p.round=m.round, p.accuracy_randomness=m.accuracy_randomness, p.accuracy_range=m.accuracy_range, p.range_min=m.range_min, p.range_max=m.range_max, p.firing_rate=m.firing_rate, p.reload_query=m.reload_query, p.effect_query=m.effect_query, p.infuse_query=m.infuse_query, p.passive_query=m.passive_query, p.ultima_query=m.ultima_query, p.price=m.price, p.dmg=m.dmg, p.stealth=m.stealth, p.evo=m.evo, p.aura=m.aura, p.craft_value=m.craft_value, p.illulink=m.illulink WHERE p.item_code='{code[0]}';")
+
+        await ctx.send(":white_check_mark:")
+
+
+
+    """
+    async def correctDefaultFist(self):
+        users = await self.client.quefe("SELECT id FROM personal_info WHERE right_hand='ar13' OR left_hand='ar13';", type='all')
+        print(users)
+        for user in users:
+            iid = await self.client.quefe(f"SELECT item_id FROM pi_inventory WHERE user_id='{user[0]}' AND item_code='ar13';")
+            if not iid:
+                await self.client._cursor.execute(f"SELECT func_it_reward('{user[0]}', 'ar13', 1);")
+                iid = await self.client.quefe(f"SELECT item_id FROM pi_inventory WHERE user_id='{user[0]}' AND item_code='ar13';")
+            await self.client._cursor.execute(f"UPDATE personal_info SET right_hand='{iid[0]}', left_hand='{iid[0]}' WHERE id='{user[0]}';")
+    """
+
+    """
+    async def correctPCMArt(self):
+        users = await self.client.quefe("SELECT user_id FROM pi_arts WHERE user_id NOT IN (SELECT user_id FROM pi_arts WHERE art_type='general');", type='all')
+        print(users)
+        for user in users:
+            await self.client._cursor.execute(f"INSERT INTO pi_arts VALUES ('{user[0]}', 'general', 'passive_chain', 5);")
+    """
 
 def setup(client):
     client.add_cog(avasoul(client))

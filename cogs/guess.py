@@ -74,7 +74,6 @@ class guess:
         return
 
     @commands.command(aliases=['quiz_add'])
-    @check_id()
     async def guess_add(self, ctx, *args):
         delay = 30
 
@@ -133,7 +132,7 @@ class guess:
         quiz_obj['question'] = a_in[0]
         quiz_obj['answer'] = a_in[1].lower()
         quiz_obj['user_id'] = ctx.message.author.id
-        quiz_obj['server_id'] = ctx.message.server.id
+        quiz_obj['server_id'] = ctx.guild.id
         quiz_obj['win'] = '0'; quiz_obj['lose'] = '0'
         if self.guess_socket:
             quiz_obj['id'] = str(int(self.guess_socket[-1]['id']) + 1)
@@ -343,7 +342,7 @@ class guess:
         quiz_obj['question'] = a_in[0]
         quiz_obj['answer'] = a_in[1].lower()
         quiz_obj['user_id'] = ctx.message.author.id
-        quiz_obj['server_id'] = ctx.message.server.id
+        quiz_obj['server_id'] = ctx.guild.id
         quiz_obj['win'] = '0'; quiz_obj['lose'] = '0'
         if self.guess_dictall['id_count']:
             quiz_obj['id'] = str(int(self.guess_dictall['id_count']) + 1)
@@ -391,7 +390,7 @@ class guess:
 
         #Get a random <quiz_obj> from <guess_socketall> from random <layer_user> from SERVER'S id
         try:
-            layer_user = self.guess_dictall[ctx.message.server.id]
+            layer_user = self.guess_dictall[ctx.guild.id]
         except KeyError:
             await self.client.send_message(ctx.message.channel, "Your server does not have any quizes!")
         quiz_obj = random.choice(layer_user[random.choice(list(layer_user.keys()))])
@@ -457,7 +456,7 @@ class guess:
         if quiz_obj['link'] != 'n/a':
             msg_box.set_image(url=quiz_obj['link'])                     #Image quiz
         else: pass                                                      #Text quiz
-        await self.client.say(embed=msg_box)
+        await ctx.send(embed=msg_box)
 
         #Generate the hint. Then send it.
         for c in quiz_obj['answer']:
@@ -488,7 +487,7 @@ class guess:
         info = ''
 
         #srvr is <layer_server>
-        srvr_gen = (self.guess_dictall[s] for s in list(self.guess_dictall.keys()) if s == ctx.message.server.id)
+        srvr_gen = (self.guess_dictall[s] for s in list(self.guess_dictall.keys()) if s == ctx.guild.id)
         srvr = list(srvr_gen)[0]
         #usr is <guess_socketall>
         usr_gen = (srvr[u] for u in list(srvr.keys()) if u == ctx.message.author.id)

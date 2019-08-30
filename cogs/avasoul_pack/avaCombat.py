@@ -2,9 +2,11 @@ import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
+import redis.exceptions as redisErrors
 
 import random
 import asyncio
+from functools import partial
 
 from .avaTools import avaTools
 from .avaUtils import avaUtils
@@ -14,6 +16,12 @@ class avaCombat:
         self.client = client
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
+        self.moveIcon_dict = {'b': '<:sword_burst:615587572717977613>',
+                            'q': '<:sword_quick:615587572478902436>',
+                            'a': '<:sword_art:615587572386889728>'}
+        self.pcmIcon_dict = {'a': '<:wsword_aggressive:615587572420313104>',
+                            'd': '<:wsword_defensive:615587572491485364>',
+                            'e': '<:wsword_evasive:615587572835549223>'}
 
 
     async def on_ready(self):
@@ -23,24 +31,44 @@ class avaCombat:
 
     # This function handles the Mob phase
     # Melee PVE     |      Start the mob phase.
-    async def PVE(self, MSG, target_id):
-        # Lock-on check. If 'n/a', proceed PVE. If the mob has already locked on other, return.
-        try:
-            t_name, t_speed, t_str, t_chain = await self.client.quefe(f"SELECT name, speed, str, chain FROM environ_mob WHERE mob_id='{target_id}' AND lockon='n/a';")
-            # Set lock-on, as the target is user_id
-            await self.client._cursor.execute(f"UPDATE environ_mob SET lockon='{MSG.author.id}' WHERE mob_id='{target_id}';")
-        except TypeError: return
+    async def PVE_melee(self, MSG, target_id, raw_move, CE=None):
 
-        name, evo, STA, MAX_STA, user_id, cur_PLACE, cur_X, cur_Y, cur_MOB, combat_HANDLING, right_hand, left_hand = await self.client.quefe(f"SELECT name, evo, STA, MAX_STA, id, cur_PLACE, cur_X, cur_Y, cur_MOB, combat_HANDLING, right_hand, left_hand FROM personal_info WHERE id='{MSG.author.id}';")
-        message_obj = False
+        # GET User info=======================
+        name, evo, STR, STA, user_id, cur_PLACE, cur_X, cur_Y, charm, combat_HANDLING, right_hand, left_hand = await self.client.quefe(f"SELECT name, evo, STR, STA, id, cur_PLACE, cur_X, cur_Y, charm, combat_HANDLING, right_hand, left_hand FROM personal_info WHERE id='{MSG.author.id}';")
+
+        # GET user's weapon
+        if combat_HANDLING == 'both':
+            w_defend, w_speed, wd_weight = await self.client.quefe(f"SELECT defend, speed, weight FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'")
+            w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'")
+            w_sta += wd_weight/100
+        elif combat_HANDLING == 'right':
+            w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'")
+            w_speed *= 1.2
+            w_multiplier += 1
+            w_defend *= 2
+        elif combat_HANDLING == 'left':
+            w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'")
+            w_speed *= 1.2
+            w_multiplier += 1
+            w_defend *= 2
+
+
+        # GET Mob info =======================
+        try:
+            t_name, t_speed, t_str, t_chain, t_lp = await self.client.quefe(f"SELECT name, speed, str, chain, LP FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+        except TypeError: await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
+
+
+        # Delete user's attack msg
         try: await MSG.delete()
         except discordErrors.Forbidden: pass
 
-        async def conclusing():
+
+        async def conclusing(dmg):
             # REFRESHING ===========================================
-            name, LP, STA, user_id, cur_PLACE = await self.client.quefe(f"SELECT name, LP, STA, id, cur_PLACE FROM personal_info WHERE id='{MSG.author.id}';")
+            LP, STA = await self.client.quefe(f"SELECT LP, STA FROM personal_info WHERE id='{MSG.author.id}';")
             #name, LP, STA, MAX_STA, user_id, cur_PLACE, cur_X, cur_Y, cur_MOB, combat_HANDLING, right_hand, left_hand = await self.client.quefe(f"SELECT name, LP, STA, MAX_STA, id, cur_PLACE, cur_X, cur_Y, cur_MOB, combat_HANDLING, right_hand, left_hand FROM personal_info WHERE id='{MSG.author.id}';")
-            t_lp, t_name = await self.client.quefe(f"SELECT lp, name FROM environ_mob WHERE mob_id='{target_id}';")
+            #t_lp, t_name = await self.client.quefe(f"SELECT lp, name FROM environ_mob WHERE mob_id='{target_id}';")
             #t_lp, t_name, t_speed, t_str, t_chain = await self.client.quefe(f"SELECT lp, name, speed, str, chain FROM environ_mob WHERE mob_id='{target_id}';")
 
 
@@ -61,16 +89,28 @@ class avaCombat:
                 await self.client._cursor.execute(f"UPDATE personal_info SET cur_MOB='n/a' WHERE id='{user_id}';")
                 return False 
 
-            msg = f"╔═══════════\n╟:heartpulse:`{LP}` :muscle:`{STA}` ⠀⠀ |〖**{name}**〗\n╟:heartpulse:`{t_lp}`⠀⠀⠀⠀⠀⠀⠀⠀|〖**{t_name}**〗\n╚═══════════"
+            msg = f"╔═══════════\n╟:heartpulse:`{LP}` :muscle:`{STA}` ⠀⠀ |〖**{MSG.author.mention}**〗\n╟:heartpulse:`{t_lp-dmg}`⠀⠀⠀⠀⠀⠀⠀⠀|〖**{t_name}**〗\n╚═══════════"
             return msg
 
         async def vanishing():
             # Looting
             mob_code, rewards, reward_query, region, t_Ax, t_Ay, t_Bx, t_By = await self.client.quefe(f"SELECT mob_code, rewards, reward_query, region, limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_mob WHERE mob_id='{target_id}';")
-            await self.client._cursor.execute(reward_query.replace('user_id_here', str(MSG.author.id)))
+            try:
+                mems = await self.client.quefe(f"SELECT user_id FROM pi_party WHERE party_id=(SELECT party_id FROM pi_party WHERE user_id='{MSG.author.id}');", type='all')
+                if mems:
+                    for mem in mems:
+                        await self.client._cursor.execute(reward_query.replace('user_id_here', mem[0]))
+                    await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you and {len(mems) - 1} other party members received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
+                else:
+                    await self.client._cursor.execute(reward_query.replace('user_id_here', str(MSG.author.id)))
+                    await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you've received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
+            except:
+                await self.client._cursor.execute(reward_query.replace('user_id_here', str(MSG.author.id)))
+                await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you've received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
 
-            await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you've received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
             
+
+            # ==================================
             # Get the <mob> prototype
             name, branch, lp, strr, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, t_evo = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, evo FROM model_mob WHERE mob_code='{mob_code}';")
             rewards = rewards.split(' | ')
@@ -99,7 +139,7 @@ class avaCombat:
             if merrire < 0: merrire = 0
             else:
                 if target_id.startswith('boss'): merrire = int(merrire/2*10)
-            stata = f"""UPDATE personal_info SET {', '.join(status)}, merrit=merrit+{merrire} WHERE id="user_id_here"; """
+            stata = f"""UPDATE personal_info SET {', '.join(status)}, merit=merit+{merrire} WHERE id="user_id_here"; """
             rewards_query = f"{stata} {' '.join(objecto)}"
 
             # Remove the old mob from DB
@@ -112,237 +152,420 @@ class avaCombat:
 
             return branch
 
-        # ------------ MOB PHASE    |   Mobs attack, user defend
-        async def battle(message_obj):
+        async def dmg_calc(raw_move):
+            bonus = []
+            icon_sequence = ''
 
-            async def attack():
-                mmoves = [random.choice(['a', 'd', 'b']) for move in range(t_chain)]
-                
-                # Decoding moves, as well as checking the moves. Get the counter_move
-                counter_mmove = []
-                for move in mmoves:
-                    if move == 'a': counter_mmove.append('d')
-                    elif move == 'd': counter_mmove.append('b')
-                    elif move == 'b': counter_mmove.append('a')
+            # Event: EVADE/mob
+            try: evas = float(CE['evasive'])
+            except KeyError: evas = 0
+            if await self.utils.percenter(t_speed, total=int(100 + evas)):
+                bonus.append('evade')
+                return 0, 0, 0, bonus, icon_sequence
 
-                dmg = t_str
-                return dmg, mmoves, counter_mmove
+            # Invoke the moves
+            count = 0
+            m_burst = 0
+            m_quick = 0
+            m_art = 0
+            for c in raw_move:
+                if c == 'b': m_burst += 1.25 + count
+                elif c == 'q':
+                    m_burst += 0.25 + count
+                    m_quick += 1 + count
+                elif c == 'a':
+                    m_burst += 0.75 + count
+                    m_art += 2*count*5
+                else: await MSG.channel.send("<:osit:544356212846886924> Invalid move!")
+                icon_sequence += self.moveIcon_dict[c]
+                count += 0.2
 
-            # ======================================================
+            # Damage Calc
+            dmg = round(STR*w_multiplier*m_burst)
+            dmg_q = round(STR*w_multiplier*m_quick)
+            # Crit
+            if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
 
-            if not await conclusing(): return False
-
-            dmg, mmove, counter_mmove = await attack()
-
-            decl_msg = await MSG.channel.send(f":crossed_swords: **{t_name}** ⋙ `{' '.join(mmove)}` ⋙ {MSG.author.mention} ")
-
-            # Wait for response moves
-            def UCc_check(m):
-                return m.author == MSG.author and m.channel == MSG.channel and m.content.startswith('!')
-            
+            # CE - Processing
             try:
-                msg = await self.client.wait_for('message', timeout=t_speed, check=UCc_check)            #timeout=10
-                await decl_msg.delete()
-            except asyncio.TimeoutError:
-                dmgdeal = round(dmg*len(mmove))
-                await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                pack_1 = f":dagger: **「`{target_id}` | {t_name}」** ⋙ ***{dmgdeal} DMG*** ⋙ {MSG.author.mention}!"
-                pack_2 = await conclusing()
-                if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                else: msg_pack = False
-                if message_obj: await message_obj.delete()
-                await decl_msg.delete()
-                return msg_pack
+                # Event: Burst
+                dmg += int(dmg/100*float(CE['aggressive']))
+            except (TypeError, KeyError): pass
 
-            try: await msg.delete()
-            except: pass
+            return dmg, dmg_q, m_art, bonus, icon_sequence
 
-            # Fleeing method    |     Success rate base on user's current STA
-            if msg.content == '!flee':
-                if STA <= 0: rate = MAX_STA//1 + 1
-                else: rate = MAX_STA//STA + 1
-                # Succesfully --> End battling session
-                if random.choice(range(int(rate))) == 0:
-                    await MSG.channel.send(f"{MSG.author.mention}, you've successfully escape from the mob!")
-                    # Erase the current_enemy lock on off the target_id
-                    await self.client._cursor.execute(f"UPDATE personal_info SET cur_MOB='n/a' WHERE id='{user_id}'; UPDATE environ_mob SET lockon='n/a' WHERE mob_id='{target_id}'")
-                    return False
-                # Fail ---> Continue, with the consequences
-                else:
-                    dmgdeal = round(dmg*len(mmove))*2
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to flee, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
-                    pack_2 = await conclusing()
-                    if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                    else: msg_pack = False
-                    if message_obj: await message_obj.delete()
-                    return msg_pack
-            # Switching method      |      Switching_range=5m
-            elif msg.content.startswith('!switch'):
-                # E: No switchee found
-                try: switchee = msg.mentions[0]
-                except IndexError:
-                    dmgdeal = round(dmg*len(mmove))*2
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f"\n:dagger::dagger: As **{name}** found no one to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
-                    pack_2 = await conclusing()
-                    if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                    else: msg_pack = False
-                    if message_obj: await message_obj.delete()
-                    return msg_pack
-                # E: Different region
-                try:
-                    sw_cur_PLACE, sw_cur_X, sw_cur_Y = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{switchee.id}' AND cur_MOB='n/a'; ")
-                    if cur_PLACE != sw_cur_PLACE: 
-                        await MSG.channel.send(f"<:osit:544356212846886924> {switchee.mention} and {MSG.author.mention}, you have to be in the same region!")
-                        dmgdeal = round(dmg*len(mmove))*2
-                        await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                        pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
-                        pack_2 = await conclusing()
-                        if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                        else: msg_pack = False                       
-                        if message_obj: await message_obj.delete()
-                        return msg_pack                        
-                ## E: Switchee doesn't have ava
-                except TypeError:
-                    await MSG.channel.send(f"<:osit:544356212846886924> User **{switchee.name}** is busy!")
-                    dmgdeal = round(dmg*len(mmove))*2
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f"\n:dagger::dagger: As **{name}** tried to switch with a ghost, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
-                    pack_2 = await conclusing()
-                    if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                    else: msg_pack = False                       
-                    if message_obj: await message_obj.delete()
-                    return msg_pack                                            
-                # E: Out of switching_range
-                if await self.utils.distance_tools(cur_X, cur_Y, sw_cur_X, sw_cur_Y) > 5:
-                    await MSG.channel.send(f"<:osit:544356212846886924> {switchee.mention} and {MSG.author.mention}, you can only switch within *5 metres*!")
-                    dmgdeal = round(dmg*len(mmove))*2
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
-                    pack_2 = await conclusing()
-                    if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                    else: msg_pack = False                     
-                    if message_obj: await message_obj.delete()
-                    return msg_pack
+        async def t_dmg_calc(t_move, w_defend):
+            bonus = []
+            icon_sequence = ''
 
-                # Wait for response
-                def UC_check2(m):
-                    return m.author == switchee and m.channel == MSG.channel and m.mentions
+            # Invoke the moves
+            count = 0
+            m_burst = 0
+            m_quick = 0
+            for c in t_move:
+                if c == 'b': m_burst += 1.25 + count
+                elif c == 'q':
+                    m_burst += 0.75 + count
+                    m_quick += 0.25 + count
+                elif c == 'a': m_burst += 1
+                icon_sequence += self.moveIcon_dict[c]
+                count += 0.2
+
+            # Damage Calc
+            t_dmg = round(t_str*m_burst)
+            try: t_dmg_q = round(t_str*m_quick/w_speed)
+            except ZeroDivisionError: t_dmg_q = round(t_str*m_quick)
+
+            # CE - Processing
+            try:
+                # Event: EVADE/player
+                if await self.utils.percenter(float(CE['evasive'] - t_speed), total=100):
+                    t_dmg = 0
+                    CE['ultimate'] += 15
+                    bonus.append('evade')
+                # Event: DEFEND/player
+                w_defend += int(w_defend/100*float(CE['defensive']))
+            except (TypeError, KeyError): pass
+
+            # Take DEF/user into account
+            t_dmg = round(t_dmg / 200 * (200 - w_defend))
+            if t_dmg < 1: t_dmg = 1
+
+            return t_dmg, t_dmg_q, bonus, icon_sequence
+
+        async def battle():
+            # ------------ USER PHASE   |   User deal DMG
+            # STA filter
+            if len(raw_move)*w_sta <= STA:
+                if w_sta >= 100: await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-2 WHERE id='{MSG.author.id}';")
+                else: await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-1 WHERE id='{MSG.author.id}';")
+            else: await MSG.channel.send(f"<:osit:544356212846886924> {MSG.author.mention}, out of `STA`!"); return
+
+            # Calc dmg
+            dmg, dmg_q, m_art, bonus, icon_sequence = await dmg_calc(raw_move)
+
+            # Take effect
+            await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{dmg} WHERE mob_id='{target_id}'; ")
+            try: CE['ultimate'] = float(CE['ultimate']) + m_art
+            except (TypeError, KeyError): pass
+
+            # Inform
+            uEmbed = discord.Embed(color=0xCDEE6E)
+            uEmbed.add_field(name=f":dagger: **{name}**  ⋙**[{dmg}]**⋙**「`{target_id}` | {t_name}」**", value=f":dagger: {icon_sequence}")
+            await MSG.channel.send(embed=uEmbed, delete_after=20)
 
 
-                try: switch_resp = await self.client.wait_for('message', timeout=5, check=UC_check2)
-                # E: No response
-                except asyncio.TimeoutError:
-                    dmgdeal = round(dmg*len(mmove))*2
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
-                    pack_2 = await conclusing()
-                    if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                    else: msg_pack = False                     
-                    if message_obj: await message_obj.delete()
-                    return msg_pack                        
-                # E: Wrong user
-                if MSG.author not in switch_resp.mentions:
-                    dmgdeal = round(dmg*len(mmove))*2
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}'; ")
-                    pack_1 = f"\n:dagger::dagger: As **{name}** failed to switch, **「`{target_id}` | {t_name}」** has dealt a critical DMG of *{dmgdeal}*!"
-                    pack_2 = await conclusing()
-                    if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                    else: msg_pack = False                    
-                    if message_obj: await message_obj.delete()
-                    return msg_pack                                
-                
-                # Proceed duo-teleportation
-                await self.tools.tele_procedure(cur_PLACE, str(switchee.id), cur_X, cur_Y)
-                await self.tools.tele_procedure(cur_PLACE, user_id, sw_cur_X, sw_cur_Y)
-                # End the switcher PVE-session
-                ## Remove the current_enemy lock-on of the switcher
-                await self.client._cursor.execute(f"UPDATE personal_info SET cur_MOB='n/a' WHERE id='{user_id}'; UPDATE environ_mob SET lockon='n/a' WHERE mob_id='{target_id}';")
-                # Proceed PVE-session re-focus
-                await MSG.channel.send(f":arrows_counterclockwise: {MSG.author.mention} and {switchee.mention}, **SWITCH!!**")
-                return [switch_resp, target_id]
 
-                
+            # ------------ MOB PHASE    |   Mob deal DMG
+            
+            # LOCK-ON of target_id
+            t_lock = await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.get, f'lock{target_id}'))
+            # If lock doesn't exist, make one
+            if t_lock == None:
+                await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'lock{target_id}', f'lock{MSG.author.id}', ex=charm))
+            # If it does-- but not lock on user, return
+            elif str(t_lock.decode('utf-8')) != f"lock{str(MSG.author.id)}":
+                # CE - OUT
+                await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=30)
+                return
 
-            # Measuring response moves
-            hit_count = 0
-            response_content = msg.content[1:]; diff = len(counter_mmove) - len(response_content)      # Measuring the length of the response
-            if diff > 0: response_content += '-'*diff                                              # Balancing the length (if needed)
-            for move, response_move in zip(counter_mmove, response_content):
-                if move != response_move: hit_count += 1
-            print(f"HIT COUNT: {hit_count} ----- {response_content} ------ {counter_mmove}")
+            # Generate moves ---> Calc dmg
+            t_raw_move = random.choices(['b', 'q', 'a'], k=random.choice(range(t_chain)))
+            t_dmg, t_dmg_q, bonus, t_icon_sequence = await t_dmg_calc(t_raw_move, w_defend)
 
-            # Conduct dealing dmg   |  Conduct dealing STA dmg
-            if hit_count == 0:
-                dmgdeal = t_str*len(counter_mmove)
+            # Take effect
+            await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{t_dmg}, STA=STA-{t_dmg_q} WHERE id='{user_id}';")
 
-                if STA > 0:
-                    # Deal
-                    if combat_HANDLING == 'both':
-                        w_defend = await self.client.quefe(f"SELECT defend FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'"); w_defend = w_defend[0]
-                        dmgredu = 100 - w_defend
-                    elif combat_HANDLING == 'right':
-                        w_defend = await self.client.quefe(f"SELECT defend FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'"); w_defend = w_defend[0]
-                        dmgredu = 100 - w_defend*2
-                    elif combat_HANDLING == 'left':
-                        w_defend = await self.client.quefe(f"SELECT defend FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'"); w_defend = w_defend[0]
-                        dmgredu = 100 - w_defend*2
-                    # Check STA
-                    tem = round(dmgdeal / 100 * dmgredu)
-                    if tem > STA:
-                        await self.client._cursor.execute(f"UPDATE personal_info SET STA=0 WHERE id='{user_id}';")
-                    else: await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-{tem} WHERE id='{user_id}';")
-                
-                # Inform
-                pack_1 = f"\n:shield: {MSG.author.mention} ⌫ **「`{target_id}`|{t_name}」**"
-                pack_2 = await conclusing()
-                if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                else: msg_pack = False
-                if message_obj: await message_obj.delete()
-                return msg_pack
-
+            # Inform
+            if 'evade' in bonus: pack_1 = f"\n<:evading:615285957889097738> **{MSG.author.mention}** evaded!"
             else:
-                dmgdeal = t_str*hit_count 
+                #pack_1 = f"\n:dagger: **「`{target_id}` | {t_name}」** ⋙ *{t_dmg}* ⋙ **{MSG.author.mention}**"
+                tEmbed = discord.Embed(color=0xF15C4A)
+                tEmbed.add_field(name=f":dagger: **「`{target_id}` | {t_name}」**  ⋙**[{t_dmg}]**⋙**{MSG.author.name}**", value=f":dagger: {t_icon_sequence}")
+                pack_1 = tEmbed
 
-                # Deal
-                if combat_HANDLING == 'both':
-                    w_defend = await self.client.quefe(f"SELECT defend FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'"); w_defend = w_defend[0]
-                    dmgredu = 200 - w_defend
-                elif combat_HANDLING == 'right':
-                    w_defend = await self.client.quefe(f"SELECT defend FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'"); w_defend = w_defend[0]
-                    dmgredu = 200 - w_defend
-                elif combat_HANDLING == 'left':
-                    w_defend = await self.client.quefe(f"SELECT defend FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'"); w_defend = w_defend[0]
-                    dmgredu = 200 - w_defend
+            
+            # Conclusing
+            pack_2 = await conclusing(dmg)
+            # Inform
+            if pack_2: await MSG.channel.send(f"{pack_2}", embed=tEmbed, delete_after=20)
+            else: False
 
-                # Get dmgdeal for informing :>
-                dmgdeal = round(dmgdeal / 200 * dmgredu)
-                await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}';")
+            # CE - OUT
+            await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=30)
 
-                # Inform
-                pack_1 = f"\n:dagger: **「`{target_id}` | {t_name}」** ⋙ *{dmgdeal} DMG* ⋙ **{MSG.author.mention}**"
-                pack_2 = await conclusing()
-                if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
-                else: msg_pack = False
-                if message_obj: await message_obj.delete()
-                return msg_pack
 
-        if target_id != cur_MOB:
-            await self.client._cursor.execute(f"UPDATE personal_info SET cur_MOB='{target_id}' WHERE id='{user_id}'; ")
 
-            # Init the fight
-            message_obj = await battle(message_obj)
-            while isinstance(message_obj, discord.message.Message):
-                message_obj = await battle(message_obj)
-            print(message_obj)
-            if message_obj:
-                print("SSSSSSSSSSSSSSSSSSSSSSSSSS")
-                await self.PVE(message_obj[0], message_obj[1])
+        await battle()
+
+
+    async def PVP_melee(self, MSG, target, raw_move, bmode='DIRECT', CE=None, tCE=None):
+        # GET User's info ============================
+        name,  LP, STR, cur_PLACE, cur_X, cur_Y, combat_HANDLING, right_hand, left_hand, main_weapon = await self.client.quefe(f"SELECT name,  LP, STR, cur_PLACE, cur_X, cur_Y, combat_HANDLING, right_hand, left_hand, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand) FROM personal_info WHERE id='{MSG.author.id}';")
+        # Get user's weapon
+        try: w_multiplier, w_speed, w_weight = await self.client.quefe(f"SELECT multiplier, speed, weight FROM pi_inventory WHERE existence='GOOD' AND item_id='{main_weapon}';")
+        # E: main_weapon is a item_code (e.g. ar13)
+        except TypeError: w_multiplier, w_sta, w_speed, w_weight = await self.client.quefe(f"SELECT multiplier, sta, speed, weight FROM pi_inventory WHERE existence='GOOD' AND item_code='{main_weapon}' and user_id='{MSG.author.id}';")
+        # GET user's weapon
+        if combat_HANDLING == 'both':
+            w_defend, w_speed, wd_weight = await self.client.quefe(f"SELECT defend, speed, weight FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{MSG.author.id}'")
+            w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{MSG.author.id}'")
+            w_sta += wd_weight/100
+        elif combat_HANDLING == 'right':
+            w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{MSG.author.id}'")
+            w_speed *= 1.2
+            w_multiplier += 1
+            w_defend *= 2
+        elif combat_HANDLING == 'left':
+            w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{MSG.author.id}'")
+            w_speed *= 1.2
+            w_multiplier += 1
+            w_defend *= 2
+
+
+        radial = 20             # Take attacker as the middle
+        # GET Target's info ============================
+        try: t_name, t_right_hand, t_left_hand, t_combat_HANDLING = await self.client.quefe(f"SELECT name, right_hand, left_hand, combat_HANDLING FROM personal_info WHERE id='{target.id}' AND cur_PLACE='{cur_PLACE}' AND cur_X-{radial}<={cur_X} AND {cur_X}<=cur_X+{radial} AND cur_Y-{radial}<={cur_Y} AND {cur_Y}<=cur_Y+{radial};")
+        except TypeError: await MSG.channel.send(f"<:osit:544356212846886924> Target's unseen within 20m radius, {MSG.author.mention}!"); return
+        # Get target's weapon
+        if t_combat_HANDLING == 'both':
+            tw_defend, tw_speed = await self.client.quefe(f"SELECT defend, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target.id}'")
+            tw_multiplier = await self.client.quefe(f"SELECT multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_right_hand}' AND user_id='{target.id}'")
+        elif t_combat_HANDLING == 'right':
+            tw_defend, tw_multiplier, tw_speed = await self.client.quefe(f"SELECT defend, multiplier, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_right_hand}' AND user_id='{target.id}'")
+            tw_defend *= 2
+        elif t_combat_HANDLING == 'left':
+            tw_defend, tw_multiplier, tw_speed = await self.client.quefe(f"SELECT defend, multiplier, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target.id}'")
+            tw_defend *= 2
+
+
+        async def dmg_calc(raw_move, pack):
+            bonus = []
+            icon_sequence = ''
+            tw_defend, w_speed = pack
+
+            # tCE - Processing
+            try:
+                if tCE:
+                    tw_defend += tw_defend*float(tCE['defensive'])
+                    w_speed -= float(tCE['evasive'])
+            # E: Temporary tCE
+            except KeyError: pass
+
+            # CE - Processing
+            try:
+                if CE:
+                    w_speed *= float(CE['evasive'])
+            # E: Temporary CE
+            except KeyError: pass
+
+            # Event: EVADE/mob
+            try: evas = float(CE['evasive'])
+            except KeyError: evas = 0
+            if await self.utils.percenter(tw_speed, total=int(100 + evas)):
+                bonus.append('evade')
+                return 0, 0, 0, bonus, icon_sequence, ''
+
+            # Invoke the moves
+            count = 0
+            m_burst = 0
+            m_quick = 0
+            m_art = 0
+            for c in raw_move:
+                if c == 'b':
+                    m_burst += 1.25 + count
+                elif c == 'q':
+                    m_burst += 0.25 + count
+                    m_quick += 1 + count
+                elif c == 'a':
+                    m_burst += 0.75 + count
+                    m_art += 2*count*5
+                icon_sequence += self.moveIcon_dict[c]
+                count += 0.2
+
+            # Damage Calc
+            if combat_HANDLING == 'both':
+                dmg = round(STR*w_multiplier*m_burst)
+                dmg_q = round(STR*w_multiplier*m_quick)
+            elif combat_HANDLING in ['right', 'left']:
+                dmg = round(STR*w_multiplier*m_burst)*2
+                dmg_q = round(STR*w_multiplier*m_quick)*2
+  
+            # Get Damage reduction
+            dmgredu = 200 - tw_defend
+            temp_query = ''
+            # If victim's defend (dmgredu) exceed 200, the attacker's STA takes dmg
+            if dmgredu < 0:
+                temp_query += f"UPDATE personal_info SET STA=STA-{round(dmg / 200 * abs(dmgredu))*tw_multiplier} WHERE id='{MSG.author.id}'; "
+                dmgredu = 0
+
+            # Get dmgdeal (don't combine, for informing :>)
+            dmg = round(dmg / 200 * dmgredu)
+
+            # Crit
+            if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
+
+            # Combat Environment
+            try:
+                # Event: Burst
+                dmg += int(dmg/100*float(CE['aggressive']))
+            except (TypeError, KeyError): pass
+
+            return dmg, dmg_q, m_art, bonus, icon_sequence, temp_query
+
+
+
+        # DMG Calc ==============================
+        dmg, dmg_q, m_art, bonus, icon_sequence, temp_query = await dmg_calc(raw_move, (tw_defend, w_speed))
+        temp_query += f"UPDATE personal_info SET LP=LP-{dmg}, STA=STA-{dmg_q} WHERE id='{target.id}'; "
+
+        # Take effect
+        await self.client._cursor.execute(temp_query)
+        try: CE['ultimate'] = float(CE['ultimate']) + m_art
+        except (TypeError, KeyError): pass
+
+        # Inform
+        uEmbed = discord.Embed(color=0xCDEE6E)
+        uEmbed.add_field(name=f":dagger: **{name}**  ⋙**[{dmg}]**⋙**「`{target.id}` | {t_name}」**", value=f":dagger: {icon_sequence}")
+        await MSG.channel.send(embed=uEmbed, delete_after=20)
+        # If INDIRECT, DM the target
+        if bmode == 'INDIRECT': await target.send(embed=uEmbed)
+
+        # CE - OUT
+        await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=30)
+
+        await self.tools.ava_scan(MSG, 'life_check')
+
+
+    async def PVE_range(self, shots, MSG, style, aDict={}, tDict={}, uDict={}, CE=None):
+
+        """"a_dmg:          Ammo's damage
+            target_id:      Mob's id
+            t_name:         Mob's name
+            w_aura:         Weapon's aura"""
+
+        my_dmgdeal = round(aDict['a_dmg']*shots)
+
+        if style == 'PHYSIC':
+
+            await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{my_dmgdeal} WHERE mob_id='{tDict['target_id']}'; ")
+
+            # Inform, of course :>
+            await MSG.channel.send(f"<:gunshot:616136094739726347> **{MSG.author.name}** ⋙ *{my_dmgdeal}* ⋙ **「`{tDict['target_id']}` | {tDict['t_name']}」**!")
+    
+        elif style == 'MAGIC':
+
+            # AURA comes in
+            aura_dict = {'FLAME': 'au_FLAME', 'ICE': 'au_ICE', 'DARK': 'au_DARK', 'HOLY': 'au_HOLY'}        # Normal
+            aura_redict = {'FLAME': 'au_ICE', 'ICE': 'au_FLAME', 'DARK': 'au_HOLY', 'HOLY': 'au_DARK'}      # Reversed
+            # DMG is directional->UAura, is indirectional->reverseTAura     ||      DMG is then decreased by its oppo's parallel aura
+            try: dmgdeal = int(my_dmgdeal*uDict[aura_dict[aDict['w_aura']]]/tDict[aura_redict[aDict['w_aura']]])
+            except ZeroDivisionError: dmgdeal = int(my_dmgdeal*tDict[aura_dict[aDict['w_aura']]])
+
+            await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{dmgdeal} WHERE mob_id='{tDict['target_id']}'; ")
+
+            # Inform, of course :>
+            await MSG.channel.send(f"<:gunshot:616136094739726347> **{MSG.author.name}** ⋙ *{dmgdeal}* ⋙ **「`{tDict['target_id']}` | {tDict['t_name']}」**!")
+
+
+    async def PVP_range(self, shots, MSG, style, distance, aDict={}, tDict={}, uDict={}, bmode='DIRECT', CE=None, tCE=None):
+        """w_speed, w_aura, a_dmg, a_weight
+            target, t_name, target_id, t_combat_handling, t_left_hand, t_right_hand"""
+
+        _style = style
+        __bmode = bmode
+
+        if distance < 100: a = 1
+        else: a = distance/100
+
+        # Depend on the distance, make the shooter anonymous
+        if distance <= 1000: shooter = MSG.author.name
+        else: shooter = 'Someone'
+
+        # Check if the attack is DIRECT. If not, DM the attacked
+
+        # MAGIC
+        if _style == 'MAGIC':
+
+            # If the attack is INDIRECT, multiple RECOG by 5
+            my_dmgdeal = round(aDict['a_dmg']*shots)
+
+            # AURA comes in
+            aura_dict = {'FLAME': 'au_FLAME', 'ICE': 'au_ICE', 'DARK': 'au_DARK', 'HOLY': 'au_HOLY'}        # Normal
+            aura_redict = {'FLAME': 'au_ICE', 'ICE': 'au_FLAME', 'DARK': 'au_HOLY', 'HOLY': 'au_DARK'}      # Reversed
+            # DMG is directional->UAura, is indirectional->reverseTAura     ||      DMG is then decreased by its oppo's parallel aura
+            try: dmgdeal = int(my_dmgdeal*uDict[aura_dict[aDict['w_aura']]]/tDict[aura_redict[aDict['w_aura']]] - my_dmgdeal*tDict[aura_dict[aDict['w_aura']]])
+            except ZeroDivisionError: dmgdeal = int(dmgdeal*tDict[aura_dict[aDict['w_aura']]])
+
+            await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{tDict['target_id']}';")
+            await MSG.send(f":dagger: **{shooter}** has dealt *{dmgdeal} DMG* to **{tDict['t_name']}**")
+            if __bmode == 'INDIRECT': await tDict['target'].send(f":dagger: **{shooter}** has dealt *{dmgdeal} DMG* to **{tDict['t_name']}**"); return  
+        
+            await self.tools.ava_scan(MSG, 'life_check')
+
+        # PHYSICAL
         else:
-            await self.client._cursor.execute(f"UPDATE personal_info SET cur_MOB='{target_id}' WHERE id='{user_id}'; ")
+            # Recalculate the dmg
+
+            ## Opponent's def
+            # Get target's weapon
+            if tDict['t_combat_HANDLING'] == 'both':
+                tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{tDict['t_left_hand']}' AND user_id='{tDict['target_id']}'")
+            elif tDict['t_combat_HANDLING'] == 'right':
+                tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{tDict['t_right_hand']}' AND user_id='{tDict['target_id']}'")
+                tw_defend *= 2
+            elif tDict['t_combat_HANDLING'] == 'left':
+                tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{tDict['t_left_hand']}' AND user_id='{tDict['target_id']}'")
+                tw_defend *= 2
+
+            async def dmg_calc(shots, pack):
+                temp_query = ''
+                tw_defend = pack[0]
+
+                dmg = round(aDict['a_dmg']*shots)
+
+                # Get Damage reduction
+                # tCE - Processing
+                try:
+                    # Event: Evasive/Crit
+                    tw_defend += tw_defend/100*float(tCE['defensive'])
+                except (TypeError, KeyError): pass
+
+                dmgredu = 200 - tw_defend
+                # If victim's defend (dmgredu) exceed 200, the attacker's STA takes dmg
+                if dmgredu < 0:
+                    temp_query += f"UPDATE personal_info SET STA=STA-{round(dmg / 200 * abs(dmgredu))*tw_multiplier} WHERE id='{MSG.author.id}'; "
+                    dmgredu = 0
+
+                # Get dmgdeal (don't combine, for informing :>)
+                dmg = round(dmg / 200 * dmgredu)
+
+                # CE - Processing
+                try:
+                    # Event: Evasive/Crit
+                    aDict['a_weight'] += aDict['a_weight']/100*float(CE['evasive'])
+                except (TypeError, KeyError): pass
+
+                # Crit
+                if aDict['w_stealth']: aDict['a_weight'] *= aDict['w_stealth']
+                if not random.choice(range(int(aDict['a_weight']/10))): dmg = dmg + dmg/10*w_weight
+
+                temp_query += f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{tDict['target_id']}';"
+
+                return dmg, temp_query
+
+            dmgdeal, temp_query = await dmg_calc(shots, (tw_defend))
+            await self.client._cursor.execute(temp_query)
+
+            await MSG.send(f":dagger: **{shooter}** has dealt *{dmgdeal} DMG* to **{tDict['t_name']}**")
+            if __bmode == 'INDIRECT': await tDict['target'].send(f":dagger: **{shooter}** has dealt *{dmgdeal} DMG* to **{tDict['t_name']}**")
+        
+            await self.tools.ava_scan(MSG, 'life_check')
 
 
+
+
+    """
     # This function handles the Mob phase
     # Melee PVE     |      Start the mob phase.
     async def PVE_training(self, ctx, dummy_config=['d0', 'Dummy', 10, 1, 6]):
@@ -471,7 +694,7 @@ class avaCombat:
                 #await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{user_id}';")
 
                 # Inform
-                pack_1 = f"\n**STREAK FAILED**\n:dagger: **「`{target_id}` | {t_name}」** ⋙ *{dmgdeal} DMG* ⋙ **{ctx.author.mention}**"
+                pack_1 = f"\n**STREAK FAILED**\n:dagger: **「`{target_id}` | {t_name}」** ⋙ *{dmgdeal}* ⋙ **{ctx.author.mention}**"
                 #pack_2 = await conclusing()
                 #if pack_2: msg_pack = await MSG.channel.send(f"{pack_1}\n{pack_2}")
                 #else: msg_pack = False
@@ -496,28 +719,26 @@ class avaCombat:
             await self.PVE(message_obj[0], message_obj[1])
         else: pass
             #await self.client._cursor.execute(f"UPDATE personal_info SET cur_MOB='{target_id}' WHERE id='{user_id}'; ")
-
+    """
 
 
     # ============= !< BATTLE >! ==================
+    # 
+    # Combat Environment (CE)
+    # ---------------- CE should be called IN at the beggining of each attack, then put OUT after each one --------------------
+    # [aggressive], [defensive], [evasive], [ultimate], [raw_pcm]
+    # [lock], 
+
     # <!> CONCEPTS
     # ---- WEAPON ----
     ### We value a melee mainly by 3 elements: SPEED, MULTIPLIER, STA              
     ### We value a range_weapon mainly by AMMUNITION and 4 elements: RANGE, ACCURACY, FIRE_RATE, STEALTH.
     ### We value a kind of ammunition mainly by 3 elements: SPEED, DMG, MONEY
 
-    # ---- BATTLING ----
-    ### A PVE (of all kind of weapons) battle session consists of two phases: 1.User 2.Mob. 
-    ### A PVP (of all kind of weapons) battle session consists of one phase only: The user phase, as the attacking side
-    ###### A melee PVE will lead to a melee single-phase or multi-phase battle
-    ###### A range_weapon PVE will (maybe, eventually) lead to a melee single-phase or multi-phase battle
 
-
-    # This function/command handles the User's MELEE phase
-    # Melee PVE |      Start the USER MELEE phase.     |          Melee PVP |       Start the USER MELEE attacking phase.
-    @commands.command(pass_context=True, aliases=['atk'])
+    @commands.command(aliases=['mle'])
     @commands.cooldown(1, 3, type=BucketType.user)
-    async def attack(self, ctx, *args):
+    async def melee(self, ctx, *args):
         """ -avaattack [moves] [target]
             -avaattack [moves]              
             <!> ONE target of each creature type at a time. Mobs always come first, then user. Therefore you can't fight an user while fighting a mob
@@ -525,29 +746,16 @@ class avaCombat:
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         raw = list(args); __mode = 'PVP'
+        # E: Moves not given
+        #if not raw: await ctx.send(f"<:osit:544356212846886924> **{ctx.author.name}**, please make your moves!"); return
 
-        # HANDLING CHECK =====================================
-        try:
-            note = {'both': '<:right_hand:521197677346553861><:left_hand:521197732162043922>', 'right': '<:right_hand:521197677346553861>', 'left': '<:left_hand:521197732162043922>'}
-
-            await ctx.send(f'{note[raw[0]]} Changed to **{raw[0].upper()} hand** pose')
-            await self.client._cursor.execute(f"UPDATE personal_info SET combat_HANDLING='{raw[0].lower()}' WHERE id='{str(ctx.message.author.id)}';"); return
-        # E: Pose not given
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, missing arguments!"); return
-        # E: Moves given, not pose
-        except KeyError: pass
-
-        # Get main_weapon, handling     |      as well as checking coord
-        try: combat_HANDLING, main_weapon = await self.client.quefe(f"SELECT combat_HANDLING, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand) FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND cur_X>1 AND cur_Y>1;")
+        # Get user's info (always put last, for the sake of efficience)         |        as well as checking coord
+        try: name, cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT name, cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND cur_X>1 AND cur_Y>1;")
         # E: User in PB
         except TypeError: await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
 
-        # Check if it's a PVP or PVE call
-        # Then get the target (Mob/User)
-
-        # Get user's info (always put last, for the sake of efficience)
-        name, cur_MOB, cur_PLACE, cur_X, cur_Y, STA, STR = await self.client.quefe(f"SELECT name, cur_MOB, cur_PLACE, cur_X, cur_Y, STA, STR FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
-
+        # CE - IN
+        CE = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get')
 
         # INPUT CHECK =========================================
         target = None; target_id = None; raw_move = None
@@ -557,27 +765,38 @@ class avaCombat:
             if copo.startswith('<@'):
                 target = ctx.message.mentions[0]; target_id = str(target.id)
                 __bmode = 'DIRECT'
+                # CE - Processing/lock
+                CE['lock'] = target_id
 
             # PVE   |    USING MOB'S ID
             elif copo.startswith('mob.') or copo.startswith('boss'):
                 # If there's no current_enemy   |   # If there is, and the target is the current_enemy
-                if cur_MOB == 'n/a' or copo == cur_MOB:
-                    if copo == 'boss': 
-                        target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}';"); target = target[0]; __mode = 'PVE'; target_id = target
-                    else: target = copo; __mode = 'PVE'; target_id = target
-                # If there is, but the target IS NOT the current_enemy
-                elif copo != cur_MOB:
-                    await ctx.send(f"<:osit:544356212846886924> Please finish your current fight with the `{cur_MOB}`!"); return
+                if CE:
+                    if 'lock' in CE:
+                        if copo == 'boss': 
+                            target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}';")
+                            target = target[0]; __mode = 'PVE'; target_id = target
+                            # CE - Processing/lock
+                            CE['lock'] = target_id
+                        else:
+                            target = copo; __mode = 'PVE'; target_id = target
+                            # CE - Processing/lock
+                            CE['lock'] = target_id
+                    # If there is, but the target IS NOT the current_enemy
+                    #elif copo != CE['lock']:
+                    #    await ctx.send(f"<:osit:544356212846886924> Please finish your current fight with the `{CE['lock']}`!"); return
 
 
 
             # PVP   |    USING USER'S ID
             else:
                 try:
-                    try: 
+                    try:
                         target = await self.client.get_user(int(copo))
                         if not target: await ctx.send("<:osit:544356212846886924> User's not found"); return
                         target_id = target.id
+                        # CE - Processing/lock
+                        CE['lock'] = target_id
                     except (discordErrors.NotFound, discordErrors.HTTPException, TypeError): await ctx.send("<:osit:544356212846886924> Invalid user's id!"); return
                     __bmode = 'INDIRECT'
                 # MOVES     |      acabcbabbba
@@ -587,247 +806,149 @@ class avaCombat:
         # In case target is not given, current_enemy is used
         if not target:
             # Mobs first. If there's no mob in current_enemy, then randomly pick one
-            if cur_MOB == 'n/a':
-                target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}';", type='all'))[0]
+            try:
+                if CE['lock'] == 'n/a':
+                    target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
+                    target_id = target
+                    __mode = 'PVE'
+                    # CE - Processing/lock
+                    CE['lock'] = target_id
+                else:
+                    target = CE['lock']
+                    target_id = target
+                    __mode = 'PVE'
+            # E: CE not init
+            except KeyError:
+                target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
                 target_id = target
                 __mode = 'PVE'
-            else:
-                target = cur_MOB
-                target_id = target
-                __mode = 'PVE'
-        
-        if not raw_move: raw_move = random.choice(['a', 'b', 'd'])           #await ctx.send(f"<:osit:544356212846886924> Please make your move!"); return
+                # CE - Processing/lock
+                CE['lock'] = target_id
 
 
         # TARGET CHECK =========================================
 
-        if __mode == 'PVP': 
-            # Check if target has a ava     |      GET TARGET's INFO
-            try: t_cur_X, t_cur_Y, t_cur_PLACE = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE FROM personal_info WHERE id='{target_id}' AND cur_PLACE='{cur_PLACE}';")
-            # E: Invalid target, or target's not in the same region
-            except TypeError:
-                await ctx.send("<:osit:544356212846886924> Target don't have an ava, or you and the target are not in the same region!"); return t_cur_X, t_cur_Y, t_cur_PLACE
-
-        elif __mode == 'PVE':
-            # Check if target is a valid mob       |       GET TARGET's INFO
-            try: t_Ax, t_Ay, t_Bx, t_By, t_name = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By, name FROM environ_MOB WHERE mob_id='{target_id}' AND region='{cur_PLACE}';")
-            # E: Invalid target, or target's not in the same region
-            except TypeError: await ctx.send(f"<:osit:544356212846886924> There is no `{target_id}` around! Perhap you should check your surrounding..."); return
-
-            # Check if the user is in the mob's diversity
-            if cur_X < t_Ax or cur_Y < t_Ay or cur_X > t_Bx or cur_Y > t_By:
-                print(cur_X, cur_Y)
-                print(t_Ax, t_Ay, t_Bx, t_By, t_name)
-                await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, you can't engage the mob from your current location!"); return
-
-
-        # WEAPON CHECK ==========================
-
-        # Get weapon info
-        try: w_multiplier, w_sta, w_speed = await self.client.quefe(f"SELECT multiplier, sta, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{main_weapon}';")
-        # E: main_weapon is a item_code (e.g. ar13)
-        except TypeError: w_multiplier, w_sta, w_speed = await self.client.quefe(f"SELECT multiplier, sta, speed FROM pi_inventory WHERE existence='GOOD' AND item_code='{main_weapon}' and user_id='{ctx.author.id}';")
-
-        # STA filter
-        if len(raw_move)*w_sta <= STA:
-            if w_sta >= 100: await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-2 WHERE id='{str(ctx.message.author.id)}';")
-            else: await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-1 WHERE id='{str(ctx.message.author.id)}';")
-        else: await ctx.send(f"<:osit:544356212846886924> {ctx.author.mention}, out of `STA`!"); return
 
         # Checking the length of moves
-        moves_to_check = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{str(ctx.message.author.id)}' AND art_type='sword' AND art_name='chain_attack';")
+        moves_to_check = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{str(ctx.message.author.id)}' AND art_type='melee' AND art_name='active_chain';")
+        if not raw_move: raw_move = random.choices(['b', 'q', 'a'], k=moves_to_check[0])
         if len(raw_move) > moves_to_check[0]:
-            await ctx.send(f"<:osit:544356212846886924> You cannot perform a `{len(raw_move)}-chain` attack, **{ctx.message.author.name}**!"); return
+            await ctx.send(f"<:osit:544356212846886924> Your current movement limit is `{len(raw_move)}`, **{ctx.message.author.name}**!"); return
 
-        # NOW THE FUN BEGIN =========================================
 
-        counter_move = []
 
-        # Decoding moves, as well as checking the moves. Get the counter_move
-        for move in raw_move:
-            if move == 'a': counter_move.append('d')
-            elif move == 'd': counter_move.append('b')
-            elif move == 'b': counter_move.append('a')
-            else: await ctx.send(f"<:osit:544356212846886924> Invalid move! (move no. `{raw_move.index(move) + 1}` -> `{move}`)"); return
-        
         # PVP use target, with personal_info =============================
-        async def PVP():
-            # If the duo share the same server, send msg to that server. If not, DM the attacked
-            if __bmode == 'DIRECT': inbox = ctx.message
-            else: inbox = await target.send(ctx.message.content)
-
-            await inbox.add_reaction('\U00002694')
-
-            radial = 20             # Take attacker as the middle
-            # GET TARGET's INFO the second time
-            try: t_name, t_right_hand, t_left_hand, t_combat_HANDLING, t_STA = await self.client.quefe(f"SELECT name, right_hand, left_hand, combat_HANDLING, STA FROM personal_info WHERE id='{target_id}' AND cur_PLACE='{cur_PLACE}' AND cur_X-{radial}<={cur_X} AND {cur_X}<=cur_X+{radial} AND cur_Y-{radial}<={cur_Y} AND {cur_Y}<=cur_Y+{radial};")
-            except TypeError: await inbox.channel.send(f"<:osit:544356212846886924> Unable to find the target within 20m radius, {inbox.author.mention}!"); return
-
-            # Wait for move recognition     |      The more STA consumed, the less time you have to recognize moves. Therefore, if you attack too many times, you'll be more vulnerable
-            # RECOG is based on opponent's STA     |      RECOG = oppo's STA / 30
-            RECOG = t_STA / 30
-
-            # If the attack is INDIRECT, multiple RECOG by 5
-            if __bmode == 'INDIRECT': RECOG = RECOG*5
-
-            def RUM_check(reaction, user):
-                return user == target and reaction.message.id == inbox.id and str(reaction.emoji) == '\U00002694'
-
-            if RECOG < 1: RECOG = 1
-            try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=RECOG)
-            except asyncio.TimeoutError:
-                dmgdeal = round(STR*w_multiplier*len(counter_move))
-                await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{target_id}';")
-                await ctx.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **{t_name}**"); return
-
-
-            # Wait for response moves       |        SPEED ('speed') of the sword
-            SPEED = w_speed
-
-            def UCc_check(m):
-                return m.author == target and m.channel == inbox.channel and m.content.startswith('!')
-
-            try: msg = await self.client.wait_for('message', timeout=SPEED, check=UCc_check)
-            except asyncio.TimeoutError:
-                dmgdeal = round(STR*w_multiplier*len(counter_move))
-                await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{target_id}';")
-                await ctx.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **{target.name}**"); return
-            
-            # Measuring response moves
-            hit_count = 0
-            response_content = msg.content[1:]; diff = len(counter_move) - len(response_content)      # Measuring the length of the response
-            if diff > 0: response_content += '-'*diff
-            for move, response_move in zip(counter_move, response_content):
-                if move != response_move: hit_count += 1
-
-            # Conduct dealing dmg   |  Conduct dealing STA dmg
-            if hit_count == 0:
-                await ctx.send(f"\n:shield: **{target.mention}** ⌫ **{name}**")
-
-                # Recalculate the dmg, since hit_count == 0                
-                ## Player's dmg
-                if combat_HANDLING == 'both':
-                    dmgdeal = round(STR*w_multiplier*len(counter_move))
-                elif combat_HANDLING in ['right', 'left']:
-                    dmgdeal = round(STR*w_multiplier*len(counter_move))*2
-                ## Opponent's def
-                if t_combat_HANDLING == 'both':
-                    try:
-                        tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND (item_code='{t_left_hand}' OR item_id='{t_left_hand}') AND user_id='{target_id}'")
-                        dmgredu = 100 - tw_defend
-                    except KeyError: dmgredu = 100    
-                elif t_combat_HANDLING == 'right':
-                    try:
-                        tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND (item_code='{t_right_hand}' OR item_id='{t_right_hand}') AND user_id='{target_id}'")
-                        dmgredu = 100 - tw_defend*2
-                    except KeyError: dmgredu = 100
-                elif t_combat_HANDLING == 'left':
-                    try:
-                        tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND (item_code='{t_left_hand}' OR item_id='{t_left_hand}') AND user_id='{target_id}'")
-                        dmgredu = 100 - tw_defend*2
-                    except KeyError: dmgredu = 100
-                
-                # If dmgredu > 0, backfire the attacker. If dmgredu >= 0, all dmg are neutralized
-                temp_query = ''
-                if dmgredu > 0:
-                    temp_query += f"UPDATE personal_info SET STA=STA-{round(dmgdeal / 100 * abs(dmgredu))*tw_multiplier} WHERE id='{str(ctx.message.author.id)}'; "
-                    dmgredu = 0
-
-                temp_query += f"UPDATE personal_info SET STA=STA-{round(dmgdeal / 100 * dmgredu)} WHERE id='{target_id}'; "
-                await self.client._cursor.execute(temp_query)
-
-            else:
-
-                # Recalculate the dmg             
-                ## Player's dmg
-                if combat_HANDLING == 'both':
-                    dmgdeal = round(STR*w_multiplier*hit_count)
-                elif combat_HANDLING in ['right', 'left']:
-                    dmgdeal = round(STR*w_multiplier*hit_count)*2
-                ## Opponent's def
-                if t_combat_HANDLING == 'both':
-                    tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target_id}'")
-                    dmgredu = 200 - tw_defend
-                elif t_combat_HANDLING == 'right':
-                    tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_right_hand}' AND user_id='{target_id}'")
-                    dmgredu = 200 - tw_defend*2
-                elif t_combat_HANDLING == 'left':
-                    tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target_id}'")
-                    dmgredu = 200 - tw_defend*2
-
-                # If dmgredu > 0, backfire the attacker. If dmgredu >= 0, all dmg are neutralized
-                temp_query = ''
-                if dmgredu < 0:
-                    temp_query += f"UPDATE personal_info SET STA=STA-{round(dmgdeal / 200 * abs(dmgredu))*tw_multiplier} WHERE id='{str(ctx.message.author.id)}'; "
-                    dmgredu = 0
-
-                # Get dmgdeal (don't combine, for informing :>)
-                dmgdeal = round(dmgdeal / 200 * dmgredu)
-                temp_query += f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{target_id}'; "
-                await self.client._cursor.execute(temp_query)
-
-                await ctx.send(f":dagger: **{ctx.message.author.name}** has dealt *{dmgdeal} DMG* to **{t_name}**")
-        
-            await self.tools.ava_scan(ctx.message, 'life_check')
-
-        # PVE use target_id, with environ_mob ======================
-        if __mode == 'PVE':
-            # ------------ USER PHASE   |   User deal DMG 
-            my_dmgdeal = round(STR*w_multiplier*len(counter_move))
-            # Inform, of course :>
-            await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{my_dmgdeal} WHERE mob_id='{target_id}'; ")
-            await ctx.send(f":dagger: **{name}** has dealt *{my_dmgdeal} DMG* to **「`{target_id}` | {t_name}」**!", delete_after=8)
 
         if __mode == 'PVP':
-            await PVP()
+            await self.PVP_melee(ctx.message, target, raw_move, bmode=__mode, CE=CE)
         elif __mode == 'PVE':
-            await self.PVE(ctx.message, target_id)
-        else: print("<<<<< OH SHIET >>>>>>>")
+            await self.PVE_melee(ctx.message, target_id, raw_move, CE=CE)
+        else: print("<<<<< Non PVP nor PVE >>>>>>>")
 
-    @commands.command()
+    @commands.command(aliases=['rng'])
     @commands.cooldown(1, 10, type=BucketType.user)
-    async def aim(self, ctx, *args):
+    async def range(self, ctx, *args):
         # >Aim <coord_X> <coord_Y> <shots(optional)>      |      >Aim <@user/mob_name> <shots(optional)>       |          >Aim (defaul - shot=1)
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
-        # HANDLING CHECK =====================================
         raw = list(args)
-        try:
-            note = {'both': '<:right_hand:521197677346553861><:left_hand:521197732162043922>', 'right': '<:right_hand:521197677346553861>', 'left': '<:left_hand:521197732162043922>'}
+        # E: Moves not given
+        if not raw: await ctx.send(f"<:osit:544356212846886924> **{ctx.author.name}**, please make your moves!"); return
 
-            await ctx.send(f'{note[raw[0]]} Changed to **{raw[0].upper()} hand** pose')
-            await self.client._cursor.execute(f"UPDATE personal_info SET combat_HANDLING='{raw[0].lower()}' WHERE id='{str(ctx.message.author.id)}';"); return
-        # E: Pose not given
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, please make your moves!"); return
-        # E: Moves given, not pose
-        except KeyError: pass
-
-
-        # USER's INFO get ===================================================
         __mode = 'PVP'
         shots = 1
+        target = ''
+
+
+        # USER's info/weapon GET ==============================================
 
         # Get info     |      as well as checking coord
-        try: user_id, name, cur_PLACE, cur_X, cur_Y, cur_MOB, main_weapon, combat_HANDLING, STA, LP = await self.client.quefe(f"SELECT id, name, cur_PLACE, cur_X, cur_Y, cur_MOB, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand), combat_HANDLING, STA, LP FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND cur_X>1 AND cur_Y>1;")
+        try: user_id, name, cur_PLACE, cur_X, cur_Y, cur_MOB, main_weapon, combat_HANDLING, STA, LP, AFlame, AIce, ADark, AHoly = await self.client.quefe(f"SELECT id, name, cur_PLACE, cur_X, cur_Y, cur_MOB, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand), combat_HANDLING, STA, LP, au_FLAME, au_ICE, au_DARK, au_HOLY FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND cur_X>1 AND cur_Y>1;")
         # E: User in PB
         except TypeError: await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
 
-
-        # INPUT ===============================================================
-
         # Get weapon's info
-        w_round, w_firing_rate, w_sta, w_rmin, w_rmax, w_accu_randomness, w_accu_range, w_stealth, w_aura, w_multiplier, w_tags = await self.client.quefe(f"SELECT round, firing_rate, sta, range_min, range_max, accuracy_randomness, accuracy_range, stealth, aura, multiplier, tags FROM pi_inventory WHERE existence='GOOD' AND item_id='{main_weapon}';")
+        w_round, w_firing_rate, w_sta, w_rmin, w_rmax, w_accu_randomness, w_accu_range, w_stealth, w_aura, w_tags, w_dmg, w_speed = await self.client.quefe(f"SELECT round, firing_rate, sta, range_min, range_max, accuracy_randomness, accuracy_range, stealth, aura, tags, dmg, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{main_weapon}';")
         w_tags = w_tags.split(' - ')
         if 'magic' in w_tags: _style = 'MAGIC'
         else: _style = 'PHYSIC'
 
+
+        # INPUT Read ===================================================
+
+        # CE - IN
+        CE = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get')
+
+        for copo in raw:
+
+            # PVE | MOB get/mob_id
+            if copo.startswith('mob.') or copo.startswith('boss'):
+                # If there's no current_enemy   |   # If there is, and the target is the current_enemy
+                if CE['lock'] == 'n/a' or copo == CE['lock']:
+                    if copo == 'boss': 
+                        target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}';")
+                        target = target[0]; __mode = 'PVE'; target_id = target
+                        # CE - Processing/lock
+                        CE['lock'] = target_id
+                    else:
+                        target = copo; __mode = 'PVE'; target_id = target
+                        # CE - Processing/lock
+                        CE['lock'] = target_id
+
+            # PVP | USER get/@mention
+            elif copo.startswith('<@'):
+                # Get user
+                target = ctx.message.mentions[0]; target_id = str(target.id)
+                __bmode = 'DIRECT'
+                # CE - Processing/lock
+                CE['lock'] = target_id
+            
+            # PVP | USER get/id   (str is digit AND len(str)>15)
+            elif copo.isdigit() and len(copo) > 15:
+
+                try:
+                    target = await self.client.get_user(int(copo))
+                    if not target: await ctx.send("<:osit:544356212846886924> User's not found"); return
+                    target_id = target.id
+                    # CE - Processing/lock
+                    CE['lock'] = target_id
+                except (discordErrors.NotFound, discordErrors.HTTPException, TypeError): await ctx.send("<:osit:544356212846886924> Invalid user's id!"); return
+                __bmode = 'INDIRECT'
+
+            # PVP | USER get/coords
+            elif ':' in copo:
+                XYpair = copo.split(':')
+
+                # Verify the coords
+                X = int(XYpair[0])/1000; Y = int(XYpair[1])/1000
+                if X > 50 and Y > 50: await ctx.send("<:osit:544356212846886924> Please use 5-digit or lower coordinates!")  
+                #if len(str(int(raw[0]))) >= 5 and len(raw[1]) >= 5:await ctx.send("<:osit:544356212846886924> Please use 5-digit or lower coordinates!")  
+
+
+                # Get USER from COORD. If there are many users, randomly pick one.
+                try:
+                    target_id = random.choice(await self.client.quefe(f"SELECT id FROM personal_info WHERE cur_X={X} AND cur_Y={Y} AND cur_PLACE='{cur_PLACE}';", type='all'))
+                    target_id = target_id[0]
+                    target = await self.client.get_user(int(target_id))
+                    __bmode = 'DIRECT'
+                    if not ctx.message.server.get_member(target_id): __bmode = 'INDIRECT'
+                    if not target: await ctx.send(f"There's noone at **x:`{X:.3f}` y:`{Y:.3f}`** in {cur_PLACE}!"); return
+                # E: Query's empty, since noone's at the given coord
+                except IndexError: await ctx.send(f"There's noone at **x:`{X:.3f}` y:`{Y:.3f}`** in {cur_PLACE}!"); return
+
+                # CE - Processing/lock
+                CE['lock'] = target_id
+
+            # Shots GET
+            elif copo.isdigit():
+                shots = int(copo)
+
+        """
         ### ALL ELEMENT GET     (target, coord, shots) 
         try:
             target = ''
-            print("HEH")
             # @User, shots provided
             if raw[0].startswith('<@'):
-                print("JUST HERE")
                 # Get user
                 target = ctx.message.mentions[0]; target_id = str(target.id)
                 __bmode = 'DIRECT'
@@ -846,7 +967,7 @@ class avaCombat:
                 X = int(raw[0])/1000; Y = int(raw[1])/1000
 
                 # Get USER from COORD. If there are many users, randomly pick one.
-                try: 
+                try:
                     target_id = random.choice(await self.client.quefe(f"SELECT id FROM personal_info WHERE cur_X={X} AND cur_Y={Y} AND cur_PLACE='{cur_PLACE}';", type='all'))
                     target_id = target_id[0]
                     target = await self.client.get_user(int(target_id))
@@ -887,8 +1008,6 @@ class avaCombat:
                     shots = int(raw[0]); amount = int(raw[1])
                     raise IndexError
 
-            else: await ctx.send("<:osit:544356212846886924> Please use 5-digit or lower coordinates!")       
-
         # Mob_id, shots provided
         except (TypeError, ValueError):
             print("HEREEE")
@@ -906,94 +1025,95 @@ class avaCombat:
             # If there is, but the target IS NOT the current_enemy
             elif raw[0] != cur_MOB:
                 await ctx.send(f"<:osit:544356212846886924> Please finish your current fight with `{cur_MOB}`!"); return
+        """
 
-        # ... or none of them, then we should randomly pick one :v        
-        except IndexError:
-            print("HER HERE")
-            # Mobs first. If there's no mob in cur_MOB, then randomly pick one
-            if cur_MOB == 'n/a':
-                target_id = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE limit_Ax<{cur_X}<limit_Bx  AND limit_Ay<{cur_Y}<limit_By AND region='{cur_PLACE}';", type='all'))
-                target_id = target_id[0]
-                target = target_id
+        # Target not found
+        if not target:
+            # Mobs first. If there's no mob in current_enemy, then randomly pick one
+            try:
+                if CE['lock'] == 'n/a':
+                    target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
+                    target_id = target
+                    __mode = 'PVE'
+                    # CE - Processing/lock
+                    CE['lock'] = target_id
+                else:
+                    target = CE['lock']
+                    target_id = target
+                    __mode = 'PVE'
+            # E: CE not init
+            except KeyError:
+                target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
+                target_id = target
                 __mode = 'PVE'
-            # If there is, use cur_MOB
-            else:
-                target_id = cur_MOB
-                target = target_id
-                __mode = 'PVE'     
-
-            if _style == 'PHYSIC':
-                # Get shots (if available and possible)
-                try: shots = int(raw[0])
-                except (IndexError, TypeError): pass
-         
+                # CE - Processing/lock
+                CE['lock'] = target_id
 
 
-        # TARGET CHECK =========================================================
+        # tCE - IN
+        if __mode == 'PVP': tCE = await self.tools.redio_map(f"CE{target.id}", mode='get')
+
+        # CHECK misc =======================================================
+        if shots > w_firing_rate: await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, your weapon cannot perform `{shots}` shots in a row!"); return
+
+
+        # TARGET's INFO ====================================================
         # (as well as init some variables)
 
         # Check if target has a ava
         if __mode == 'PVP': 
             # Check if target has a ava     |      GET TARGET's INFO
-            try: t_cur_X, t_cur_Y, t_cur_PLACE, t_combat_HANDLING, t_right_hand, t_left_hand = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE, combat_HANDLING, right_hand, left_hand FROM personal_info WHERE id='{target_id}' AND cur_PLACE='{cur_PLACE}';")
+            try: t_cur_X, t_cur_Y, t_combat_HANDLING, t_right_hand, t_left_hand = await self.client.quefe(f"SELECT cur_X, cur_Y, combat_HANDLING, right_hand, left_hand FROM personal_info WHERE id='{target_id}' AND cur_PLACE='{cur_PLACE}';")
             # E: Invalid target, or target's not in the same region
             except TypeError:
                 await ctx.send("<:osit:544356212846886924> Target don't have an ava, or you and the target are not in the same region!"); return
 
         elif __mode == 'PVE':
             # Check if target is a valid mob       |       GET TARGET's INFO
-            try: t_Ax, t_Ay, t_Bx, t_By, t_name = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By, name FROM environ_MOB WHERE mob_id='{target_id}' AND region='{cur_PLACE}';")
+            try: t_Ax, t_Ay, t_Bx, t_By, t_name, t_AFlame, t_AIce, t_ADark, t_AHoly = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By, name, au_FLAME, au_ICE, au_DARK, au_HOLY FROM environ_MOB WHERE mob_id='{target_id}';")
             # E: Invalid target, or target's not in the same region
-            except TypeError: await ctx.send(f"<:osit:544356212846886924> There is no `{target_id}` around! Perhap you should check your surrounding..."); return
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {ctx.author.mention}!"); return
 
-            # Check if the user is in the mob's diversity
-            if cur_X < t_Ax or cur_Y < t_Ay or cur_X > t_Bx or cur_Y > t_By:
-                print(t_Ax, t_Ay, t_Bx, t_By, t_name)
-                await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, you can't engage the mob from your current location!"); return
-
-
-        # WEAPON CHECK ===========================================================
-
-        # Distance get/check
+        # DISTANCE get/check
         if __mode == 'PVP': 
             distance = await self.utils.distance_tools(cur_X, cur_Y, t_cur_X, t_cur_Y)
             if distance > w_rmax or distance < w_rmin: await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, the target is out of your weapon's range!"); return
         elif __mode == 'PVE':
             distance = 1                    # There is NO distance in a PVE battle, therefore the accuracy will always be at its lowest
 
-        # AMMUNITION
-        if shots > w_firing_rate: await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, your weapon cannot perform `{shots}` shots in a row!"); return
-        
-        # Get ammu's info
+
+
+        # AMMO's info GET ===========================================================
         try:
-            a_name, a_tags, a_speed, a_rlquery, a_dmg, a_quantity = await self.client.quefe(f"SELECT name, tags, speed, reload_query, dmg, quantity FROM pi_inventory WHERE existence='GOOD' AND item_code='{w_round}' AND user_id='{user_id}';")
+            a_name, a_tags, a_speed, a_rlquery, a_dmg, a_quantity, a_weight = await self.client.quefe(f"SELECT name, tags, speed, reload_query, dmg, quantity, weight FROM pi_inventory WHERE existence='GOOD' AND item_code='{w_round}' AND user_id='{user_id}';")
             a_tags = a_tags.split(' - ')
-        # E: Ammu not found --> Unpack error
+        # E: Ammu not found (OUT-OF-AMMO, am5, am6, etc.)
         except TypeError: 
             if w_round not in ['am5', 'am6'] :
                 a_name = await self.client.quefe(f"SELECT name FROM model_item WHERE item_code='{w_round}';")
-                await ctx.send(f"<:osit:544356212846886924> {ctx.message.author.mention}, OUT OF `{w_round} | {a_name}`!"); return
+                await ctx.send(f"<:osit:544356212846886924> {ctx.message.author.mention}, OUT OF AMMO --> `{w_round} | {a_name}`"); return
             else:
-                a_name, a_tags, a_speed, a_rlquery, a_dmg = await self.client.quefe(f"SELECT name, tags, speed, reload_query, dmg FROM model_item WHERE item_code='{w_round}';")
+                a_name, a_tags, a_speed, a_rlquery, a_dmg, a_weight = await self.client.quefe(f"SELECT name, tags, speed, reload_query, dmg, weight FROM model_item WHERE item_code='{w_round}';")
 
 
-        # Check shots VS quantity of the ammu_type. RELOAD.
-        # MAGIC
+
+        # SHOTS pre-processed calc  ||  Reload ====================================================
+        ################## MAGIC
         if w_round == 'am5':                    # LP -------------------- If kamikaze, halt them
-            if LP <= shots*amount:
+            if LP <= shots*w_dmg:
                 await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, please don't kill yourself..."); return
             else:
-                a_rlquery = a_rlquery.replace('quantity_here', str(shots*amount)).replace('user_id_here', user_id)
+                a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
                 await self.client._cursor.execute(a_rlquery)
         elif w_round == 'am6':                  # STA -------------------- If kamikaze, take the rest of the STA, split it into shots. Then decrease STA
-            if STA <= shots*amount:
-                amount = STA//shots
-                a_rlquery = a_rlquery.replace('quantity_here', str(shots*amount)).replace('user_id_here', user_id)
+            if STA <= shots*w_dmg:
+                w_dmg = STA//shots
+                a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
                 await self.client._cursor.execute(a_rlquery)
             else:
-                a_rlquery = a_rlquery.replace('quantity_here', str(shots*amount)).replace('user_id_here', user_id)
+                a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
                 await self.client._cursor.execute(a_rlquery)            
-        # PHYSIC
+        ################## PHYSIC
         else:
             if a_quantity <= shots:
                 shots = a_quantity
@@ -1002,7 +1122,7 @@ class avaCombat:
                 a_rlquery = a_rlquery.replace('quantity_here', str(shots)).replace('user_id_here', user_id)
                 await self.client._cursor.execute(a_rlquery)
 
-        # Filtering shots bases on STA remaining. If using physical, STA's decreased        |          No filtering, while using magic. STA's NOT decreased (for using weapon).
+        # STAMINA damaging for Physic W
         if _style == 'PHYSIC':
             if shots*w_sta < STA:
                 if w_sta >= 100:
@@ -1013,236 +1133,124 @@ class avaCombat:
                 shots = STA//w_sta
 
         
-        # PREPARING !!! =======================================================
-        # Re-calc randomness
+        # SHOOTING =======================================================
+        # RANDOMNESS | Take HANDLING into account, then re-calc
         if combat_HANDLING != 'both':
             w_accu_randomness = w_accu_randomness//2
+        if w_accu_randomness < 1: w_accu_randomness = 1
 
-        # Filtering shots
-        bingos = 0
-        for i in range(shots):
-            if distance < w_accu_range:
-                if random.choice(range(w_accu_randomness)) == 0: bingos += 1
-            else:
-                if random.choice(range(w_accu_randomness*(distance / w_accu_range))) == 0: bingos += 1
-        print(f"BINGO: {bingos}")
-        shots = bingos
+        # CE - Processing
+        # SHOTS are evaluated with probability and user's CE (PCM:Attack) (More attack -> Less accuracy)
+        try:
+            if CE: w_accu_randomness = w_accu_randomness - w_accu_randomness*float(CE['attack'])
+        # E: Temporary CE ('lockon' only)
+        except KeyError: pass
+
+        numerator = random.choice(range(100+w_accu_randomness))
+        if distance > w_accu_range: denominator = 100*(distance/w_accu_range)
+        else: denominator = 100*(distance/w_accu_range)
+        # Check if numerator > denominator
+        if numerator > denominator: shots = shots
+        else: shots = int(shots/denominator*numerator)
+
+        # tCE - Processing
+        # SHOTS are evaluated with probability and user's CE (PCM:Attack) (More attack -> Less accuracy)
+        try:
+            if tCE and await self.utils.percenter(int(tCE['evasive']), total=100, anti=True):
+                shots -= int(tCE['evasive'])
+        # E: Temporary CE ('lockon' only)
+        except (KeyError, UnboundLocalError): pass
+
+        # Inform MISS (to user and target)
         if shots == 0: 
-            await ctx.send(f":interrobang: {ctx.message.author.mention}, you shot a lot but hit nothing...")
-            if __bmode == 'INDIRECT': await target.send(f":sos: **Someone** is trying to hurt you, {target.mention}!")
+            await ctx.send(f":interrobang: **MISS...** again, {ctx.author.mention}?")
+
+            if __bmode == 'INDIRECT' and __mode == 'PVP': await target.send(f":sos: **Someone** is trying to hurt you, {target.mention}!")
             return
 
-        #dmgdeal = ammu['dmg']*shots
 
         # PVP use target, with ava_dict =================================
-        async def PVP():
-            # PVE() already has a deletion. Please don't put this else where
-            try: await ctx.message.delete()
-            except discordErrors.Forbidden: pass
-
-            if distance < 100: a = 1
-            else: a = distance/100
-            
-            # MAGIC
-            if _style == 'MAGIC':
-                verb = 'curse'
-                field = '⠀'*int(shots)*w_stealth*int(a)        # <--- Braille white-space
-
-                for shot in range(shots):
-                    while True:
-                        hole = random.choice(range(len(field)))
-                        if field[hole] == '⠀': break
-                    
-                    if hole != 0:
-                        field = field[:hole] + '·' + field[(hole + 1):]   # OOOOOOOOOOOOO
-                    elif hole == len(field):
-                        field = field[:hole] + '·'
-                    else:
-                        field = '·' + field[(hole + 1):]
-            # PHYSICAL
-            else:
-                verb = 'shoot'
-                field = '0'*int(shots)*w_stealth*int(a)
-                counter_shot = []
-
-                for shot in range(shots):
-                    while True:
-                        hole = random.choice(range(len(field)))
-                        if field[hole] == 'O': break
-                    counter_shot.append(str(hole)[-1])
-                    
-                    if hole != 0:
-                        field = field[:hole] + '0' + field[(hole + 1):]   # OOOOOOOOOOOOO
-                    elif hole == len(field):
-                        field = field[:hole] + '0'
-                    else:
-                        field = '0' + field[(hole + 1):]
-
-
-            # Depend on the distance, make the shooter anonymous
-            if distance <= 1000: shooter = ctx.message.author.name
-            else: shooter = 'Someone'
-
-            # Check if the attack is DIRECT. If not, DM the attacked
-            if __bmode == 'DIRECT': 
-                inbox = await ctx.send(f""":sos: **{shooter}** is trying to *{verb}* you, {target.mention}!```css
-{field}```""")
-            else: 
-                inbox = await target.send(f""":sos: **{shooter}** is trying to *{verb}* you, {target.mention}!```css
-{field}```""")
-
-            # MAGIC
-            if _style == 'MAGIC':
-                # Generate model moves
-                model_moves = field.replace('⠀', '0').replace('·', '1')
-
-                # Wait for response moves       |        SPEED ('speed') of the bullet aka. <ammu>
-                def UCc_check(m):
-                    return m.author == target and m.channel == inbox.channel and m.content == f"!{model_moves}"
-                
-                SPEED = a_speed
-                # If the attack is INDIRECT, multiple RECOG by 5
-                if __bmode == 'INDIRECT': SPEED = SPEED*5
-                try: msg = await self.client.wait_for('message', timeout=SPEED, check=UCc_check)
-                except asyncio.TimeoutError:
-                    dmgdeal = a_dmg*shots*amount
-
-                    # AURA comes in
-                    aura_dict = {'FLAME': 'au_FLAME', 'ICE': 'au_ICE', 'DARK': 'au_DARK', 'HOLY': 'au_HOLY'}
-                    aura = await self.client.quefe(f"SELECT {aura_dict[w_aura]} FROM personal_info WHERE id='{user_id}';")
-                    t_aura = await self.client.quefe(f"SELECT {aura_dict[w_aura]} FROM personal_info WHERE id='{target_id}';")
-                    # Re-calc dmgdeal
-                    try: dmgdeal = int(dmgdeal*t_aura[0]/aura[0])
-                    except ZeroDivisionError: dmgdeal = int(dmgdeal*t_aura)
-
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{target_id}';")
-                    await ctx.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **{t_name}**")
-                    if __bmode == 'INDIRECT': await target.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **{t_name}**")
-                    return
-                else:
-                    await ctx.send(f"\n--------------------\n:shield: **{target.mention}** has successfully *neutralized* all **{name}**'s spells!")
-                    if __bmode == 'INDIRECT': await target.send(f"\n--------------------\n:shield: **{target.mention}** has successfully *neutralized* all **{name}**'s spells!")
-                    return
-            
-                await self.tools.ava_scan(ctx.message, 'life_check')
-
-            # PHYSICAL
-            else:
-                # Wait for response moves       |        SPEED ('speed') of the bullet aka. <ammu>
-                def UC_check(m):
-                    return m.author == target and m.channel == inbox.channel and m.content.startswith('!')
-                
-                SPEED = a_speed
-                # If the attack is INDIRECT, multiple RECOG by 5
-                if __bmode == 'INDIRECT': SPEED = SPEED*5
-                try: msg = await self.client.wait_for('message', timeout=SPEED, check=UC_check)
-                except asyncio.TimeoutError:
-                    dmgdeal = a_dmg*shots
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{target_id}';")
-                    await ctx.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **{t_name}**")
-                    if __bmode == 'INDIRECT': await target.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **{t_name}**")
-                    return
-
-                # Measuring response moves
-                hit_count = 0
-                response_content = msg.content[1:]              # Measuring the length of the response
-                # Fixing the length of response_content
-                response_content = response_content + 'o'*(len(counter_shot) - len(response_content))
-
-                # HIT COUNTER
-                for shot, resp in zip(counter_shot, response_content):
-                    if shot != resp: hit_count += 1
-
-                # Conduct dealing dmg   |  Conduct dealing STA dmg
-                dmgdeal = a_dmg*hit_count
-                if hit_count == 0:
-                    await ctx.send(f"\n:shield: **{target.mention}** ⌫ **{name}**")
-                    if __bmode == 'INDIRECT': await target.send(f"\n:shield: **{target.mention}** ⌫ **{name}**")
-
-                    # Recalculate the dmg, since hit_count == 0                
-                    ## Player's dmg
-                    dmgdeal = round(a_dmg*len(counter_shot))
-                    ## Opponent's def
-                    if t_combat_HANDLING == 'both':
-                        tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target_id}'")
-                        dmgredu = 100 - tw_defend
-                    elif t_combat_HANDLING == 'right':
-                        tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_right_hand}' AND user_id='{target_id}'")
-                        dmgredu = 100 - tw_defend*2
-                    elif t_combat_HANDLING == 'left':
-                        tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target_id}'")
-                        dmgredu = 100 - tw_defend*2                    
-                    # If dmgredu >= 0, all dmg are neutralized
-                    if dmgredu < 0:
-                        dmgredu = 0
-
-                    await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-{round(dmgdeal / 100 * dmgredu)} WHERE id='{target_id}';")
-                else:
-                    # Recalculate the dmg             
-                    ## Player's dmg
-                    dmgdeal = round(a_dmg*hit_count)
-                    ## Opponent's def
-                    if t_combat_HANDLING == 'both':
-                        try:
-                            tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target_id}'")
-                            dmgredu = 200 - tw_defend
-                        except KeyError: dmgredu = 200
-                    elif t_combat_HANDLING == 'right':
-                        try:
-                            tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target_id}'")
-                            dmgredu = 200 - tw_defend*2
-                        except KeyError: dmgredu = 200
-                    elif t_combat_HANDLING == 'left':
-                        try:
-                            tw_defend, tw_multiplier = await self.client.quefe(f"SELECT defend, multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target_id}'")
-                            dmgredu = 200 - tw_defend*2
-                        except KeyError: dmgredu = 200
-
-                    # If dmgredu > 0, backfire the attacker. If dmgredu >= 0, all dmg are neutralized
-                    if dmgredu < 0:
-                        await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-{round(dmgdeal / 200 * abs(dmgredu))*tw_multiplier} WHERE id='{user_id}';")
-                        dmgredu = 0
-
-                    # Get dmgdeal, for informing :>
-                    dmgdeal = round(dmgdeal / 200 * dmgredu)
-                    await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{target_id}';")
-
-                    await ctx.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **{t_name}**")
-                    if __bmode == 'INDIRECT': await target.send(f":dagger: **{name}** has dealt *{dmgdeal} DMG* to **{t_name}**")
-            
-                await self.tools.ava_scan(ctx.message, 'life_check')
 
         # PVE use target_id, with environ_mob ============================
-        async def first_PVE():
-            if _style == 'PHYSIC':
-                # ------------ USER PHASE   |   User deal DMG 
-                my_dmgdeal = round(a_dmg*len(shots))
-                # Inform, of course :>
-                await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{my_dmgdeal} WHERE mob_id='{target_id}'; ")
-                await ctx.send(f":dagger: **{name}** ⋙ *{my_dmgdeal} DMG* ⋙ **「`{target_id}` | {t_name}」**!")
-            elif _style == 'MAGIC':
-                my_dmgdeal = a_dmg*shots*amount
-
-                # AURA comes in
-                aura_dict = {'FLAME': 'au_FLAME', 'ICE': 'au_ICE', 'DARK': 'au_DARK', 'HOLY': 'au_HOLY'}
-                aura = await self.client.quefe(f"SELECT {aura_dict[w_aura]} FROM personal_info WHERE id='{user_id}';")
-                t_aura = await self.client.quefe(f"SELECT {aura_dict[w_aura]} FROM environ_mob WHERE mob_id='{target_id}';")
-                # Re-calc dmgdeal
-                try: dmgdeal = int(my_dmgdeal*t_aura[0]/aura[0])
-                except ZeroDivisionError: dmgdeal = int(my_dmgdeal*t_aura[0])
-
-                # Inform, of course :>
-                await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{dmgdeal} WHERE mob_id='{target_id}'; ")
-                await ctx.send(f":dagger: **{name}** ⋙ *{dmgdeal} DMG* ⋙ **「`{target_id}` | {t_name}」**!")
 
 
         if __mode == 'PVP':
-            await PVP()
+            await self.PVP_range(shots, ctx.message, _style, __mode, aDict={'a_dmg': a_dmg, 'a_weight': a_weight, 'w_aura': w_aura, 'w_speed': w_speed, 'w_stealth': w_stealth}, tDict={'target': target, 'target_id': target_id, 't_name': t_name, 't_combat_HANDLING': t_combat_HANDLING, 't_left_hand': t_left_hand, 't_right_hand': t_right_hand, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE, tCE=tCE)
         elif __mode == 'PVE':
-            await first_PVE()
-            await self.PVE(ctx.message, target_id)
+            await self.PVE_range(shots, ctx.message, _style, aDict={'a_dmg': a_dmg, 'w_aura': w_aura}, tDict={'target_id': target_id, 't_name': t_name, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE)
         else: print("<<<<< OH SHIET >>>>>>>")
 
+    @commands.command()
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def pose(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        raw = list(args)
+
+        # CE - IN
+        CE, CE_ttl = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get', getttl=True)
+
+        # POSE ==========================================
+        try:
+            note = {'both': ['<:right_hand:521197677346553861><:left_hand:521197732162043922>', '**BOTH hand** · Attack rely on right-hand, defense rely on left-hand weapon'],
+            'right': ['<:right_hand:521197677346553861>', '**RIGHT hand** · Defense and attack rely on right-hand weapon'], 
+            'left': ['<:left_hand:521197732162043922>', '**LEFT hand** · Defense and attack rely on left-hand weapon']}
+
+            await ctx.send(f'{note[raw[0]][0]} Changed to **{raw[0].upper()} hand** pose')
+            await self.client._cursor.execute(f"UPDATE personal_info SET combat_HANDLING='{raw[0].lower()}' WHERE id='{ctx.author.id}';")
+            return
+        # E: Pose not given --> Show current pose and PCM
+        except IndexError:
+            vpcm = ''
+
+            # Get pose
+            curPose = await self.client.quefe(f"SELECT combat_HANDLING FROM personal_info WHERE id='{ctx.author.id}';")
+
+            temb = discord.Embed(title=f"{note[curPose[0]][0]} {note[curPose[0]][1]}", color=0x36393F)
+
+            # PCM
+            if CE:
+                if 'raw_pcm' in CE:
+                    # Visualize raw_PCM
+                    for m in CE['raw_pcm']:
+                        vpcm += self.pcmIcon_dict[m]
+                    
+                    temb.add_field(name=f"╟ `Time` · {CE_ttl}", value=f"\n╟ `Lockon` · **{CE['lock']}**\n╟ `Ultimate` · **{CE['ultimate']}%**")
+                    temb.add_field(name=f">>> {vpcm}", value=f"╟ `Aggressive` · **{float(CE['aggressive']):.2f}**\n╟ `Defensive` · **{float(CE['defensive']):.2f}**\n╟ `Evasive` · **{float(CE['evasive']):.2f}**")
+
+            await ctx.send(embed=temb, delete_after=10)
+            return
+        # E: PCM given, not pose
+        except KeyError: pass
+
+        # Passive Combat Movement (PCM) =================
+        pcmLimit = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{ctx.author.id}' AND art_type='general' AND art_name='passive_chain';")
+        if len(args[0]) > pcmLimit[0]: await ctx.send(f"<:osit:544356212846886924> Your current PCM (PassiveCombatMovement) limit is `{pcmLimit[0]}`, **{ctx.author.name}**!"); return
+
+        async def CE_maker(raw_pcm):
+
+            # If CE not found, init one
+            CE = {
+                "aggressive": 0, "defensive": 0, "evasive": 0, "ultimate": 0, "raw_pcm": '',
+                "lock": 'n/a'
+            }
+
+            count = 0
+            for c in raw_pcm:
+                if c == 'a': CE['aggressive'] = float(CE['aggressive']) + 1.25 + count
+                elif c == 'd': CE['defensive'] = float(CE['defensive']) + 1.25 + count
+                elif c == 'e': CE['evasive'] = float(CE['evasive']) + 1.25 + count
+                else: await ctx.send("<:osit:544356212846886924> Invalid PCM (PassiveCombatMovement)!"); return
+                count += 0.2
+            CE['raw_pcm'] = raw_pcm
+            return CE
+
+        CE = await CE_maker(args[0])
+
+        # CE - OUT
+        try: await self.tools.redio_map(f"CE{ctx.author.id}", dict=CE, ttl=60)
+        except redisErrors.DataError: return
+        await ctx.invoke(self.pose)
 
 
 def setup(client):

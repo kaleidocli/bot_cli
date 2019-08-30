@@ -2,6 +2,7 @@ import pymysql.err as mysqlError
 
 import random
 from os import listdir
+from functools import partial
 
 class avaTools:
 
@@ -21,6 +22,25 @@ class avaTools:
         if type == 'all': resu = await self.client._cursor.fetchall()
         else: resu = await self.client._cursor.fetchone()
         return resu
+
+    async def redio_map(self, key, dict=None, mode='set', ttl=0, getttl=False):
+        # Set dict into key with expiration ===========
+        if mode == 'set':
+            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.hmset, key, dict))
+            if ttl: await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.expire, key, ttl))
+            return
+
+        # Get dict ====================================
+        endict = await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.hgetall, key))
+        dedict = {k.decode('utf-8'):v.decode('utf-8') for k, v in endict.items()}
+
+        # Whether get time-to-live of the dict
+        if getttl:
+            time = await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.ttl, key))
+            if not time: return None, None
+            else: return dedict, time
+        return dedict
+
 
     async def ava_scan(self, MSG, type='all', target_id='n/a'):
         # Get target
@@ -91,13 +111,13 @@ class avaTools:
         #self.ava_dict[user_id]['realtime_zone']['current_coord'] = [desti_x, desti_y]
 
     async def character_generate(self, id, name, dob=[0, 0, 0, 0, 0], player=True, resu=True):
-        "MMHHDDMMYY"
+        "YYMMDDHHMM"
 
         ava = {}
 
         if not resu:
             ava['name'] = await self.utils.inj_filter(name[0:20])
-            ava['dob'] = f"{dob[2]} - {dob[3]} - {dob[4]}"
+            ava['dob'] = f"{dob[2]} - {dob[1]} - {dob[0]}"
             ava['age'] = 0
             ava['gender'] = random.choice(['m', 'f'])
             ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
@@ -150,9 +170,13 @@ class avaTools:
             ava['cur_X'] = -1
             ava['cur_Y'] = -1
             ava['cur_QUEST'] = 'n/a'
+
+            # Inventory     |      Add fist as a default weapon
+            await self.client._cursor.execute(f"SELECT func_it_reward('{id}', 'ar13', 1);")
+            dfFist = await self.quefe(f"SELECT item_id FROM pi_inventory WHERE user_id='{id}';")
             ava['combat_HANDLING'] = 'both'
-            ava['right_hand'] = 'ar13'
-            ava['left_hand'] = 'ar13'
+            ava['right_hand'] = dfFist[0]
+            ava['left_hand'] = dfFist[0]
 
             await self.quefe(f"INSERT INTO personal_info VALUES ('{id}', '{ava['name']}', '{ava['dob']}', {ava['age']}, '{ava['gender']}', '{ava['race']}', {ava['height']}, {ava['weight']}, '{ava['size']}', 'GREEN', {ava['kills']}, {ava['deaths']}, {ava['charm']}, '{ava['partner']}', {ava['money']}, {ava['merit']}, {ava['perks']}, {ava['EVO']}, {ava['STR']}, {ava['INTT']}, {ava['STA']}, {ava['MAX_STA']}, {ava['LP']}, {ava['MAX_LP']}, {ava['auras'][0]}, {ava['auras'][1]}, {ava['auras'][2]}, {ava['auras'][3]}, '{ava['cur_MOB']}', '{ava['cur_USER']}', '{ava['cur_PLACE']}', {ava['cur_X']}, {ava['cur_Y']}, '{ava['cur_QUEST']}', '{ava['combat_HANDLING']}', '{ava['right_hand']}', '{ava['left_hand']}');")
             await self.quefe(f"INSERT INTO pi_degrees VALUES ('{id}', 'Instinct', NULL);")
@@ -164,9 +188,8 @@ class avaTools:
             await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}','DEFAULT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
             await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'CURRENT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
             # Arts
-            await self.client._cursor.execute(f"INSERT INTO pi_arts VALUES ('{id}', 'sword', 'chain_attack', 5)")
-            # Inventory     |      Add fist as a default weapon
-            await self.client._cursor.execute(f"SELECT func_it_reward('{id}', 'ar13', 1);")
+            await self.client._cursor.execute(f"""INSERT INTO pi_arts VALUES ('{id}', 'melee', 'active_chain', 5);
+                                                INSERT INTO pi_arts VALUES ('{id}', 'general', 'passive_chain', 5);""")
             #self.ava_dict[id] = ava
             if player: return 0
             else: return 2
@@ -181,9 +204,6 @@ class avaTools:
         loss = int(mb / time)
         if loss > b: return 1
         return b - loss
-
-
-
 
 
 
