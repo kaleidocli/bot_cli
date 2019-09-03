@@ -10,7 +10,7 @@ from functools import partial
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
-class avaWorkshop:
+class avaWorkshop(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.__cd_check = self.client.thp.cd_check
@@ -18,7 +18,7 @@ class avaWorkshop:
         self.tools = avaTools(self.client, self.utils)
 
 
-
+    @commands.Cog.listener()
     async def on_ready(self):
         print("|| Workshop --- READY!")
 

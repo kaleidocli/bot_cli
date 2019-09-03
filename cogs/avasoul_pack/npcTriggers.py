@@ -22,6 +22,7 @@ class npcTrigger:
 
     async def p0c0i0training(self, pack):
         """pack = [ctx, data_goods, entity_code]"""
+        return
 
         await pack[0].send(f':checkered_flag: Training session **`NPC|Kaleido Cli` >< `Player|{pack[0].author.name}`** starting in 5 secs...', delete_after=5)
         await asyncio.sleep(5)

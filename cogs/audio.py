@@ -13,7 +13,7 @@ def check_id():
         return ctx.author.id == 214128381762076672
     return commands.check(inner)
 
-class audio:
+class audio(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.channel_socket = []
@@ -23,6 +23,7 @@ class audio:
         self.volo = []
         self.vol = 1.0
 
+    @commands.Cog.listener()
     async def on_ready(self):
         #Create <channel> object in a list
         self.channel_socket.append(self.client.get_channel('493467475493781504'))

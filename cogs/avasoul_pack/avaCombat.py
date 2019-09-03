@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import redis.exceptions as redisErrors
+from nltk import word_tokenize
 
 import random
 import asyncio
@@ -10,8 +11,9 @@ from functools import partial
 
 from .avaTools import avaTools
 from .avaUtils import avaUtils
+from utils import checks
 
-class avaCombat:
+class avaCombat(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.utils = avaUtils(self.client)
@@ -24,6 +26,7 @@ class avaCombat:
                             'e': '<:wsword_evasive:615587572835549223>'}
 
 
+    @commands.Cog.listener()
     async def on_ready(self):
         print("|| Combat ---- READY!")
 
@@ -548,7 +551,7 @@ class avaCombat:
 
                 # Crit
                 if aDict['w_stealth']: aDict['a_weight'] *= aDict['w_stealth']
-                if not random.choice(range(int(aDict['a_weight']/10))): dmg = dmg + dmg/10*w_weight
+                if not random.choice(range(int(aDict['a_weight']/10))): dmg = dmg + dmg/10*aDict['a_weight']
 
                 temp_query += f"UPDATE personal_info SET LP=LP-{dmgdeal} WHERE id='{tDict['target_id']}';"
 
@@ -731,9 +734,8 @@ class avaCombat:
 
     # <!> CONCEPTS
     # ---- WEAPON ----
-    ### We value a melee mainly by 3 elements: SPEED, MULTIPLIER, STA              
-    ### We value a range_weapon mainly by AMMUNITION and 4 elements: RANGE, ACCURACY, FIRE_RATE, STEALTH.
-    ### We value a kind of ammunition mainly by 3 elements: SPEED, DMG, MONEY
+    # ATK -----> STR and Multiplier for base dmg, Weight for crit
+    # DEF -----> DEF for base defense, Speed for against stamina attack
 
 
     @commands.command(aliases=['mle'])
@@ -884,16 +886,17 @@ class avaCombat:
             # PVE | MOB get/mob_id
             if copo.startswith('mob.') or copo.startswith('boss'):
                 # If there's no current_enemy   |   # If there is, and the target is the current_enemy
-                if CE['lock'] == 'n/a' or copo == CE['lock']:
-                    if copo == 'boss': 
-                        target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}';")
-                        target = target[0]; __mode = 'PVE'; target_id = target
-                        # CE - Processing/lock
-                        CE['lock'] = target_id
-                    else:
-                        target = copo; __mode = 'PVE'; target_id = target
-                        # CE - Processing/lock
-                        CE['lock'] = target_id
+                if CE:
+                    if CE['lock'] == 'n/a' or copo == CE['lock']:
+                        if copo == 'boss': 
+                            target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}';")
+                            target = target[0]; __mode = 'PVE'; target_id = target
+                            # CE - Processing/lock
+                            CE['lock'] = target_id
+                        else:
+                            target = copo; __mode = 'PVE'; target_id = target
+                            # CE - Processing/lock
+                            CE['lock'] = target_id
 
             # PVP | USER get/@mention
             elif copo.startswith('<@'):
@@ -1251,6 +1254,21 @@ class avaCombat:
         try: await self.tools.redio_map(f"CE{ctx.author.id}", dict=CE, ttl=60)
         except redisErrors.DataError: return
         await ctx.invoke(self.pose)
+
+    @commands.command()
+    @checks.check_author()
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def cast(self, ctx, *, line):
+        pass
+
+
+        
+
+
+
+
+
+
 
 
 def setup(client):

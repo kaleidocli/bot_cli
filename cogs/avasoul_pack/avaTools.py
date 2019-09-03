@@ -106,7 +106,7 @@ class avaTools:
     async def tele_procedure(self, current_place, user_id, desti_x, desti_y):
         """x, y: float"""
         # Assign the user's id to coord / Resign the user's id from the old coord
-        await self.client._cursor.execute(f"UPDATE personal_info SET cur_X={desti_x:.3}, cur_Y={desti_y:.3} WHERE id='{user_id}';")
+        await self.client._cursor.execute(f"UPDATE personal_info SET cur_X={desti_x:.3f}, cur_Y={desti_y:.3f} WHERE id='{user_id}';")
         # Assign the coord to ava
         #self.ava_dict[user_id]['realtime_zone']['current_coord'] = [desti_x, desti_y]
 
@@ -197,10 +197,12 @@ class avaTools:
             await self.client._cursor.execute(f"UPDATE personal_info SET LP=1, STA=1, stats='GREEN' WHERE id='{id}'; UPDATE pi_inventory SET existence='GOOD' WHERE user_id='{id}' AND item_code='ar13';")
             return 1
 
-    async def hierarchy_generate(self, child_id, father_id='n/a', mother_id='n/a', guardian_id='n/a', chem_value=0):
-        await self.client._cursor.execute(f"INSERT INTO environ_hierarchy VALUES (0, '{child_id}', '{father_id}', '{mother_id}', '{guardian_id}', {chem_value});")
+    async def hierarchy_generate(self, child_id, father_id='n/a', mother_id='n/a', guardian_ids=[], chem_value=0):
+        guardian_id = ' ||| '.join(guardian_ids)
+        await self.client._cursor.execute(f"INSERT INTO environ_hierarchy VALUES (0, '{child_id}', '', '{guardian_id}', {chem_value});")
 
     async def division_LP(self, b, mb, time=2):
+        "Reduct LP an amount of mb/time. If loss > LP, set LP = 1"
         loss = int(mb / time)
         if loss > b: return 1
         return b - loss

@@ -11,12 +11,13 @@ from utils import checks
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
-class avaAdmin:
+class avaAdmin(commands.Cog):
     def __init__(self, client):
         self.client = client
 
         self.utils = avaUtils(self.client)
 
+    @commands.Cog.listener()
     async def on_ready(self):
         print("|| Admin --- Ready!")
 

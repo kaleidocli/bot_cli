@@ -5,7 +5,7 @@ from pybooru import Moebooru
 import functools
 import random
 
-class dan:
+class dan(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.dan_client = Danbooru('danbooru', username='aklei', api_key='PubbhbW6nutC3yiFrBCrZs7S')

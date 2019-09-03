@@ -5,7 +5,7 @@ from discord.ext.commands.cooldowns import BucketType
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
-class avaTrivia:
+class avaTrivia(commands.Cog):
     def __init__(self, client):
         self.client = client
 
@@ -13,7 +13,7 @@ class avaTrivia:
         self.tools = avaTools(self.client, self.utils)
 
 
-
+    @commands.Cog.listener()
     async def on_ready(self):
         print("|| Trivia ---- READY!")
 
@@ -114,6 +114,8 @@ class avaTrivia:
             line = line + f"{count} | **{u[0]}** have won **{u[1]}** duels and lost **{u[2]}** duels\n"
 
         await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+
+
 
 
     @commands.command(aliases=['map'])
@@ -218,6 +220,10 @@ class avaTrivia:
             except asyncio.TimeoutError: 
                 await msg.delete(); return
 
+    @commands.command()
+    @commands.cooldown(1, 2, type=BucketType.user)
+    async def pralaeyr(self, ctx):
+        await ctx.send("https://media.discordapp.net/attachments/381963689470984203/546796245994307595/map_description.png")
 
 
 

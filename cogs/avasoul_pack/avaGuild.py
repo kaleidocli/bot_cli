@@ -9,7 +9,7 @@ import asyncio
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
-class avaGuild:
+class avaGuild(commands.Cog):
     def __init__(self, client):
         self.client = client
 
@@ -17,7 +17,7 @@ class avaGuild:
         self.tools = avaTools(self.client, self.utils)
 
 
-
+    @commands.Cog.listener()
     async def on_ready(self):
         print("|| Guild Systems ---- READY!")
 
@@ -314,15 +314,20 @@ class avaGuild:
                 # If quest's id given, accept the quest
                 try:
                     sample = {'iron': 3, 'bronze': 4, 'silver': 5, 'gold': 6, 'adamantite': 8, 'mithryl': 10}
-                    if await self.client._cursor.execute(f"SELECT * FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_code='{raw[1]}';") >= 1: await ctx.send("<:osit:544356212846886924> Quest has already been taken or done"); return
+                    if await self.client._cursor.execute(f"SELECT * FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_code='{raw[1]}';") >= 1:
+                        await ctx.send("<:osit:544356212846886924> Quest has already been taken"); return
+                    done_quests = await self.client.quefe(f"SELECT finished_quests FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
+                    if raw[1] in done_quests[0].split(' - '): await ctx.send("<:osit:544356212846886924> Quest has already been done"); return
                     if await self.client._cursor.execute(f"SELECT COUNT(user_id) FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='ONGOING'") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
 
-                    region, quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, prerequisite = await self.client.quefe(f"SELECT region, quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, prerequisite FROM model_quest WHERE quest_code='{raw[1]}';")
+                    # QUEST info get
+                    region, quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query = await self.client.quefe(f"SELECT region, quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query FROM model_quest WHERE quest_code='{raw[1]}' AND quest_line IN ('main', 'side');")
                     try:
                         if await self.client._cursor.execute(prerequisite.replace('user_id_here', str(ctx.author.id))) == 0: await ctx.send("<:osit:544356212846886924> Prerequisite is not met!"); return
                     # E: Query's empty
                     except mysqlError.InternalError: pass
                     snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
+                    effect_query = effect_query.replace('user_id_here', f'{ctx.author.id}')
                     # Region check
                     if region != current_place and quest_line != 'DAILY': await ctx.send(f":european_castle: Quest `{raw[1]}` is only available in `{region}`!"); return
                     
@@ -335,7 +340,7 @@ class avaGuild:
                         except TypeError: temp2.append('0')
                     snapshot = ' || '.join(temp2)
 
-                    await self.client._cursor.execute(f"""INSERT INTO pi_quests VALUES (0, '{quest_code}', '{ctx.author.id}', "{snap_query}", '{snapshot}', '{quest_sample}', '{eval_meth}', "{effect_query}", "{reward_query}", 'FULL');""")
+                    await self.client._cursor.execute(f"""INSERT INTO pi_quests VALUES (0, '{quest_code}', '{ctx.author.id}', "{snap_query}", '{snapshot}', '{quest_sample}', '{eval_meth}', "{effect_query}", "{reward_query}", "{penalty_query}", 'FULL'); {effect_query}""")
                     
                     await ctx.send(f":white_check_mark: {quest_line.capitalize()} quest `{raw[1]}`|**{quest_name}** accepted! Use `quest` to check your progress."); return
                 # E: Quest's id not found
@@ -345,21 +350,24 @@ class avaGuild:
 
             elif raw[0] == 'leave': 
                 try:
-                    quest_code = await self.client.quefe(f"SELECT quest_code FROM pi_quests WHERE quest_id={raw[1]};")
-                    region, quest_line, name = await self.client.quefe(f"SELECT region, quest_line, name FROM model_quest WHERE quest_code='{quest_code[0]}';")
+                    try:
+                        quest_code, penalty_query = await self.client.quefe(f"SELECT quest_code, penalty_query FROM pi_quests WHERE quest_id='{raw[1]}';")
+                    except mysqlError.InternalError: await ctx.send("<:osit:544356212846886924> Invalid quest id"); return
+                    region, quest_line, name = await self.client.quefe(f"SELECT region, quest_line, name FROM model_quest WHERE quest_code='{quest_code}';")
                     # Region check
                     if region != current_place and quest_line != 'DAILY': await ctx.send(f":european_castle: You need to be in `{region}` in order to leave {quest_line} quest `{quest_code}`|**{name}**"); return
                 except TypeError: await ctx.send("<:osit:544356212846886924> You have not taken this quest yet!"); return
 
                 if await self.client._cursor.execute(f"DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]} AND stats!='ONGOING'") == 0: await ctx.send(f"<:osit:544356212846886924> You cannot leave a completed quest"); return
-                await ctx.send(f":european_castle: Left {quest_line} quest `{quest_code[0]}`|`{name}` (id.`{raw[1]}`)"); return
+                penalty_query = penalty_query.replace('user_id_here', str(ctx.author.id))
+                if penalty_query: await self.client._cursor.execute(penalty_query)
+                await ctx.send(f":european_castle: Left {quest_line} quest `{quest_code}`|`{name}` (id.`{raw[1]}`)"); return
 
             elif raw[0] == 'claim':
                 # Check if the quest is ONGOING     |      Get stuff too :>
-                try: snapshot, snap_query, quest_sample, stats, eval_meth, effect_query, reward_query, quest_line, quest_code = await self.client.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, effect_query, reward_query, (SELECT quest_line FROM model_quest WHERE quest_code=pi_quests.quest_code), quest_code FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
+                try: snapshot, snap_query, quest_sample, stats, eval_meth, reward_query, quest_line, quest_code = await self.client.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, reward_query, (SELECT quest_line FROM model_quest WHERE quest_code=pi_quests.quest_code), quest_code FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
                 except TypeError: await ctx.send(f"<:osit:544356212846886924> Quest not found, **{ctx.author.name}**")
                 snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
-                effect_query = effect_query.replace('user_id_here', f'{ctx.author.id}')
                 reward_query = reward_query.replace('user_id_here', f'{ctx.author.id}')
 
                 if stats == 'DONE': await ctx.send("<:osit:544356212846886924> A quest cannot be claimed twice, scammer... <:fufu:520602319323267082>"); return
@@ -379,8 +387,14 @@ class avaGuild:
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
                         if not (a - int(b)) >= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
                 elif eval_meth == '==':
-                    for a, c in zip(cur_snapshot, quest_sample):
-                        if not a == int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
+                    for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
+                        print(a, b, c)
+                        # DIGIT
+                        if c.isdigit():
+                            if not (int(a) - int(b)) >= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
+                        # CHAR
+                        else:
+                            if not a == c: await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
                 if eval_meth == '<=':
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
                         if not (a - int(b)) <= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
@@ -392,7 +406,7 @@ class avaGuild:
                         if not a <= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
 
                 # Reward n Affect
-                await self.client._cursor.execute(reward_query + effect_query)
+                await self.client._cursor.execute(reward_query)
                 # Increase pi_guild.total_quests by 1
                 # Remove quest
                 await self.client._cursor.execute(f"UPDATE pi_guild SET total_quests=total_quests+1 WHERE user_id='{ctx.author.id}'; DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
@@ -442,29 +456,46 @@ class avaGuild:
                         try: rate = int(((int(a) - int(b))/int(c))*10)
                         except ZeroDivisionError: rate = 0
                         if rate > 10: rate = 10
+                        elif rate < -10: rate = 0
                         line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
                 elif eval_meth == '==':
-                    for a, c in zip(cur_snapshot, quest_sample):
-                        if a == c: rate = 10
-                        else: rate = 0
-                        line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
+                    for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
+                        # DIGIT
+                        try:
+                            difference = int(a) - int(b)
+                            try: rate = int(difference/int(c)*10)
+                            except ZeroDivisionError: rate = 0
+                        # CHAR
+                        except ValueError:
+                            if a == c:
+                                difference = 1
+                                rate = 10
+                            else:
+                                difference = 0
+                                rate = 0
+                        if rate > 10: rate = 10
+                        elif rate < -10: rate = 0
+                        line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({difference}·**{c}**)||"
                 elif eval_meth == '<=':
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
                         try: rate = int(((int(a) - int(b))/int(c))*10)
                         except ZeroDivisionError: rate = 0
                         if rate > 10: rate = 10
+                        elif rate < -10: rate = 0
                         line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
                 elif eval_meth == '>':
                     for a, c in zip(cur_snapshot, quest_sample):
                         try: rate = int((int(a)/int(c))*10)
                         except ZeroDivisionError: rate = 0
                         if rate > 10: rate = 10
+                        elif rate < -10: rate = 0
                         line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
                 elif eval_meth == '<':
                     for a, c in zip(cur_snapshot, quest_sample):
                         try: rate = int((int(a)/int(c))*10)
                         except ZeroDivisionError: rate = 0
                         if rate > 10: rate = 10
+                        elif rate < -10: rate = 0
                         line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
                 temb.add_field(name=f"`{pack[0]}` :scroll:『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest", value=line)
 
@@ -487,10 +518,10 @@ class avaGuild:
 
         current_place = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'"); current_place = current_place[0]
 
-        bundle = await self.client.quefe(f"SELECT quest_code, name, description, quest_line FROM model_quest WHERE region='{current_place}';", type='all')
+        bundle = await self.client.quefe(f"SELECT quest_code, name, description, quest_line FROM model_quest WHERE region='{current_place}' AND quest_line IN ('main', 'side');", type='all')
         #completed_bundle = await self.client.quefe(f"SELECT quest_code FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='DONE' AND EXISTS (SELECT * FROM model_quest WHERE model_quest.quest_code=pi_quests.quest_code AND region='{current_place}');")
         completed_bundle = await self.client.quefe(f"SELECT finished_quests FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
-        try: completed_bundle[0].split(' - ')
+        try: completed_bundle = completed_bundle[0].split(' - ')
         except (TypeError, AttributeError): completed_bundle = []
 
         def makeembed(top, least, pages, currentpage):

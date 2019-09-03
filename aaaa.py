@@ -41,17 +41,20 @@ extensions = ['cogs.error_handler',
                 'cogs.guess', 
                 'jishaku', 
                 'cogs.audio', 
-                'cogs.avasoul', 
+                'cogs.avasoul',
+                'cogs.avasoul_pack.avaHelper', 
                 'cogs.avasoul_pack.avaAdmin', 
                 'cogs.avasoul_pack.avaTrivia', 
                 'cogs.avasoul_pack.avaGuild', 
                 'cogs.avasoul_pack.avaNPC', 
                 'cogs.avasoul_pack.avaCombat', 
-                'cogs.avasoul_pack.avaService', 
+                'cogs.avasoul_pack.avaCommercial', 
                 'cogs.avasoul_pack.avaSocial',
                 'cogs.avasoul_pack.avaActivity',
                 'cogs.avasoul_pack.avaWorkshop',
-                'cogs.avasoul_pack.avaPersonal']
+                'cogs.avasoul_pack.avaPersonal',
+                'cogs.avasoul_pack.avaPersonalUtils']
+
 TOKEN = configs.TOKEN
 
 #prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
@@ -728,7 +731,7 @@ def prepformain():
         if client.load_count == client.extension_count: break
         client.load_extension(extension)
         client.load_count += 1
-    client.run(TOKEN)
+    client.run(TOKEN, bot=True, reconnect=True)
 
 if __name__ == '__main__':
     prepformain()

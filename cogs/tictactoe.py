@@ -6,7 +6,7 @@ import operator
 import random
 import asyncio
 
-class tictactoe:
+class tictactoe(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.ticks = []

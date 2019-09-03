@@ -5,10 +5,11 @@ import discord
 from datetime import timedelta
 
 
-class ErrorHandler:
+class ErrorHandler(commands.Cog):
     def __init__(self, client):
         self.client = client
 
+    @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         """The event triggered when an error is raised while invoking a command.
         ctx   : Context

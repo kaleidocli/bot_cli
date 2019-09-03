@@ -7,7 +7,7 @@ from os import listdir
 import nekos
 
 
-class allhen:
+class allhen(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.nhen_type = ''

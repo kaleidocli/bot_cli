@@ -15,7 +15,7 @@ from .avaTools import avaTools
 from .avaUtils import avaUtils
 from utils import checks
 
-class avaAvatar:
+class avaAvatar(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.prote_lib = {}
@@ -54,7 +54,8 @@ class avaAvatar:
                         'av21': 'Ricka_Cosplay',
                         'av22': 'Ricka_NSFW',
                         'av23': 'set_FURRY',
-                        'av24': 'Req_Virgo'}
+                        'av24': 'Req_Virgo',
+                        'av25': 'Black_Survival'}
 
 
         self.utils = avaUtils(self.client)
@@ -62,7 +63,7 @@ class avaAvatar:
 
 
 
-
+    @commands.Cog.listener()
     async def on_ready(self):
         await asyncio.sleep(2)      # Do not remove, or else the data stream would mix with WORLD_BUILDING
         await self.prote_plugin()

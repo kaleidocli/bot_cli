@@ -5,14 +5,16 @@ import json
 import asyncio
 
 
-class custom_speech:
+class custom_speech(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.custom_speech = {}
         
+    @commands.Cog.listener()
     async def on_ready(self):
         await self.client.loop.run_in_executor(None, self.custom_speech_plugin)
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         #custom_speech
         try:

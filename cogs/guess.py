@@ -23,7 +23,7 @@ def check_id():
         return ctx.author.id == 214128381762076672       
     return commands.check(inner)
 
-class guess:
+class guess(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.guess_socket = []          #For guess
