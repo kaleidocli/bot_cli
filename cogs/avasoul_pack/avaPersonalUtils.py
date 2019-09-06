@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw
 from io import BytesIO
 import asyncio
 from functools import partial
+from datetime import datetime, timedelta
 
 from .avaTools import avaTools
 from .avaUtils import avaUtils
@@ -253,15 +254,64 @@ class avaPersonalUtils(commands.Cog):
             await ctx.send(f":straight_ruler\n::triangular_ruler: Result: **`{distance}m`**")
         except IndexError: pass
 
-    @commands.command(aliases=['happybirthday', 'hpbd'])
+    @commands.command()
     async def daily(self, ctx, *args):
-        cmd_tag = 'daily'
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
-        if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:605255050289348620> Oops. It's not your birthday yet, **{ctx.author.name}**."): return
 
-        await self.client._cursor.execute(f"SELECT func_ig_reward('{ctx.author.id}', 'ig77', 1);")
-        await ctx.send(f":cake: Happy birthday! Here's a `ig77`|**Cake**!")
-        await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'working', ex=86400, nx=True))
+        # CAKE
+        if not args:
+            cmd_tag = 'daily'
+            if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:605255050289348620> Oops. It's not your birthday yet, **{ctx.author.name}**."): return
+
+            await self.client._cursor.execute(f"SELECT func_ig_reward('{ctx.author.id}', 'ig77', 1);")
+            await ctx.send(f":cake: Happy birthday! Here's a `ig77`|**Cake**!")
+            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'working', ex=82800, nx=True))
+
+        # QUEST
+        elif args[0] == 'quest':
+            cmd_tag = 'dailyquest'
+            if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:605255050289348620> Once a day, **{ctx.author.name}**. Don't push yourself too hard ~!"): return
+            
+            name, rank = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{ctx.author.id}';")
+
+            try:
+                if name == 'n/a':
+                    await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
+            except IndexError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
+
+            current_place = await self.client.quefe(f"SELECT cur_PLACE, money FROM personal_info WHERE id='{ctx.author.id}'"); current_place = current_place[0]
+
+            sample = {'iron': 3, 'bronze': 4, 'silver': 5, 'gold': 6, 'adamantite': 8, 'mithryl': 10}
+            if await self.client._cursor.execute(f"SELECT COUNT(user_id) FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='ONGOING'") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
+
+            # QUEST info get
+            try: quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, penalty_query, duration = await self.client.quefe(f"SELECT quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, penalty_query, duration FROM model_quest WHERE region='{current_place}' AND quest_line='daily' ORDER BY RAND() LIMIT 1;")
+            except TypeError: await ctx.send(f":european_castle: No daily quest available in current region."); return
+
+            snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
+            effect_query = effect_query.replace('user_id_here', f'{ctx.author.id}')            
+
+            temp = snap_query.split(' || ')
+            temp2 = []
+            for que in temp:
+                a = await self.client.quefe(que)
+                try: temp2.append(str(a[0]))
+                except TypeError: temp2.append('0')
+            snapshot = ' || '.join(temp2)
+
+
+            # End_point calc from duration
+            if duration:
+                end_point = datetime.now() + timedelta(seconds=duration)
+                end_point = end_point.strftime('%Y-%m-%d %H:%M:%S')
+            else: end_point = ''
+
+
+            await self.client._cursor.execute(f"""INSERT INTO pi_quests VALUES (0, '{quest_code}', '{ctx.author.id}', "{snap_query}", '{snapshot}', '{quest_sample}', '{eval_meth}', "{effect_query}", "{reward_query}", "{penalty_query}", '{end_point}', 'FULL'); {effect_query}""")
+            
+            await ctx.send(f":white_check_mark: {quest_line.capitalize()} quest `{quest_code}`|**{quest_name}** accepted! Use `quest` to check your progress.")
+            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'dailyquest', ex=82800, nx=True))
+            
 
     @commands.command()
     async def kms(self, ctx, *args):

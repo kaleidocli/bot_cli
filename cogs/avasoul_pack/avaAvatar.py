@@ -29,7 +29,8 @@ class avaAvatar(commands.Cog):
                     'bg6': 'rocha_cold',
                     'bg7': 'rocha_crimson',
                     'bg8': 'rocha_gold',
-                    'bg9': 'rocha_green'}
+                    'bg9': 'rocha_green', 
+                    'bg10': 'pengzhen_zhang'}
         self.char_dict = {'av0': 'Iris',
                         'av1': 'Zoey',
                         'av2': 'Ardena',

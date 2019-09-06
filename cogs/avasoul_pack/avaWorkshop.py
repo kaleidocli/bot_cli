@@ -190,13 +190,13 @@ class avaWorkshop(commands.Cog):
         # Inform
         await ctx.send(f":tools: {info_msg[0]} **Successfully crafted!**")
 
-    @commands.command(aliases=['crafts'])
+    @commands.command(aliases=['fml'])
     @commands.cooldown(1, 10, type=BucketType.user)
-    async def formulas(self, ctx, *args):
-        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+    async def formula(self, ctx, *args):
 
         # FORMULA
         try:
+            # Formulas' code
             if args[0].startswith('fm'):
                 try: formula_code, name, formula_value, description, tags, kit = await self.client.quefe(f"SELECT formula_code, name, formula_value, description, tags, kit FROM model_formula WHERE formula_code='{args[0]}';")
                 except TypeError: await ctx.send(":tools: Formula not found!"); return
@@ -207,16 +207,24 @@ class avaWorkshop(commands.Cog):
 
                 await ctx.send(embed=temb, delete_after=15)
 
-            else:
-                formus = await self.client.quefe(f"SELECT formula_code, description, tags FROM model_formula WHERE tags LIKE '%{await self.utils.inj_filter(' '.join(args))}%';", type='all')
+            # Formulas' tag
+            elif args[0].startswith('ar') or args[0].startswith('it') or args[0].startswith('ig') or args[0].startswith('bp') or args[0].startswith('am'):
+                formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula WHERE tags LIKE '%{await self.utils.inj_filter(' '.join(args))}%';", type='all')
 
                 def makeembed(top, least, pages, currentpage):
-                    line = ''
+                    line = ''; count = 1
+
+                    reembed = discord.Embed(colour = discord.Colour(0x011C3A))
 
                     for formu in formus[top:least]:
-                        line = line + f"╟ `{formu[0]}` | **`{formu[1]}`** | `{formu[2].replace(' - ', '` `')}`\n"
+                        if count == 6:
+                            reembed.add_field(name="---------", value=line)
+                            count = 1; line = ''
+                        else:
+                            line = line + f"╟ `{formu[0]}`|**{formu[1]}**\n"
+                            count += 1
+                        if count < 6: reembed.add_field(name="---------", value=line)
 
-                    reembed = discord.Embed(colour = discord.Colour(0x011C3A), description=line)
                     reembed.set_footer(text=f"------ {currentpage}/{pages} ------")
                     return reembed
                     #else:
@@ -228,15 +236,15 @@ class avaWorkshop(commands.Cog):
                     await msg.add_reaction("\U000027a1")    #Right
                     await msg.add_reaction("\U000023ed")    #Top-right
 
-                pages = len(formus)//10
-                if len(formus)%10 != 0: pages += 1
+                pages = len(formus)//9
+                if len(formus)%9 != 0: pages += 1
                 currentpage = 1
                 cursor = 0
 
                 emli = []
                 # pylint: disable=unused-variable
                 for curp in range(pages):
-                    myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
+                    myembed = makeembed(currentpage*9-9, currentpage*9, pages, currentpage)
                     emli.append(myembed)
                     currentpage += 1
                 # pylint: enable=unused-variable
@@ -274,17 +282,100 @@ class avaWorkshop(commands.Cog):
                     except asyncio.TimeoutError:
                         await msg.delete(); return
 
+            # Formulas' name
+            else:
+                formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula WHERE name LIKE '%{await self.utils.inj_filter(' '.join(args))}%';", type='all')
+                print(formus)
+
+                def makeembed(top, least, pages, currentpage):
+                    line = ''; count = 1
+
+                    reembed = discord.Embed(colour = discord.Colour(0x011C3A))
+
+                    for formu in formus[top:least]:
+                        if count == 6:
+                            reembed.add_field(name="---------", value=line)
+                            count = 1; line = ''
+                        else:
+                            line = line + f"╟ `{formu[0]}`|**{formu[1]}**\n"
+                            count += 1
+                        if count < 6: reembed.add_field(name="---------", value=line)
+
+                    reembed.set_footer(text=f"------ {currentpage}/{pages} ------")
+                    return reembed
+                    #else:
+                    #    await ctx.send("*Nothing but dust here...*")
+                
+                async def attachreaction(msg):
+                    await msg.add_reaction("\U000023ee")    #Top-left
+                    await msg.add_reaction("\U00002b05")    #Left
+                    await msg.add_reaction("\U000027a1")    #Right
+                    await msg.add_reaction("\U000023ed")    #Top-right
+
+                pages = len(formus)//9
+                if len(formus)%9 != 0: pages += 1
+                currentpage = 1
+                cursor = 0
+
+                emli = []
+                # pylint: disable=unused-variable
+                for curp in range(pages):
+                    myembed = makeembed(currentpage*6-6, currentpage*9, pages, currentpage)
+                    emli.append(myembed)
+                    currentpage += 1
+                # pylint: enable=unused-variable
+                if pages > 1: 
+                    msg = await ctx.send(embed=emli[cursor])
+                    await attachreaction(msg)
+                else: msg = await ctx.send(embed=emli[cursor], delete_after=21); return
+
+                def UM_check(reaction, user):
+                    return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
+                while True:
+                    try:    
+                        reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                            cursor += 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U00002b05" and cursor > 0:
+                            cursor -= 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U000023ee" and cursor != 0:
+                            cursor = 0
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                            cursor = pages - 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                    except asyncio.TimeoutError:
+                        await msg.delete(); return
+
+
         except IndexError:
 
-            formus = await self.client.quefe(f"SELECT formula_code, description, tags FROM model_formula;", type='all')
+            formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula;", type='all')
 
             def makeembed(top, least, pages, currentpage):
-                line = ''
+                line = ''; count = 1
 
+                reembed = discord.Embed(colour = discord.Colour(0x011C3A))
                 for formu in formus[top:least]:
-                    line = line + f"╟ `{formu[0]}` | **`{formu[1]}`** | `{formu[2].replace(' - ', '` `')}`\n"
+                    if count == 6:
+                        reembed.add_field(name="---------", value=line)
+                        count = 1; line = ''
+                    else:
+                        line = line + f"╟ `{formu[0]}`|**{formu[1]}**\n"
+                        count += 1
+                    if count < 6 and line: reembed.add_field(name="---------", value=line)
 
-                reembed = discord.Embed(colour = discord.Colour(0x011C3A), description=line)
                 reembed.set_footer(text=f"------ {currentpage}/{pages} ------")
                 return reembed
                 #else:
@@ -296,14 +387,14 @@ class avaWorkshop(commands.Cog):
                 await msg.add_reaction("\U000027a1")    #Right
                 await msg.add_reaction("\U000023ed")    #Top-right
 
-            pages = len(formus)//10
-            if len(formus)%10 != 0: pages += 1
+            pages = len(formus)//9
+            if len(formus)%9 != 0: pages += 1
             currentpage = 1
             cursor = 0
 
             emli = []
             for curp in range(pages):
-                myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
+                myembed = makeembed(currentpage*9-9, currentpage*9, pages, currentpage)
                 emli.append(myembed)
                 currentpage += 1
 

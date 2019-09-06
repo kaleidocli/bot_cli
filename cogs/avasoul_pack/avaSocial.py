@@ -123,7 +123,7 @@ class avaSocial(commands.Cog):
             await ctx.send(f":heart: {tar.mention}, **{ctx.author.name}** is feeling *unsure*.\nType `sure` to make {ctx.author.name} sure, 20 secs left to grab your chance!")
 
             def UMCc_check(m):
-                return m.channel == ctx.channel and m.author == tar
+                return m.channel == ctx.channel and m.author == tar and m.content.lower() == 'sure'
 
             try: resp = await self.client.wait_for('message', timeout=20, check=UMCc_check)
             except asyncio.TimeoutError: await ctx.send("<:gees:559192536195923999> Neither of them are sure..."); return

@@ -28,8 +28,8 @@ class guess(commands.Cog):
         self.client = client
         self.guess_socket = []          #For guess
         self.guess_dictall = {}         #For guess_all
-        self.guess_socket_plugin()
-        self.guess_socket_pluginall()
+        # self.guess_socket_plugin()
+        # self.guess_socket_pluginall()
         self.client_id = '594344297452325'
         self.client_secret = '2e29f3c50797fa6d5aad8b5bef527b214683a3ff'
         self.imgur_client = ImgurClient(self.client_id, self.client_secret)
@@ -523,6 +523,7 @@ class guess(commands.Cog):
         with open('game/q/qall.json', 'w') as f:
             json.dump(self.guess_dictall, f, indent=6)
     
+    """
     def guess_socket_plugin(self):
         with open('game/q/q.json') as f:
             try:
@@ -534,7 +535,7 @@ class guess(commands.Cog):
             try:
                 self.guess_dictall = json.load(f)
             except: print("ERROR at <guess_dict_pluginall()>")
-
+    """
 
 
 def setup(client):

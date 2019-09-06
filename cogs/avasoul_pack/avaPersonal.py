@@ -21,6 +21,16 @@ class avaPersonal(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
+        self.evo_dict = {'lp': f"UPDATE personal_info SET MAX_LP=MAX_LP+ROUND(MAX_LP/100*5), EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
+                    'sta': f"UPDATE personal_info SET MAX_STA=MAX_STA+ROUND(MAX_STA/100*10), EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
+                    'str': f"UPDATE personal_info SET STR=STR+0.25, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
+                    'int': f"UPDATE personal_info SET INTT=INTT+0.1, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
+                    'flame': f"UPDATE personal_info SET au_FLAME=au_FLAME+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
+                    'ice': f"UPDATE personal_info SET au_ICE=au_ICE+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
+                    'holy': f"UPDATE personal_info SET au_HOLY=au_HOLY+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
+                    'dark': f"UPDATE personal_info SET au_DARK=au_DARK+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
+                    'charm': f"UPDATE personal_info SET charm=charm+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;"}
+
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -352,17 +362,6 @@ class avaPersonal(commands.Cog):
 
         raw = list(args)
 
-
-        evo_dict = {'lp': f"UPDATE personal_info SET MAX_LP=MAX_LP+ROUND(MAX_LP/100*5), EVO=EVO+1, perks=perks-1 WHERE id='{ctx.author.id}' AND perks>0;",
-                    'sta': f"UPDATE personal_info SET MAX_STA=MAX_STA+ROUND(MAX_STA/100*10), EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
-                    'str': f"UPDATE personal_info SET STR=STR+0.1, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
-                    'int': f"UPDATE personal_info SET INTT=INTT+0.1, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
-                    'flame': f"UPDATE personal_info SET au_FLAME=au_FLAME+0.05, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
-                    'ice': f"UPDATE personal_info SET au_ICE=au_ICE+0.05, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
-                    'holy': f"UPDATE personal_info SET au_HOLY=au_HOLY+0.05, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
-                    'dark': f"UPDATE personal_info SET au_DARK=au_DARK+0.05, EVO=EVO+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;",
-                    'charm': f"UPDATE personal_info SET charm=charm+1, perks=perks-1 WHERE id='{str(ctx.message.author.id)}' AND perks>0;"}
-
         try:
             if raw[0] == 'transfuse':
                 if evo < 6: await ctx.send(f"<:osit:544356212846886924> Your evolution has to be more than 6 to proceed transfusion!"); return
@@ -398,17 +397,17 @@ class avaPersonal(commands.Cog):
                 except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request decline!"); return
 
                 LP, MAX_LP, STA, STR, INT = await self.client.quefe(f"SELECT LP, MAX_LP, STA, STR, INT FROM personal_info WHERE id='{ctx.author.id}';")
-                await self.client._cursor.execute(f"UPDATE personal_info SET perks=perks-1, LP={random.randint(0, LP*2)}, MAX_LP={random.randint(0, MAX_LP*2)}, STA={random.randint(0, STA*2)}, STR={random.randint(0, round(STR*2))}, INT={random.randint(0, round(INT*2))} WHERE id='{ctx.author.id}';")
-                await ctx.send("<:osit:544356212846886924> Mutation succeed! Check your profile immidiately..."); return
+                await self.client._cursor.execute(f"UPDATE personal_info SET perks=perks-1, LP={random.randint(0, LP*2)}, MAX_LP={random.randint(0, MAX_LP*2)}, STA={random.randint(0, STA*2)}, STR={random.randint(0, int(STR*2))}, INT={random.randint(0, int(INT*2))} WHERE id='{ctx.author.id}';")
+                await ctx.send("<:osit:544356212846886924> Mutation done! Check your profile immidiately..."); return
 
 
-            if await self.client._cursor.execute(evo_dict[raw[0].lower()]) == 0: await ctx.send("<:osit:544356212846886924> Not enough perks!"); return
+            if await self.client._cursor.execute(self.evo_dict[raw[0].lower()].replace('user_id_here', ctx.author.id)) == 0: await ctx.send("<:osit:544356212846886924> Not enough perks!"); return
 
         # E: Attributes not found
         except KeyError: await ctx.send("<:osit:544356212846886924> Invalid attribute!"); return
 
         # E: Attri not given
-        except IndexError: await ctx.send(f"<:zapp:524893958115950603> Perks can be spent on your attributes:\n________________________\n**|** `LP` · +5% MAX_LP \n**|** `STA` · +10% MAX_STA \n**|** `STR` · +0.1 STR\n**|** `INT` · +0.1 INT\n**|** `FLAME` · +0.05 aura \n**|** `ICE` · +0.05 aura \n**|** `HOLY` · +0.05 aura \n**|** `DARK` · +0.05 aura\n**|** `CHARM` · +0.01 CHARM \n________________________\n**Your perks:** {perks}\n**Your evolution:** {evo}"); return
+        except IndexError: await ctx.send(f"<:zapp:524893958115950603> Perks can be spent on your attributes:\n________________________\n**|** `LP` · +5% MAX_LP \n**|** `STA` · +10% MAX_STA \n**|** `STR` · +0.25 STR\n**|** `INT` · +0.1 INT\n**|** `FLAME` · +0.05 aura \n**|** `ICE` · +0.05 aura \n**|** `HOLY` · +0.05 aura \n**|** `DARK` · +0.05 aura\n**|** `CHARM` · +0.01 CHARM \n________________________\n**Your perks:** {perks}\n**Your evolution:** {evo}"); return
 
         await ctx.send("<:zapp:524893958115950603> Done. You may use `profile` to check.")
 

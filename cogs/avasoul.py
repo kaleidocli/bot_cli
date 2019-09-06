@@ -2068,26 +2068,21 @@ class avasoul(commands.Cog):
                         for count in range(mob[1]):
                             # Generating rewards
                             status = []; objecto = []; bingo_list = []
+                            # Gacha
                             for reward in rewards:
                                 stuff = reward.split(' - ')
-                                if random.choice(range(int(stuff[2]))) == 0:
-                                    if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+                                if await self.utils.percenter(int(stuff[2])):
 
                                     # Stats reward
-                                    if stuff[0] in ['money']: status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
+                                    if stuff[0] in ['money']:
+                                        if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+
+                                        status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
                                     # ... other shit
                                     else:
-                                        # Get item/weapon's info
-                                        temp = await self.client.quefe(f"SELECT * FROM model_item WHERE item_code='{stuff[0]}';")
-                                        # SERI / UN-SERI check
-                                        # SERI
-                                        if 'inconsumbale' in temp[2].split(' - '):
-                                            #objecto.append(f"""INSERT INTO pi_inventory VALUE ("user_id_here", {', '.join(temp)});""")
-                                            objecto.append(f"""SELECT func_it_reward('user_id_here', '{stuff[0]}', '{random.choice(range(stuff[1]))}');""")
-                                        # UN-SERI
-                                        else:
-                                            #objecto.append(f"""UPDATE pi_inventory SET quantity=quantity+{random.choice(range(stuff[1]))} WHERE user_id="user_id_here" AND item_code='{stuff[0]}';""")
-                                            objecto.append(f"""SELECT func_ig_reward('user_id_here', '{stuff[0]}', '{random.choice(range(stuff[1]))}');""")
+                                        objecto.append(f"""SELECT func_it_reward("user_id_here", "{stuff[0]}", {stuff[1]}); SELECT func_ig_reward("user_id_here", "{stuff[0]}", {stuff[1]});""")
+                                        bingo_list.append(f"item `{stuff[0]}`")
+
                             stata = f"""UPDATE personal_info SET {', '.join(status)} WHERE id="user_id_here"; """
                             rewards_query = f"{stata} {' '.join(objecto)}"
 

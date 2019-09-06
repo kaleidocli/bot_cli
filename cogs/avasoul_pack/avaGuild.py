@@ -5,6 +5,8 @@ import discord.errors as discordErrors
 import pymysql.err as mysqlError
 
 import asyncio
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 from .avaTools import avaTools
 from .avaUtils import avaUtils
@@ -15,6 +17,13 @@ class avaGuild(commands.Cog):
 
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
+
+        self.guild_rank = {'iron': ['bronze', 20],
+                            'bronze': ['silver', 100],
+                            'silver': ['gold', 220],
+                            'gold': ['adamantite', 490], 
+                            'adamantite': ['mithryl', 755], 
+                            'mithryl': ['n/a', 980]}
 
 
     @commands.Cog.listener()
@@ -79,217 +88,6 @@ class avaGuild(commands.Cog):
                 await self.client._cursor.execute(f"UPDATE pi_guild SET name='n/a', deposit=0 WHERE user_id='{str(ctx.message.author.id)}';")
                 await ctx.send(f":white_check_mark: Left guild. Deposit of **<:36pxGold:548661444133126185>{deposit}** has been returned"); return
 
-            elif raw[0] == 'quest':
-                try:
-                    if raw[1] == 'take':
-                        # If quest's id given, accept the quest
-                        try:
-                            sample = {'iron': 3, 'bronze': 4, 'silver': 5, 'gold': 6, 'adamantite': 8, 'mithryl': 10}
-                            if await self.client._cursor.execute(f"SELECT * FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_code='{raw[2]}';") >= 1: await ctx.send("<:osit:544356212846886924> Quest has already been taken or done"); return
-                            if await self.client._cursor.execute(f"SELECT COUNT(user_id) FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='ONGOING'") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
-
-                            region, quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query = await self.client.quefe(f"SELECT region, quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query FROM model_quest WHERE quest_code='{raw[2]}';")
-                            snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
-                            # Region check
-                            if region != current_place and quest_line != 'DAILY': await ctx.send(f":european_castle: Quest `{raw[2]}` is only available in `{region}`!"); return
-                            
-
-                            temp = snap_query.split(' || ')
-                            temp2 = []
-                            for que in temp:
-                                a = await self.client.quefe(que)
-                                try: temp2.append(str(a[0]))
-                                except TypeError: temp2.append('0')
-                            snapshot = ' || '.join(temp2)
-
-                            await self.client._cursor.execute(f"""INSERT INTO pi_quests VALUES (0, '{quest_code}', '{ctx.author.id}', "{snap_query}", '{snapshot}', '{quest_sample}', '{eval_meth}', "{effect_query}", "{reward_query}", 'FULL');""")
-                            
-                            await ctx.send(f":white_check_mark: {quest_line.capitalize()} quest `{raw[2]}`|**{quest_name}** accepted! Use `quest` to check your progress."); return
-                        # E: Quest's id not found
-                        except ValueError: await ctx.send("<:osit:544356212846886924> Quest not found"); return
-                        # E: Quest's id not given (and current_quest is also empty)
-                        except IndexError: await ctx.send(f"Take what?"); return
-
-                    elif raw[1] == 'leave': 
-                        try:
-                            region, quest_line = await self.client.quefe(f"SELECT region, quest_line FROM model_quest WHERE quest_code='{raw[2]}';")
-                            # Region check
-                            if region != current_place and quest_line != 'DAILY': await ctx.send(f":european_castle: You need to be in `{region}` in order to leave {quest_line} quest `{raw[2]}`"); return
-                        except TypeError: await ctx.send("<:osit:544356212846886924> You have not taken this quest yet!"); return
-
-                        if await self.client._cursor.execute(f"DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[0]} AND stats!='ONGOING'") == 0: await ctx.send(f"<:osit:544356212846886924> You cannot leave a completed quest"); return
-                        await ctx.send(f":european_castle: Left {quest_line} quest `{raw[2]}`|`{region}` (id.`{raw[2]}`)"); return
-
-                    elif raw[1] == 'redeem':
-                        # Check if the quest is ONGOING     |      Get stuff too :>
-                        try: snapshot, snap_query, quest_sample, stats, eval_meth, effect_query, reward_query = await self.client.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, effect_query, reward_query FROM pi_quests WHERE quest_id={raw[2]} AND user_id='{ctx.author.id}';")
-                        except TypeError: await ctx.send(f"<:osit:544356212846886924> Quest not found, **{ctx.author.name}**")
-                        snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
-                        effect_query = effect_query.replace('user_id_here', f'{ctx.author.id}')
-                        reward_query = reward_query.replace('user_id_here', f'{ctx.author.id}')
-
-                        if stats == 'DONE': await ctx.send("<:osit:544356212846886924> A quest cannot be redeem twice, scammer... <:fufu:520602319323267082>"); return
-
-                        # Get current snapshot
-                        temp = snap_query.split(' || ')
-                        quest_sample = quest_sample.split(' || ')
-                        snapshot = snapshot.split(' || ')
-                        cur_snapshot = []
-                        for sque in temp:
-                            a = await self.client.quefe(sque)
-                            try: cur_snapshot.append(a[0])
-                            except TypeError: cur_snapshot.append('0')
-
-                        # Evaluating
-                        if eval_meth == '>=':
-                            for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                                if not (a - b) >= c: await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
-                        elif eval_meth == '==':
-                            for a, c in zip(cur_snapshot, quest_sample):
-                                if not a == c: await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
-                        if eval_meth == '<=':
-                            for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                                if not (a - b) <= c: await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
-                        elif eval_meth == '>':
-                            for a, c in zip(cur_snapshot, quest_sample):
-                                if not a >= c: await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
-                        elif eval_meth == '<':
-                            for a, c in zip(cur_snapshot, quest_sample):
-                                if not a <= c: await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
-
-                        # Reward n Affect
-                        await self.client._cursor.execute(reward_query + effect_query)
-                        # Increase total_quests by 1
-                        await self.client._cursor.execute(f"UPDATE pi_guild SET total_quests+=1 WHERE user_id='{ctx.author.id}';")
-                        # Remove if daily, else keep
-                        if quest_line == 'DAILY': await self.client._cursor.execute(f"DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[0]};")
-                        else: await self.client._cursor.execute(f"UPDATE pi_quests SET stats='DONE' WHERE user_id='{ctx.author.id}' AND quest_id={raw[2]};")
-                        # Inform
-                        await ctx.send(f":european_castle: Glad we can work out well, {ctx.author.id}. May the Olds look upon you!")
-                        # Ranking check
-                        sample2 = {'iron': ['bronze', 155], 'bronze': ['silver', 310], 'silver': ['gold', 465], 'gold': ['adamantite', 620], 'adamantite': ['mithryl', 755], 'mithryl': ['n/a', 0]}
-                        if await self.client._cursor.execute(f"UPDATE pi_guild SET rank='{sample2[rank][0]}' WHERE user_id='{str(ctx.message.author.id)}' AND total_quests>={sample2[rank][1]};") == 1:
-                            await ctx.send(f":beginner: Congrats, {ctx.message.author.mention}! You've been promoted to **{sample2[rank][0].upper()}**!")                         
-
-                except IndexError:
-                    bundle = await self.client.quefe(f"SELECT quest_id, quest_code, snap_query, snapshot, sample, eval_meth FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats IN ('ONGOING', 'FULL');", type='all')
-                    # ONGOING quest check
-                    if not bundle: await ctx.send(f":european_castle: You have currently no active quest, **{ctx.author.name}**! Try get some and prove yourself."); return
-                    for pack in bundle:
-                        bundle2 = await self.client.quefe(f"SELECT name, description, quest_line FROM model_quest WHERE quest_code='{pack[1]}';", type='all')
-
-                    line = f"**『ACTIVE QUEST』** {len(bundle)}\n━━━━━━━━━━━━━━"
-                    for pack, pack2 in zip(bundle, bundle2):
-                        # Get current snapshot
-                        eval_meth = pack[5]
-                        temp = pack[2].split(' || ')
-                        quest_sample = pack[4].split(' || ')
-                        snapshot = pack[3].split(' || ')
-                        cur_snapshot = []
-                        for sque in temp:
-                            a = await self.client.quefe(sque)
-                            try: cur_snapshot.append(a[0])
-                            except TypeError: cur_snapshot.append('0')
-
-                        # Create cur_snapshot-sample pack
-                        line += f"\n:scroll: `{pack[0]}` · `{pack[1]}`|**{pack2[0]}**"
-                        if eval_meth == '>=':
-                            for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                                try: rate = int(((int(a) - int(b))/int(c))*10)
-                                except ZeroDivisionError: rate = 0
-                                line = line + f"\n:: {'∎'*rate + '━'*(10-rate)} ({int(a) - int(b)}/{c})"
-                        elif eval_meth == '==':
-                            for a, c in zip(cur_snapshot, quest_sample):
-                                if a == c: rate = 10
-                                else: rate = 0
-                                line = line + f"\n:: {'∎'*rate + '━'*(10-rate)} ({int(a) - int(b)}/{c})"
-                        elif eval_meth == '<=':
-                            for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                                try: rate = int(((int(a) - int(b))/int(c))*10)
-                                except ZeroDivisionError: rate = 0
-                                line = line + f"\n:: {'∎'*rate + '━'*(10-rate)} ({int(a) - int(b)}/{c})"
-                        elif eval_meth == '>':
-                            for a, c in zip(cur_snapshot, quest_sample):
-                                try: rate = int((int(a)/int(c))*10)
-                                except ZeroDivisionError: rate = 0
-                                line = line + f"\n:: {'∎'*rate + '━'*(10-rate)} ({int(a) - int(b)}/{c})"
-                        elif eval_meth == '<':
-                            for a, c in zip(cur_snapshot, quest_sample):
-                                try: rate = int((int(a)/int(c))*10)
-                                except ZeroDivisionError: rate = 0
-                                line = line + f"\n:: {'∎'*rate + '━'*(10-rate)} ({int(a) - int(b)}/{c})"
-
-                    await ctx.send(line); return                
-
-            elif raw[0] == 'quests':
-                bundle = await self.client.quefe(f"SELECT quest_code, name, description, quest_line FROM model_quest WHERE region='{current_place}';", type='all')
-                completed_bundle = await self.client.quefe(f"SELECT quest_code FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='DONE' AND EXISTS (SELECT * FROM model_quest WHERE model_quest.quest_code=pi_quests.quest_code AND region='{current_place}');")
-                # None check
-                if not completed_bundle: completed_bundle = []
-
-                def makeembed(top, least, pages, currentpage):
-                    line = ''
-
-                    line = f"\n```『Total』{len(bundle)}⠀⠀⠀⠀『Done』{len(completed_bundle)}```"
-                    for pack in bundle[top:least]:
-                        if pack[0] in completed_bundle: marker = ':page_with_curl:'
-                        else: marker = ':scroll:'
-                        line += f"""\n{marker} **`{pack[0]}`**|`{pack[3].capitalize()} quest`\n⠀⠀⠀|**"{pack[1]}"**\n⠀⠀⠀|*"{pack[2]}"*\n"""
-
-                    reembed = discord.Embed(title = f"`{current_place}`|**QUEST BULLETIN**", colour = discord.Colour(0x011C3A), description=f"{line}\n⠀⠀⠀⠀")
-                    reembed.set_footer(text=f"Board {currentpage} of {pages}")
-                    return reembed
-                    #else:
-                    #    await ctx.send("*Nothing but dust here...*")
-                
-                async def attachreaction(msg):
-                    await msg.add_reaction("\U00002b05")    #Left
-                    await msg.add_reaction("\U000027a1")    #Right
-
-                pages = int(len(bundle)/5)
-                if len(bundle)%5 != 0: pages += 1
-                currentpage = 1
-                cursor = 0
-
-                emli = []
-                for curp in range(pages):
-                    myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
-                    emli.append(myembed)
-                    currentpage += 1
-
-                msg = await ctx.send(embed=emli[cursor])
-                if pages > 1: await attachreaction(msg)
-                else: return
-
-                def UM_check(reaction, user):
-                    return user.id == ctx.author.id and reaction.message.id == msg.id
-
-                while True:
-                    try:    
-                        reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                            cursor += 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U00002b05" and cursor > 0:
-                            cursor -= 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ee" and cursor != 0:
-                            cursor = 0
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                            cursor = pages - 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                    except asyncio.TimeoutError:
-                        break
-
         except IndexError: await ctx.send(f":european_castle: **`{ctx.message.author.name}`'s G.U.I.L.D card** :european_castle: \n------------------------------------------------\n**`Guild`** · `{name}`|**{name}**\n**`Rank`** · {rank}\n**`Total quests done`** · {total_quests}"); return
 
     @commands.command()
@@ -321,15 +119,14 @@ class avaGuild(commands.Cog):
                     if await self.client._cursor.execute(f"SELECT COUNT(user_id) FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='ONGOING'") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
 
                     # QUEST info get
-                    region, quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query = await self.client.quefe(f"SELECT region, quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query FROM model_quest WHERE quest_code='{raw[1]}' AND quest_line IN ('main', 'side');")
+                    try: quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query, duration = await self.client.quefe(f"SELECT quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query, duration FROM model_quest WHERE quest_code='{raw[1]}' AND region='{current_place}' AND quest_line IN ('main', 'side');")
+                    except TypeError: await ctx.send("<:osit:544356212846886924> Quest not found!"); return
                     try:
                         if await self.client._cursor.execute(prerequisite.replace('user_id_here', str(ctx.author.id))) == 0: await ctx.send("<:osit:544356212846886924> Prerequisite is not met!"); return
                     # E: Query's empty
                     except mysqlError.InternalError: pass
                     snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
                     effect_query = effect_query.replace('user_id_here', f'{ctx.author.id}')
-                    # Region check
-                    if region != current_place and quest_line != 'DAILY': await ctx.send(f":european_castle: Quest `{raw[1]}` is only available in `{region}`!"); return
                     
 
                     temp = snap_query.split(' || ')
@@ -340,7 +137,15 @@ class avaGuild(commands.Cog):
                         except TypeError: temp2.append('0')
                     snapshot = ' || '.join(temp2)
 
-                    await self.client._cursor.execute(f"""INSERT INTO pi_quests VALUES (0, '{quest_code}', '{ctx.author.id}', "{snap_query}", '{snapshot}', '{quest_sample}', '{eval_meth}', "{effect_query}", "{reward_query}", "{penalty_query}", 'FULL'); {effect_query}""")
+
+                    # End_point calc from duration
+                    if duration == '0':
+                        end_point = datetime.now() + timedelta(seconds=duration)
+                        end_point = f"'{end_point.strftime('%Y-%m-%d %H:%M:%S')}'"
+                    else: end_point = 'NULL'
+
+
+                    await self.client._cursor.execute(f"""INSERT INTO pi_quests VALUES (0, '{quest_code}', '{ctx.author.id}', "{snap_query}", '{snapshot}', '{quest_sample}', '{eval_meth}', "{effect_query}", "{reward_query}", "{penalty_query}", {end_point}, 'FULL'); {effect_query}""")
                     
                     await ctx.send(f":white_check_mark: {quest_line.capitalize()} quest `{raw[1]}`|**{quest_name}** accepted! Use `quest` to check your progress."); return
                 # E: Quest's id not found
@@ -365,10 +170,14 @@ class avaGuild(commands.Cog):
 
             elif raw[0] == 'claim':
                 # Check if the quest is ONGOING     |      Get stuff too :>
-                try: snapshot, snap_query, quest_sample, stats, eval_meth, reward_query, quest_line, quest_code = await self.client.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, reward_query, (SELECT quest_line FROM model_quest WHERE quest_code=pi_quests.quest_code), quest_code FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
-                except TypeError: await ctx.send(f"<:osit:544356212846886924> Quest not found, **{ctx.author.name}**")
+                try: snapshot, snap_query, quest_sample, stats, eval_meth, reward_query, quest_line, quest_code, end_point = await self.client.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, reward_query, (SELECT quest_line FROM model_quest WHERE quest_code=pi_quests.quest_code), quest_code, end_point FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
+                except (TypeError, mysqlError.InternalError): await ctx.send(f"<:osit:544356212846886924> Quest not found, **{ctx.author.name}**")
                 snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
                 reward_query = reward_query.replace('user_id_here', f'{ctx.author.id}')
+
+                # Duration check
+                if end_point:
+                    if datetime.now() > end_point: await ctx.send(f":european_castle: The quest is out of time, **{ctx.author.name}**!"); return
 
                 if stats == 'DONE': await ctx.send("<:osit:544356212846886924> A quest cannot be claimed twice, scammer... <:fufu:520602319323267082>"); return
 
@@ -422,84 +231,142 @@ class avaGuild(commands.Cog):
                 # Inform
                 await ctx.send(f":european_castle: Quest completion is confirmed. **{ctx.author.name}**, may the Olds look upon you!")
                 # Ranking check
-                sample2 = {'iron': ['bronze', 20], 'bronze': ['silver', 120], 'silver': ['gold', 350], 'gold': ['adamantite', 620], 'adamantite': ['mithryl', 755], 'mithryl': ['n/a', 980]}
-                if await self.client._cursor.execute(f"UPDATE pi_guild SET rank='{sample2[rank][0]}' WHERE user_id='{str(ctx.message.author.id)}' AND total_quests>={sample2[rank][1]};") == 1:
-                    await ctx.send(f":beginner: Congrats, {ctx.message.author.mention}! You've been promoted to **{sample2[rank][0].upper()}**!")                         
+                if await self.client._cursor.execute(f"UPDATE pi_guild SET rank='{self.guild_rank[rank][0]}' WHERE user_id='{str(ctx.message.author.id)}' AND total_quests>={self.guild_rank[rank][1]};") == 1:
+                    await ctx.send(f":beginner: Congrats, {ctx.message.author.mention}! You've been promoted to **{self.guild_rank[rank][0].upper()}**!")                         
 
         except IndexError:
-            bundle = await self.client.quefe(f"SELECT quest_id, quest_code, snap_query, snapshot, sample, eval_meth FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats IN ('ONGOING', 'FULL');", type='all')
+            bundle = await self.client.quefe(f"SELECT quest_id, quest_code, snap_query, snapshot, sample, eval_meth, end_point FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats IN ('ONGOING', 'FULL');", type='all')
             # ONGOING quest check
             if not bundle: await ctx.send(f":european_castle: You have currently no active quest, **{ctx.author.name}**! Try get some and prove yourself."); return
             bundle2 = []
             for pack in bundle:
-                tempbu = await self.client.quefe(f"SELECT name, description, quest_line FROM model_quest WHERE quest_code='{pack[1]}';", type='all')
+                tempbu = await self.client.quefe(f"SELECT name, description, quest_line, description FROM model_quest WHERE quest_code='{pack[1]}';", type='all')
                 bundle2.append(tempbu[0])
 
-            temb = discord.Embed(title = f"ACTIVE QUESTS of {ctx.author.name}", colour = discord.Colour(0x011C3A), description=f"```:: {len(bundle)} quests in total```")
-            for pack, pack2 in zip(bundle, bundle2):
-                # Get current snapshot
-                eval_meth = pack[5]
-                temp = pack[2].split(' || ')
-                quest_sample = pack[4].split(' || ')
-                snapshot = pack[3].split(' || ')
-                cur_snapshot = []
-                for sque in temp:
-                    a = await self.client.quefe(sque)
-                    try: cur_snapshot.append(a[0])
-                    except TypeError: cur_snapshot.append('0')
+            async def makeembed(top, least, pages, currentpage):
+                temb = discord.Embed(title = f"**ACTIVE QUESTS** || {ctx.author.name}", colour = discord.Colour(0x011C3A), description=f'═════════╡**`{currentpage}/{len(bundle)}`**╞═════════')
+                for pack, pack2 in zip(bundle[top:least], bundle2[top:least]):
+                    # Get current snapshot
+                    eval_meth = pack[5]
+                    temp = pack[2].split(' || ')
+                    quest_sample = pack[4].split(' || ')
+                    snapshot = pack[3].split(' || ')
+                    cur_snapshot = []
+                    for sque in temp:
+                        a = await self.client.quefe(sque)
+                        try: cur_snapshot.append(a[0])
+                        except TypeError: cur_snapshot.append('0')
 
-                line = ''
+                    line = ''
 
-                # Create cur_snapshot-sample pack
-                if eval_meth == '>=':
-                    for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                        try: rate = int(((int(a) - int(b))/int(c))*10)
-                        except ZeroDivisionError: rate = 0
-                        if rate > 10: rate = 10
-                        elif rate < -10: rate = 0
-                        line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
-                elif eval_meth == '==':
-                    for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                        # DIGIT
-                        try:
-                            difference = int(a) - int(b)
-                            try: rate = int(difference/int(c)*10)
+                    # Create cur_snapshot-sample pack
+                    if eval_meth == '>=':
+                        for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
+                            try: rate = int(((int(a) - int(b))/int(c))*10)
                             except ZeroDivisionError: rate = 0
-                        # CHAR
-                        except ValueError:
-                            if a == c:
-                                difference = 1
-                                rate = 10
-                            else:
-                                difference = 0
-                                rate = 0
-                        if rate > 10: rate = 10
-                        elif rate < -10: rate = 0
-                        line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({difference}·**{c}**)||"
-                elif eval_meth == '<=':
-                    for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                        try: rate = int(((int(a) - int(b))/int(c))*10)
-                        except ZeroDivisionError: rate = 0
-                        if rate > 10: rate = 10
-                        elif rate < -10: rate = 0
-                        line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
-                elif eval_meth == '>':
-                    for a, c in zip(cur_snapshot, quest_sample):
-                        try: rate = int((int(a)/int(c))*10)
-                        except ZeroDivisionError: rate = 0
-                        if rate > 10: rate = 10
-                        elif rate < -10: rate = 0
-                        line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
-                elif eval_meth == '<':
-                    for a, c in zip(cur_snapshot, quest_sample):
-                        try: rate = int((int(a)/int(c))*10)
-                        except ZeroDivisionError: rate = 0
-                        if rate > 10: rate = 10
-                        elif rate < -10: rate = 0
-                        line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
-                temb.add_field(name=f"`{pack[0]}` :scroll:『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest", value=line)
+                            if rate > 10: rate = 10
+                            elif rate < -10: rate = 0
+                            line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
+                    elif eval_meth == '==':
+                        for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
+                            # DIGIT
+                            try:
+                                difference = int(a) - int(b)
+                                try: rate = int(difference/int(c)*10)
+                                except ZeroDivisionError: rate = 0
+                            # CHAR
+                            except ValueError:
+                                if a == c:
+                                    difference = 1
+                                    rate = 10
+                                else:
+                                    difference = 0
+                                    rate = 0
+                            if rate > 10: rate = 10
+                            elif rate < -10: rate = 0
+                            line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({difference}·**{c}**)||"
+                    elif eval_meth == '<=':
+                        for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
+                            try: rate = int(((int(a) - int(b))/int(c))*10)
+                            except ZeroDivisionError: rate = 0
+                            if rate > 10: rate = 10
+                            elif rate < -10: rate = 0
+                            line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
+                    elif eval_meth == '>':
+                        for a, c in zip(cur_snapshot, quest_sample):
+                            try: rate = int((int(a)/int(c))*10)
+                            except ZeroDivisionError: rate = 0
+                            if rate > 10: rate = 10
+                            elif rate < -10: rate = 0
+                            line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
+                    elif eval_meth == '<':
+                        for a, c in zip(cur_snapshot, quest_sample):
+                            try: rate = int((int(a)/int(c))*10)
+                            except ZeroDivisionError: rate = 0
+                            if rate > 10: rate = 10
+                            elif rate < -10: rate = 0
+                            line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
 
-            await ctx.send(embed=temb, delete_after=20); return                
+                    if pack[6]:
+                        if datetime.now() > pack[6]:
+                            temb.add_field(name=f"`{pack[0]}`:fire:~~『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest~~\n\n> {pack2[3]}\n", value=line)
+                        else:
+                            delta = relativedelta(pack[6], datetime.now())
+                            temb.add_field(name=f"`{pack[0]}` :scroll:『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest [`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`]\n\n> {pack2[3]}\n", value=line)
+                    else:
+                        temb.add_field(name=f"`{pack[0]}` :scroll:『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest\n\n> {pack2[3]}\n", value=line)
+                return temb
+                #else:
+                #    await ctx.send("*Nothing but dust here...*")
+            
+            async def attachreaction(msg):
+                await msg.add_reaction("\U00002b05")    #Left
+                await msg.add_reaction("\U000027a1")    #Right
+
+            pages = int(len(bundle)/1)
+            if len(bundle)%1 != 0: pages += 1
+            currentpage = 1
+            cursor = 0
+
+            emli = []
+            for curp in range(pages):
+                myembed = await makeembed(currentpage*1-1, currentpage*1, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
+
+            try: msg = await ctx.send(embed=emli[cursor])
+            except IndexError: await ctx.send("<:osit:544356212846886924> Please join a guild..."); return
+            if pages > 1: await attachreaction(msg)
+            else: return
+
+            def UM_check(reaction, user):
+                return user.id == ctx.author.id and reaction.message.id == msg.id
+
+            while True:
+                try:    
+                    reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
+                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                        cursor += 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U00002b05" and cursor > 0:
+                        cursor -= 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ee" and cursor != 0:
+                        cursor = 0
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                        cursor = pages - 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                except asyncio.TimeoutError:
+                    break          
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)

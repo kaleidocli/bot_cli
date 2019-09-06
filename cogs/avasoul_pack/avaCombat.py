@@ -42,15 +42,15 @@ class avaCombat(commands.Cog):
         # GET user's weapon
         if combat_HANDLING == 'both':
             w_defend, w_speed, wd_weight = await self.client.quefe(f"SELECT defend, speed, weight FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'")
-            w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'")
+            w_str, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT str, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'")
             w_sta += wd_weight/100
         elif combat_HANDLING == 'right':
-            w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'")
+            w_str, w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT str, defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'")
             w_speed *= 1.2
             w_multiplier += 1
             w_defend *= 2
         elif combat_HANDLING == 'left':
-            w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'")
+            w_str, w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT str, defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'")
             w_speed *= 1.2
             w_multiplier += 1
             w_defend *= 2
@@ -122,21 +122,20 @@ class avaCombat(commands.Cog):
             status = []; objecto = []; bingo_list = []
             for reward in rewards:
                 stuff = reward.split(' - ')
-                if random.choice(range(int(stuff[2]))) == 0:
-                    if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+                # Gacha
+                if await self.utils.percenter(int(stuff[2])):
 
                     # Stats reward
-                    if stuff[0] in ['money']: status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
+                    if stuff[0] in ['money']:
+                        if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+
+                        status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
                     # ... other shit
                     else: 
                         # Get item/weapon's info
-                        temp = await self.client.quefe(f"SELECT * FROM model_item WHERE item_code='{stuff[0]}';")
-                        # SERI / UN-SERI check
-                        # SERI
-                        if 'inconsumbale' in temp[2].split(' - '):
-                            objecto.append(f"""INSERT INTO pi_inventory VALUE ("user_id_here", {', '.join(temp)});""")
-                        # UN-SERI
-                        else: objecto.append(f"""UPDATE pi_inventory SET quantity=quantity+{random.choice(range(stuff[1]))} WHERE user_id="user_id_here" AND item_code='{stuff[0]}';""")
+                        objecto.append(f"""SELECT func_it_reward("user_id_here", "{stuff[0]}", {stuff[1]}); SELECT func_ig_reward("user_id_here", "{stuff[0]}", {stuff[1]});""")
+                        bingo_list.append(f"item `{stuff[0]}`")
+
             # Merit calc
             merrire = t_evo - evo + 1
             if merrire < 0: merrire = 0
@@ -184,8 +183,8 @@ class avaCombat(commands.Cog):
                 count += 0.2
 
             # Damage Calc
-            dmg = round(STR*w_multiplier*m_burst)
-            dmg_q = round(STR*w_multiplier*m_quick)
+            dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst)
+            dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick)
             # Crit
             if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
 
@@ -312,15 +311,15 @@ class avaCombat(commands.Cog):
         # GET user's weapon
         if combat_HANDLING == 'both':
             w_defend, w_speed, wd_weight = await self.client.quefe(f"SELECT defend, speed, weight FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{MSG.author.id}'")
-            w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{MSG.author.id}'")
+            w_str, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT str, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{MSG.author.id}'")
             w_sta += wd_weight/100
         elif combat_HANDLING == 'right':
-            w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{MSG.author.id}'")
+            w_str, w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT str, defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{MSG.author.id}'")
             w_speed *= 1.2
             w_multiplier += 1
             w_defend *= 2
         elif combat_HANDLING == 'left':
-            w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{MSG.author.id}'")
+            w_str, w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT str, defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{MSG.author.id}'")
             w_speed *= 1.2
             w_multiplier += 1
             w_defend *= 2
@@ -333,7 +332,7 @@ class avaCombat(commands.Cog):
         # Get target's weapon
         if t_combat_HANDLING == 'both':
             tw_defend, tw_speed = await self.client.quefe(f"SELECT defend, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_left_hand}' AND user_id='{target.id}'")
-            tw_multiplier = await self.client.quefe(f"SELECT multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_right_hand}' AND user_id='{target.id}'")
+            tw_multiplier = await self.client.quefe(f"SELECT multiplier FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_right_hand}' AND user_id='{target.id}'"); tw_multiplier = tw_multiplier[0]
         elif t_combat_HANDLING == 'right':
             tw_defend, tw_multiplier, tw_speed = await self.client.quefe(f"SELECT defend, multiplier, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{t_right_hand}' AND user_id='{target.id}'")
             tw_defend *= 2
@@ -388,11 +387,11 @@ class avaCombat(commands.Cog):
 
             # Damage Calc
             if combat_HANDLING == 'both':
-                dmg = round(STR*w_multiplier*m_burst)
-                dmg_q = round(STR*w_multiplier*m_quick)
+                dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst)
+                dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick)
             elif combat_HANDLING in ['right', 'left']:
-                dmg = round(STR*w_multiplier*m_burst)*2
-                dmg_q = round(STR*w_multiplier*m_quick)*2
+                dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst)*2
+                dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick)*2
   
             # Get Damage reduction
             dmgredu = 200 - tw_defend
@@ -477,9 +476,6 @@ class avaCombat(commands.Cog):
 
         _style = style
         __bmode = bmode
-
-        if distance < 100: a = 1
-        else: a = distance/100
 
         # Depend on the distance, make the shooter anonymous
         if distance <= 1000: shooter = MSG.author.name
@@ -865,12 +861,12 @@ class avaCombat(commands.Cog):
         # USER's info/weapon GET ==============================================
 
         # Get info     |      as well as checking coord
-        try: user_id, name, cur_PLACE, cur_X, cur_Y, cur_MOB, main_weapon, combat_HANDLING, STA, LP, AFlame, AIce, ADark, AHoly = await self.client.quefe(f"SELECT id, name, cur_PLACE, cur_X, cur_Y, cur_MOB, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand), combat_HANDLING, STA, LP, au_FLAME, au_ICE, au_DARK, au_HOLY FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND cur_X>1 AND cur_Y>1;")
+        try: user_id, INTT, cur_PLACE, cur_X, cur_Y, cur_MOB, main_weapon, combat_HANDLING, STA, LP, AFlame, AIce, ADark, AHoly = await self.client.quefe(f"SELECT id, INTT, cur_PLACE, cur_X, cur_Y, cur_MOB, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand), combat_HANDLING, STA, LP, au_FLAME, au_ICE, au_DARK, au_HOLY FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND cur_X>1 AND cur_Y>1;")
         # E: User in PB
         except TypeError: await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
 
         # Get weapon's info
-        w_round, w_firing_rate, w_sta, w_rmin, w_rmax, w_accu_randomness, w_accu_range, w_stealth, w_aura, w_tags, w_dmg, w_speed = await self.client.quefe(f"SELECT round, firing_rate, sta, range_min, range_max, accuracy_randomness, accuracy_range, stealth, aura, tags, dmg, speed FROM pi_inventory WHERE existence='GOOD' AND item_id='{main_weapon}';")
+        w_round, w_firing_rate, w_sta, w_rmin, w_rmax, w_accu_randomness, w_accu_range, w_stealth, w_aura, w_tags, w_dmg, w_speed, w_int = await self.client.quefe(f"SELECT round, firing_rate, sta, range_min, range_max, accuracy_randomness, accuracy_range, stealth, aura, tags, dmg, speed, intt FROM pi_inventory WHERE existence='GOOD' AND item_id='{main_weapon}';")
         w_tags = w_tags.split(' - ')
         if 'magic' in w_tags: _style = 'MAGIC'
         else: _style = 'PHYSIC'
@@ -1139,13 +1135,13 @@ class avaCombat(commands.Cog):
         # SHOOTING =======================================================
         # RANDOMNESS | Take HANDLING into account, then re-calc
         if combat_HANDLING != 'both':
-            w_accu_randomness = w_accu_randomness//2
-        if w_accu_randomness < 1: w_accu_randomness = 1
+            w_accu_randomness = w_accu_randomness//2 + (INTT*4+w_int)//5
+        if w_accu_randomness < 1: w_accu_randomness = 1 + (INTT*4+w_int)//5
 
         # CE - Processing
         # SHOTS are evaluated with probability and user's CE (PCM:Attack) (More attack -> Less accuracy)
         try:
-            if CE: w_accu_randomness = w_accu_randomness - w_accu_randomness*float(CE['attack'])
+            if CE: w_accu_randomness = w_accu_randomness - w_accu_randomness/20*float(CE['aggressive'])
         # E: Temporary CE ('lockon' only)
         except KeyError: pass
 
