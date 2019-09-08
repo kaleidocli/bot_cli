@@ -64,6 +64,7 @@ class avaPersonal(commands.Cog):
     async def profile(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
         await self.tools.ava_scan(ctx.message, type='all')
+        await self.tools.ava_scan(ctx.message, type='normalize')
 
         try:
             id = args[0]
@@ -72,31 +73,93 @@ class avaPersonal(commands.Cog):
         
         # Data get and paraphrase
         # pylint: disable=unused-variable
-        try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo = await self.client.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo FROM personal_info WHERE id='{id}' OR name LIKE '%{id}%';")
+        try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, charm, au_FLAME, au_ICE, au_HOLY, au_DARK = await self.client.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, charm, au_FLAME, au_ICE, au_HOLY, au_DARK FROM personal_info WHERE id='{id}' OR name LIKE '%{id}%';")
         except TypeError: await ctx.send("<:osit:544356212846886924> User has not incarnated!"); return
         # pylint: enable=unused-variable
         if str(ctx.message.author.id) not in ['214128381762076672', partner, f'{ctx.author.id}']: await ctx.send("<:osit:544356212846886924> You have to be user's *partner* or *guardians* to view their status!"); return
 
-        degrees = '` `'.join(await self.client.quefe(f"SELECT degree FROM pi_degrees WHERE user_id='{id}';"))
-        
+        # pockets = await self.client.quefe(f"SELECT slot_name, item_id FROM pi_equipment WHERE user_id='{ctx.author.id}' AND slot_type='belt' ORDER BY slot_id ASC LIMIT 3;")
+        # pocket_line = ''
+        # for pocket in pockets:
+        #     pocket_line = pocket_line + f"\n**`{pocket[0]}`**: `{pocket[1]}`"
+
         if right_hand != 'n/a':
             rh_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{str(ctx.message.author.id)}';")
             try: right_hand = f"`{right_hand}`|**{rh_name[0]}**"
             except TypeError:
-                if right_hand == 'ar13': await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'ar13', 1);"); rh_name = "ar13"
-                else: await self.client._cursor.execute(f"UPDATE personal_info SET right_hand='ar13' WHERE id='{ctx.author.id}';"); rh_name = "ar13"
+                if right_hand == 'ar13': await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'ar13', 1);"); rh_name = "Fist"
+                else:
+                    right_hand, rh_name = await self.client.quefe(f"SELECT item_id, name FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13'")
+                    await self.client._cursor.execute(f"UPDATE personal_info SET right_hand='{right_hand}' WHERE id='{ctx.author.id}';")
+                right_hand = f"`{right_hand}`|**{rh_name[0]}**"
         if left_hand != 'n/a': 
             lh_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND (item_code='{left_hand}' OR item_id='{left_hand}') AND user_id='{str(ctx.message.author.id)}';")
             try: left_hand = f"`{left_hand}`|**{lh_name[0]}**"
             except TypeError:
-                if left_hand == 'ar13': await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'ar13', 1);"); lh_name = "ar13"
-                else: await self.client._cursor.execute(f"UPDATE personal_info SET left_hand='ar13' WHERE id='{ctx.author.id}';"); lh_name = "ar13"
+                if left_hand == 'ar13': await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'ar13', 1);"); lh_name = "Fist"
+                else:
+                    left_hand, lh_name = await self.client.quefe(f"SELECT item_id, name FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13'")
+                    await self.client._cursor.execute(f"UPDATE personal_info SET left_hand='ar13' WHERE id='{ctx.author.id}';"); lh_name = "ar13"
+                left_hand = f"`{left_hand}`|**{lh_name[0]}**"
+        if combat_HANDLING == 'right':
+            right_hand = f"__{right_hand}__"
+        elif combat_HANDLING == 'left':
+            left_hand = f"__{left_hand}__"
+        else:
+            right_hand = f"**__{right_hand}__"
+            left_hand = f"__{left_hand}__"
 
-        lmao = {'f': 'female', 'm': 'male'}
+        lmao = {'f': '<:Offgirl_Heart:620029339148484611>', 'm': '<:Offboy_Heart:620029339194490912>'}
+        # handling = {'right': '<:right_hand:521197677346553861> Right',
+        #             'left': '<:left_hand:521197732162043922> Left',
+        #             'both': '<:right_hand:521197677346553861><:left_hand:521197732162043922> Both'}
         # Status
-        box = f"\n░░░░ **{name}** | {lmao[gender].capitalize()}, {age} ░░░░\n╟**`Money`** · <:36pxGold:548661444133126185>{money}\n╟**`Merit`** · {merit}\n╟**`Degrees`** · `{degrees}`\n━━━━━╾ {combat_HANDLING.capitalize()} hand ╼━━━━\n╟**`RIGHT`** · {right_hand}\n╟**`LEFT`** · {left_hand}\n━━━━━╾ **`EVO`** {evo} ╼━━━━━━\n**·** `STA` {STA}/{MAX_STA}\n**·** `LP` {LP}/{MAX_LP}\n**·** `STR` {STR}\n**·** `INT` {INTT}"
-        await ctx.author.send(box)
-        await ctx.send(":incoming_envelope: **Bang!** <a:blob_snu:531060438142812190> *From Cli with love*")
+
+        # LINE LP ==================
+        # Calc <LP per block>, <blocks of LP>, <partial block of LP>
+        per_LP = (MAX_LP/6)
+        block_LP = int(LP/per_LP)
+        if block_LP > 6: block_LP = 6
+        blockp_LP = (LP/per_LP - int(LP/per_LP))*100
+        # Construct line
+        LP_line = '<:hp_block:619947505290969138>'*block_LP
+        if blockp_LP > 75: LP_line = LP_line + '<:hp_block_34:619947505223991296>'
+        elif blockp_LP > 50: LP_line = LP_line + '<:hp_block_24:619947504808755211>'
+        elif blockp_LP > 25: LP_line = LP_line + '<:hp_block_14:619947504854630442>'
+        # Check if there's partial
+        if blockp_LP: LP_line = LP_line + '<:emtpy_block:619947505299226654>'*(6 - block_LP - 1)
+        else: LP_line = LP_line + '<:emtpy_block:619947505299226654>'*(6 - block_LP)
+
+        # LINE LP ==================
+        # Calc <LP per block>, <blocks of LP>, <partial block of LP>
+        per_STA = (MAX_STA/6)
+        block_STA = int(STA/per_STA)
+        if block_STA > 6: block_STA = 6
+        blockp_STA = (STA/per_STA - int(STA/per_STA))*100
+        # Construct line
+        STA_line = '<:sta_block:619947505248894976>'*block_STA
+        if blockp_STA > 75: STA_line = STA_line + '<:sta_block_34:619947504997367850>'
+        elif blockp_STA > 50: STA_line = STA_line + '<:sta_block_24:619947505181917196>'
+        elif blockp_STA > 25: STA_line = STA_line + '<:sta_block_14:619947505269866516>'
+        # Check if there's partial
+        if blockp_STA: STA_line = STA_line + '<:emtpy_block:619947505299226654>'*(6 - block_STA - 1)
+        else: STA_line = STA_line + '<:emtpy_block:619947505299226654>'*(6 - block_STA)
+
+        #line = f"""{LP_line}"""
+
+        #box = f"\n░░░░ **{name}** | {lmao[gender].capitalize()}, {age} ░░░░\n╟**`Money`** · <:36pxGold:548661444133126185>{money}\n╟**`Merit`** · {merit}\n╟**`Degrees`** · `{degrees}`\n━━━━━╾ {combat_HANDLING.capitalize()} hand ╼━━━━\n╟**`RIGHT`** · {right_hand}\n╟**`LEFT`** · {left_hand}\n━━━━━╾ **`EVO`** {evo} ╼━━━━━━\n**·** `STA` {STA}/{MAX_STA}\n**·** `LP` {LP}/{MAX_LP}\n**·** `STR` {STR}\n**·** `INT` {INTT}"
+        box = discord.Embed(title = f"{age} {lmao[gender].capitalize()} ||<:merit_badge:620137704662761512>`{merit}`|| | **{name}**", colour = discord.Colour(0x36393F))
+        box.add_field(name=f"`LP` · **{LP}**/{MAX_LP}", value=f"""{LP_line}""", inline=True)
+        box.add_field(name=f"`STA` · **{STA}**/{MAX_STA}", value=f"""{STA_line}""", inline=True)
+        box.add_field(name=f'>>> **`EVO`** · {evo}\n**`STR`** · {STR}\n**`INT`** · {INTT}\n**`CHARM`** · {charm}', value=f"<:right_hand:521197677346553861>{right_hand}")
+        box.add_field(name=f'>>> **`FLAME`** · {au_FLAME}\n**`ICE`** · {au_ICE}\n**`HOLY`** · {au_HOLY}\n**`DARK`** · {au_DARK}', value=f"<:left_hand:521197732162043922>{left_hand}")
+        # box.add_field(name=f'>>> **`merit`** · {merit}{pocket_line}', value=f"{handling[combat_HANDLING]}", inline=True)
+        box.set_thumbnail(url=ctx.author.avatar_url)
+        # box.set_footer(text=f'', icon_url='https://imgur.com/jkznAfT')
+
+        await ctx.send(embed=box, delete_after=10)
+        # await ctx.author.send(embed=box)
+        # await ctx.send(":incoming_envelope: **Bang!** <a:blob_snu:531060438142812190> *From Cli with love*")
 
     # pylint: disable=unused-variable
     @commands.command(aliases=['wb'])
@@ -410,6 +473,131 @@ class avaPersonal(commands.Cog):
         except IndexError: await ctx.send(f"<:zapp:524893958115950603> Perks can be spent on your attributes:\n________________________\n**|** `LP` · +5% MAX_LP \n**|** `STA` · +10% MAX_STA \n**|** `STR` · +0.25 STR\n**|** `INT` · +0.1 INT\n**|** `FLAME` · +0.05 aura \n**|** `ICE` · +0.05 aura \n**|** `HOLY` · +0.05 aura \n**|** `DARK` · +0.05 aura\n**|** `CHARM` · +0.01 CHARM \n________________________\n**Your perks:** {perks}\n**Your evolution:** {evo}"); return
 
         await ctx.send("<:zapp:524893958115950603> Done. You may use `profile` to check.")
+
+    @commands.command()
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def pocket(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        # POCKETS ==========================================
+        if not args:
+            async def browse():
+                items = await self.client.quefe(f"SELECT slot_id, slot_name, item_id FROM pi_equipment WHERE user_Id='{ctx.author.id}';", type='all')
+
+                def makeembed(top, least, pages, currentpage):
+                    line = '' 
+
+                    for item in items[top:least]:
+                        line = line + f"""\n`{item[0]}`|**{item[1]}** == `{item[2]}`"""
+
+                    reembed = discord.Embed(title = f"<:armor_p:619743809286438929> Pocket of **{ctx.author.name}**", colour = discord.Colour(0x011C3A), description=line)
+                    reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                    return reembed
+                    #else:
+                    #    await ctx.send("*Nothing but dust here...*")
+                
+                async def attachreaction(msg):
+                    await msg.add_reaction("\U000023ee")    #Top-left
+                    await msg.add_reaction("\U00002b05")    #Left
+                    await msg.add_reaction("\U000027a1")    #Right
+                    await msg.add_reaction("\U000023ed")    #Top-right
+
+                pages = int(len(items)/5)
+                if len(items)%5 != 0: pages += 1
+                currentpage = 1
+                cursor = 0
+
+                emli = []
+                for curp in range(pages):
+                    myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
+                    emli.append(myembed)
+                    currentpage += 1
+
+                if pages > 1:
+                    msg = await ctx.send(embed=emli[cursor])
+                    await attachreaction(msg)
+                else: 
+                    msg = await ctx.send(embed=emli[cursor], delete_after=15)
+                    return
+
+                def UM_check(reaction, user):
+                    return user.id == ctx.author.id and reaction.message.id == msg.id
+
+                while True:
+                    try:
+                        reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
+                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                            cursor += 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U00002b05" and cursor > 0:
+                            cursor -= 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U000023ee" and cursor != 0:
+                            cursor = 0
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                            cursor = pages - 1
+                            await msg.edit(embed=emli[cursor])
+                            try: await msg.remove_reaction(reaction.emoji, user)
+                            except discordErrors.Forbidden: pass
+                    except asyncio.TimeoutError:
+                        await msg.delete(); return
+
+            await browse()
+            return
+
+
+        # RENAME ===========================================
+        if args[0] == 'rename':
+            # Handle
+            try: handle = args[1].lower()
+            except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing pocket's name or ID"); return
+
+            # Name
+            try: name = args[2].lower()[:13]
+            except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing name to rename"); return            
+
+            # SLOT_ID
+            if handle.isdigit():
+                temp = f"AND slot_id={handle}"
+
+            # SLOT_NAME
+            else:
+                temp = f"AND slot_name LIKE '%{handle}%'"
+
+            if await self.client._cursor.execute(f"UPDATE pi_equipment SET slot_name='{name}' WHERE user_id='{ctx.author.id}' {temp};") == 0:
+                await ctx.send(f"<:osit:544356212846886924> Pocket name or ID not found"); return
+            await ctx.send(f"<:armor_p:619743809286438929> Renamed `{handle}` to **`{name}`**! (Limited to 12 chars)"); return
+
+
+
+        # EQUIPMENT (w/ item_id, handle) ===================
+        # Item ID
+        try: item_id = args[0]
+        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing item ID"); return
+
+        # Handle
+        try: handle = args[1]
+        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing pocket's name or ID"); return
+
+        # SLOT_ID
+        if handle.isdigit():
+            temp = f"AND slot_id={handle}"
+
+        # SLOT_NAME
+        else:
+            temp = f"AND slot_name LIKE '%{handle}%'"
+
+        if await self.client._cursor.execute(f"UPDATE pi_equipment SET item_id='{item_id}' WHERE user_id='{ctx.author.id}' AND item_id='n/a' {temp};") == 0:
+            await self.client._cursor.execute(f"UPDATE pi_equipment SET item_id='n/a' WHERE user_id='{ctx.author.id}' AND item_id='{item_id}' {temp};")
+            await ctx.send(f"<:armor_p:619743809286438929> Item `{item_id}` is put out of pocket `{handle}`"); return
+        else: await ctx.send(f"<:armor_p:619743809286438929> Item `{item_id}` is put in pocket `{handle}`"); return
 
 
 

@@ -138,8 +138,8 @@ class avaSocial(commands.Cog):
 
             await self.client._cursor.execute(f"UPDATE personal_info SET STA=0, LP=IF(id='{ctx.author.id}', {int(LP + LP * reco_percent)}, {int(t_LP + t_LP * reco_percent)}) WHERE id IN ('{ctx.author.id}', '{partner}');")
             await asyncio.sleep(1)
-            await self.tools.ava_scan(ctx.message, type='normalize')
 
+        await self.tools.ava_scan(ctx.message, type='normalize')
         await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'sex', ex=3600, nx=True))
 
     @commands.command()

@@ -155,7 +155,7 @@ class avaNPC(commands.Cog):
             await self.trigg[trigg](pack)
             return
 
-        async def line_gen(lines, first_time=False):
+        async def line_gen(lines, illulink='', first_time=False):
 
             def embing(entity_code, entity_name, line, illulink, dura=5, left=False):
                 # In case <LEFT>
@@ -187,14 +187,16 @@ class avaNPC(commands.Cog):
             # Splitting urls with the sets
             line = linu.split(' <> ')
             dura = round(len(line[0])/7)
+            # try: illulink = line[1]
+            # except IndexError: illulink = ''
 
             # Carrying on conversation
             if await self.utils.percenter(value_chem - limit_chem, total=100) or first_time:
-                linus, dura, checkk = embing(entity_code, entity_name, line, illulink, dura=dura)
+                linus, dura, checkk = embing(entity_code, entity_name, line[0], illulink, dura=dura)
                 return linus, dura, checkk, False
             # Or not...
             else:
-                linus, dura, checkk = embing(entity_code, entity_name, line, illulink, dura=dura, left=True)
+                linus, dura, checkk = embing(entity_code, entity_name, line[0], illulink, dura=dura, left=True)
                 return linus, dura, checkk, False
 
         def RUM_check(reaction, user):
@@ -207,12 +209,14 @@ class avaNPC(commands.Cog):
         # Rewarding relationship
         r_chem = r_chem.split(' | ')
         rwc = random.choice(r_chem)
-        await self.client._cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{int(rwc)}+{round(charm/50)}, value_impression=value_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
+        if effect_query: await self.client._cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{int(rwc)}+{round(charm/50)}, value_impression=value_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
+        else: await self.client._cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{int(rwc)}+{round(charm/50)}, value_impression=value_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
+
         # In case pick the fail one
         if rwc == r_chem[0] and int(rwc) != 0:
             lines = fail_line
 
-        temb, dura, checkk, continuous = await line_gen(lines, first_time=True)
+        temb, dura, checkk, continuous = await line_gen(lines, illulink, first_time=True)
 
         # CONTINUOUS line
         if continuous:
@@ -236,7 +240,7 @@ class avaNPC(commands.Cog):
         while True:
             try:
                 await self.client.wait_for('reaction_add', check=RUM_check, timeout=dura)
-                temb, dura, checkk = await line_gen(lines)
+                temb, dura, checkk, continuous = await line_gen(lines)
                 if checkk: await msg.edit(embed=temb)
                 else: await msg.edit(embed=temb, delete_after=5); return
 

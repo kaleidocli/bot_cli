@@ -61,7 +61,6 @@ class avasoul(commands.Cog):
 
 
 
-
     @commands.command(aliases=['tut'])
     @commands.cooldown(1, 3, type=BucketType.user)
     async def tutorial(self, ctx, *args):
@@ -2213,9 +2212,17 @@ class avasoul(commands.Cog):
     """
     async def correctPCMArt(self):
         users = await self.client.quefe("SELECT user_id FROM pi_arts WHERE user_id NOT IN (SELECT user_id FROM pi_arts WHERE art_type='general');", type='all')
-        print(users)
+
         for user in users:
             await self.client._cursor.execute(f"INSERT INTO pi_arts VALUES ('{user[0]}', 'general', 'passive_chain', 5);")
+    """
+
+    """
+    async def initEquipment(self):
+        users = await self.client.quefe("SELECT id FROM personal_info", type='all')
+
+        for user in users:
+            await self.client._cursor.execute(f"INSERT INTO pi_equipment VALUES (0, '{user[0]}', 'Untitled', 'belt', 'n/a'); INSERT INTO pi_equipment VALUES (0, '{user[0]}', 'Untitled', 'belt', 'n/a');")
     """
 
 def setup(client):

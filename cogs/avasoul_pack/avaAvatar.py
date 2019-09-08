@@ -195,7 +195,7 @@ class avaAvatar(commands.Cog):
 
         def form_plugin():
             self.prote_lib['form'] = []
-            img = Image.open('C:/Users/DELL/Desktop/bot_cli/data/profile/form3.png').convert('RGBA')
+            img = Image.open('C:/Users/DELL/Desktop/bot_cli/data/profile/form4.png').convert('RGBA')
             self.prote_lib['form'].append(img)
         
         def badge_plugin():
@@ -307,7 +307,7 @@ class avaAvatar(commands.Cog):
 
             # Info get
             #pylint: disable=unused-variable
-            age, evo, kill, death, money, name, partner_temp, partner = await self.client.quefe(f"SELECT age, evo, kills, deaths, money, name, partner AS prtn, (SELECT name FROM personal_info WHERE id=prtn) FROM personal_info WHERE id='{user_id}';")
+            age, evo, kill, death, money, name, partner_temp, partner = await self.client.quefe(f"SELECT age, evo, LP, STA, money, name, partner AS prtn, (SELECT name FROM personal_info WHERE id=prtn) FROM personal_info WHERE id='{user_id}';")
             if not partner: partner = '---------------------'
             #pylint: enable=unused-variable
             guild_region, rank = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{user_id}';")
@@ -331,7 +331,7 @@ class avaAvatar(commands.Cog):
 
             # Font Set
             fnt_name = self.prote_lib['font']['name']            # Name
-            fnt_degree = self.prote_lib['font']['degree']        # Degrees
+            fnt_degree = self.prote_lib['font']['guild']        # Degrees
             fnt_age = self.prote_lib['font']['age']              # Age
             fnt_kd = self.prote_lib['font']['k/d']               # K/D
             fnt_guild = self.prote_lib['font']['guild']          # Guild

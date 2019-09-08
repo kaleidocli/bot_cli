@@ -72,7 +72,7 @@ class avaGuild(commands.Cog):
 
                 await self.client._cursor.execute(f"UPDATE personal_info SET money={money - cost} WHERE id='{str(ctx.message.author.id)}';")
                 await self.client._cursor.execute(f"UPDATE pi_guild SET name='{current_place}', deposit=deposit+{cost} WHERE user_id='{str(ctx.message.author.id)}';")
-                await ctx.send(f":european_castle: Welcome, {ctx.message.author.mention}, to our big family all over Pralayr :european_castle:\nYou are no longer a lonely, nameless adventurer, but a member of `{current_place} | {name}` guild, a part of **G.U.I.L.D**'s league. Please, newcomer, make yourself at home <3"); return
+                await ctx.send(f"<:guild_p:619743808959283201> Welcome, {ctx.message.author.mention}, to our big family all over Pralayr <:guild_p:619743808959283201>\nYou are no longer a lonely, nameless adventurer, but a member of `{current_place} | {name}` guild, a part of **G.U.I.L.D**'s league. Please, newcomer, make yourself at home <3"); return
 
             elif raw[0] == 'leave':
                 name, deposit = await self.client.quefe(f"SELECT name, deposit FROM pi_guild WHERE user_id='{str(ctx.message.author.id)}'")
@@ -88,7 +88,7 @@ class avaGuild(commands.Cog):
                 await self.client._cursor.execute(f"UPDATE pi_guild SET name='n/a', deposit=0 WHERE user_id='{str(ctx.message.author.id)}';")
                 await ctx.send(f":white_check_mark: Left guild. Deposit of **<:36pxGold:548661444133126185>{deposit}** has been returned"); return
 
-        except IndexError: await ctx.send(f":european_castle: **`{ctx.message.author.name}`'s G.U.I.L.D card** :european_castle: \n------------------------------------------------\n**`Guild`** · `{name}`|**{name}**\n**`Rank`** · {rank}\n**`Total quests done`** · {total_quests}"); return
+        except IndexError: await ctx.send(f"<:guild_p:619743808959283201> **`{ctx.message.author.name}`'s G.U.I.L.D card** <:guild_p:619743808959283201> \n------------------------------------------------\n**`Guild`** · `{name}`|**{name}**\n**`Rank`** · {rank}\n**`Total quests done`** · {total_quests}"); return
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -160,13 +160,13 @@ class avaGuild(commands.Cog):
                     except mysqlError.InternalError: await ctx.send("<:osit:544356212846886924> Invalid quest id"); return
                     region, quest_line, name = await self.client.quefe(f"SELECT region, quest_line, name FROM model_quest WHERE quest_code='{quest_code}';")
                     # Region check
-                    if region != current_place and quest_line != 'DAILY': await ctx.send(f":european_castle: You need to be in `{region}` in order to leave {quest_line} quest `{quest_code}`|**{name}**"); return
+                    if region != current_place and quest_line != 'DAILY': await ctx.send(f"<:guild_p:619743808959283201> You need to be in `{region}` in order to leave {quest_line} quest `{quest_code}`|**{name}**"); return
                 except TypeError: await ctx.send("<:osit:544356212846886924> You have not taken this quest yet!"); return
 
                 if await self.client._cursor.execute(f"DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]} AND stats!='ONGOING'") == 0: await ctx.send(f"<:osit:544356212846886924> You cannot leave a completed quest"); return
                 penalty_query = penalty_query.replace('user_id_here', str(ctx.author.id))
                 if penalty_query: await self.client._cursor.execute(penalty_query)
-                await ctx.send(f":european_castle: Left {quest_line} quest `{quest_code}`|`{name}` (id.`{raw[1]}`)"); return
+                await ctx.send(f"<:guild_p:619743808959283201> Left {quest_line} quest `{quest_code}`|`{name}` (id.`{raw[1]}`)"); return
 
             elif raw[0] == 'claim':
                 # Check if the quest is ONGOING     |      Get stuff too :>
@@ -177,7 +177,7 @@ class avaGuild(commands.Cog):
 
                 # Duration check
                 if end_point:
-                    if datetime.now() > end_point: await ctx.send(f":european_castle: The quest is out of time, **{ctx.author.name}**!"); return
+                    if datetime.now() > end_point: await ctx.send(f"<:guild_p:619743808959283201> The quest is out of time, **{ctx.author.name}**!"); return
 
                 if stats == 'DONE': await ctx.send("<:osit:544356212846886924> A quest cannot be claimed twice, scammer... <:fufu:520602319323267082>"); return
 
@@ -194,25 +194,25 @@ class avaGuild(commands.Cog):
                 # Evaluating
                 if eval_meth == '>=':
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                        if not (a - int(b)) >= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
+                        if not (a - int(b)) >= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                 elif eval_meth == '==':
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
                         print(a, b, c)
                         # DIGIT
                         if c.isdigit():
-                            if not (int(a) - int(b)) >= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
+                            if not (int(a) - int(b)) >= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                         # CHAR
                         else:
-                            if not a == c: await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
+                            if not a == c: await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                 if eval_meth == '<=':
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                        if not (a - int(b)) <= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
+                        if not (a - int(b)) <= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                 elif eval_meth == '>':
                     for a, c in zip(cur_snapshot, quest_sample):
-                        if not a >= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
+                        if not a >= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                 elif eval_meth == '<':
                     for a, c in zip(cur_snapshot, quest_sample):
-                        if not a <= int(c): await ctx.send(":european_castle: The quest has not been fulfilled yet"); return
+                        if not a <= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
 
                 # Reward n Affect
                 await self.client._cursor.execute(reward_query)
@@ -229,7 +229,7 @@ class avaGuild(commands.Cog):
                 #else: await self.client._cursor.execute(f"UPDATE pi_quests SET stats='DONE' WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
                 """
                 # Inform
-                await ctx.send(f":european_castle: Quest completion is confirmed. **{ctx.author.name}**, may the Olds look upon you!")
+                await ctx.send(f"<:guild_p:619743808959283201> Quest completion is confirmed. **{ctx.author.name}**, may the Olds look upon you!")
                 # Ranking check
                 if await self.client._cursor.execute(f"UPDATE pi_guild SET rank='{self.guild_rank[rank][0]}' WHERE user_id='{str(ctx.message.author.id)}' AND total_quests>={self.guild_rank[rank][1]};") == 1:
                     await ctx.send(f":beginner: Congrats, {ctx.message.author.mention}! You've been promoted to **{self.guild_rank[rank][0].upper()}**!")                         
@@ -237,7 +237,7 @@ class avaGuild(commands.Cog):
         except IndexError:
             bundle = await self.client.quefe(f"SELECT quest_id, quest_code, snap_query, snapshot, sample, eval_meth, end_point FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats IN ('ONGOING', 'FULL');", type='all')
             # ONGOING quest check
-            if not bundle: await ctx.send(f":european_castle: You have currently no active quest, **{ctx.author.name}**! Try get some and prove yourself."); return
+            if not bundle: await ctx.send(f"<:guild_p:619743808959283201> You have currently no active quest, **{ctx.author.name}**! Try get some and prove yourself."); return
             bundle2 = []
             for pack in bundle:
                 tempbu = await self.client.quefe(f"SELECT name, description, quest_line, description FROM model_quest WHERE quest_code='{pack[1]}';", type='all')
@@ -400,7 +400,7 @@ class avaGuild(commands.Cog):
                 else: marker = ':scroll:'
                 line += f"""\n{marker} **`{pack[0]}`**|`{pack[3].capitalize()} quest`\n⠀⠀⠀|**"{pack[1]}"**\n⠀⠀⠀|*"{pack[2]}"*\n"""
 
-            reembed = discord.Embed(title = f"`{current_place}`|**QUEST BULLETIN**", colour = discord.Colour(0x011C3A), description=f"{line}\n⠀⠀⠀⠀")
+            reembed = discord.Embed(title = f"<:guild_p:619743808959283201> `{current_place}`|**Quest Bulletin**", colour = discord.Colour(0x011C3A), description=f"{line}\n⠀⠀⠀⠀")
             reembed.set_footer(text=f"Board {currentpage} of {pages}")
             return reembed
             #else:

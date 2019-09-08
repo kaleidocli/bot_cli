@@ -658,140 +658,118 @@ class avaCommercial(commands.Cog):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         raw = list(args)
-        slots = {"a": 'right_hand', "b": "left_hand"}
+        slots = {"r": 'right_hand', "l": "left_hand"}
 
-        try:
-            # Filter
-            int(raw[0])
+        target_id = str(ctx.author.id); target_name = ctx.author.name
+        item_id = ''
+        quantity = 1
+        handle = 'r'
 
-            # INCONSUMABLE
-            try:
-                ##Get weapon info
-                try: w_name, w_tags, w_eq, w_weight, w_code = await self.client.quefe(f"SELECT name, tags, effect_query, weight, item_code FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{raw[0]}';")
-                except TypeError: await ctx.send(f"<:osit:544356212846886924> You don't own this item! (id.`{raw[0]}`)"); return
+        # INFO get =========================================================
 
-                if 'supply' in w_tags or 'ingredient' in w_tags: raise ZeroDivisionError
+        for a in args:
+            # Number
+            if a.isdigit():
+                # Item_ID
+                if not item_id: item_id = a
 
-                ##Get slot_name
-                try: slot_name = slots[raw[1]]
-                except IndexError: slot_name = slots['a']
-                except KeyError: await ctx.send(f"<:osit:544356212846886924> Slots not found, **{ctx.message.author.name}**!\n:grey_question: There are `2` weapon slots available: `0` Main Weapon | `1` Secondary Weapon"); return
-                ##Get weapon
-                weapon = await self.client.quefe(f"SELECT {slot_name} FROM personal_info WHERE id='{str(ctx.message.author.id)}';"); weapon = weapon[0]
-
-                ##Equip
-                if raw[0] != weapon:
-                    await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}='{raw[0]}' WHERE id='{str(ctx.message.author.id)}';")
-                    # Inform, of course :)
-                    await ctx.send(f":white_check_mark: Equipped item `{raw[0]}`|**{w_name}** to `{slot_name}` slot!"); return
-                ###Already equip    -----> Unequip
+                # QUANTITY
                 else:
-                    await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}=(SELECT item_id FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13') WHERE id='{ctx.author.id}'")
-                    await ctx.send(f":white_check_mark: Unequipped item `{raw[0]}`|**{w_name}** from *{slot_name}* slot!")
-                    return
-            # CONSUMABLE (Supply / Ingredient)
-            except ZeroDivisionError:
+                    quantity = int(a)
+                
+            # Char
+            else:
+                # TARGET/mob
+                if a.startswith('mob.') or a.startswith('boss.'):
+                    target_id = a; target_name = a
+
+                # TARGET/player
+                elif ctx.message.mentions:
+                    target_id = str(ctx.message.mentions[0].id)
+                    target_name = ctx.message.mentions[0].name
+
+                # Handle
+                else: handle = a
+
+
+        # EXECUTE ===========================================================
+
+        # Slot Self-switching
+        if not args:
+            # Switch
+            mw, sw = await self.client.quefe(f"SELECT right_hand, {slots['l']} FROM personal_info WHERE id='{ctx.author.id}';")
+            await self.client._cursor.execute(f"UPDATE personal_info SET right_hand='{sw}', {slots['l']}='{mw}' WHERE id='{ctx.author.id}';")
+
+            # Get line
+            sw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{sw}';")
+            if sw_name: line_1 = f"`{sw}`|**{sw_name[0]}** ➠ **right_hand**"
+            else: line_1 = '**right_hand** is left empty'
+            mw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{mw}';")
+            if mw_name: line_2 = f"`{mw}`|**{mw_name[0]}** ➠ **{slots['l']}**'"
+            else: line_2 = f"**{slots['l']}** is left empty"
+            # Inform :)
+            await ctx.send(f":twisted_rightwards_arrows: {line_1} \n:twisted_rightwards_arrows: {line_2} "); return
+
+        # Equipment (slot)
+        elif handle not in slots:
+            item_id = await self.client.quefe(f"SELECT item_id FROM pi_equipment WHERE user_id='{ctx.author.id}' AND slot_name LIKE '{handle}' AND slot_type='belt';")
+
+            # Invoke
+            try:
+                await ctx.invoke('use', *(item_id[0], target_id, quantity))
+            except discordErrors.HTTPException: pass
+            # E: Slot name not found
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> Pocket name not found!")
+
+        # Item ID
+        elif item_id:
+            ##Get weapon info
+            try: w_name, w_tags, w_eq, w_code = await self.client.quefe(f"SELECT name, tags, effect_query, item_code FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{raw[0]}';")
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> Item not found!"); return
+
+            # Sharable check (share-able)
+            if target_id != str(ctx.author.id) and 'sharable' not in w_tags: await ctx.send("<:osit:544356212846886924> This item cannot be used on other entity"); return
+
+            # CONSUMABLE (Supply / Ingredient) ======================
+            if 'supply' in w_tags or 'ingredient' in w_tags:
                 
                 # Effect_query check
                 if not w_eq: await ctx.send(":white_check_mark: Tried to use, but no effect received."); return
 
-                ## Get quantity
-                try:
-                    target_id = str(ctx.message.author.id)
-                    quantity = int(raw[1])
-                    # SCAM :)
-                    if quantity <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return
-                    #if w_quantity <= quantity: 
-                        #quantity = w_quantity
-                        #quantity_query = f"UPDATE pi_inventory SET existence='BAD' WHERE item_id={raw[0]} AND user_id='{target_id}';"
-                    #else:
-                    #    quantity_query = f"UPDATE pi_inventory SET quantity=quantity-{quantity} WHERE item_id='{raw[0]}' AND user_id='{target_id}';"
-                    quantity_query = f"SELECT func_i_delete('{target_id}', '{w_code}', {quantity});"
-
-                ## E: No quantity given
-                except IndexError:
-                    target_id = str(ctx.message.author.id)
-                    quantity = 1
-                    #if w_quantity <= quantity: 
-                    #    quantity = w_quantity
-                    #    quantity_query = f"UPDATE pi_inventory SET existence='BAD' WHERE item_id={raw[0]} AND user_id='{target_id}';"
-                    #else:
-                    #    quantity_query = f"UPDATE pi_inventory SET quantity=quantity-{quantity} WHERE item_id='{raw[0]}' AND user_id='{target_id}';"
-                    quantity_query = f"SELECT func_i_delete('{target_id}', '{w_code}', {quantity});"
-
-                ## E: Invalid type of quantity argument
-                except TypeError:
-                    ## Get target_id
-                    try: target_id = str(ctx.message.mentions[0].id)
-                    ## E: No mention
-                    except IndexError: target_id = str(ctx.author.id)
-                    quantity = 1
-                    #if w_quantity <= quantity:
-                    #    quantity = w_quantity
-                    #    quantity_query = f"UPDATE pi_inventory SET existence='BAD' WHERE item_id={raw[0]} AND user_id='{target_id}';"
-                    #else:
-                    #    quantity_query = f"UPDATE pi_inventory SET quantity=quantity-{quantity} WHERE item_id='{raw[0]}' AND user_id='{target_id}';"
-                    quantity_query = f"SELECT func_i_delete('{target_id}', '{w_code}', {quantity});"
-
-                # Get target info
-                try: t_name, t_STA, t_MAX_STA = await self.client.quefe(f"SELECT name, STA, MAX_STA FROM personal_info WHERE id='{target_id}';")
-                except TypeError: await ctx.send("<:osit:544356212846886924> Target has not incarnated")
                 # Prepair query
                 w_eq = w_eq.replace("user_id_here", target_id)
                 af_query = ''
-                # pylint: disable=unused-variable
                 for time in range(quantity):
                     # Affect
                     af_query = af_query + w_eq
-                # pylint: enable=unused-variable
-                # Weight check :">
-                ex_query = ''
-                if t_STA > t_MAX_STA:
-                    # Weigh on the commander. Please don't change
-                    ex_query = f"UPDATE personal_info SET weight=weight+{random.choice([0, 0.1, 0.2, 0.5, 1, 1.2, 1.5, 2])*w_weight*quantity} WHERE id='{str(ctx.message.author.id)}';"
 
                 ## Adjusting things with quantity
-                await self.client._cursor.execute(quantity_query + af_query + ex_query)
+                await self.client._cursor.execute(f"SELECT func_i_delete('{ctx.author.id}', '{item_id}', {quantity}); " + af_query)
                 await self.tools.ava_scan(ctx.message, type='normalize', target_id=target_id)
-                #print(quantity_query + af_query + ex_query)
-                await ctx.send(f":white_check_mark: Used {quantity} `{raw[0]}`|**{w_name}** on **{t_name}**")                
+                await ctx.send(f":white_check_mark: Used {quantity} `{item_id}`|**{w_name}** on **{target_name}**")     
 
-        # E: Slot not given            
-        except IndexError:
-            # Switch
-            mw, sw = await self.client.quefe(f"SELECT right_hand, {slots['b']} FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
-            await self.client._cursor.execute(f"UPDATE personal_info SET right_hand='{sw}', {slots['b']}='{mw}' WHERE id='{str(ctx.message.author.id)}';")
+            # INCONSUMABLE ===========================================
+            else:
 
-            # Get line
-            sw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{sw}';")
-            if sw_name: line_1 = f"`{sw}`|**{sw_name}** ➠ **right_hand**"
-            else: line_1 = '**right_hand** is left empty'
-            mw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{mw}';")
-            if mw_name: line_2 = f"`{mw}`|**{mw_name}** ➠ **{slots['b']}**'"
-            else: line_2 = f"**{slots['b']}** is left empty"
-            # Inform :)
-            await ctx.send(f":twisted_rightwards_arrows: {line_1} **|** {line_2} "); return
-    
-        # E: <item_code> OR <slot> given, instead of <item_id>
-        except ValueError:
+                ##Get slot_name
+                try: slot_name = slots[handle]
+                except IndexError: slot_name = slots['r']
+                except KeyError: await ctx.send(f":grey_question: There are `2` weapon slots available: `r` Main Weapon | `l` Secondary Weapon"); return
 
-            # SLOT SWITCHING
-            try:
-                # Switch
-                mw, sw = await self.client.quefe(f"SELECT right_hand, {slots[raw[0]]} FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
-                await self.client._cursor.execute(f"UPDATE personal_info SET right_hand='{sw}', {slots['b']}='{mw}' WHERE id='{str(ctx.message.author.id)}';")
+                ##Get weapon
+                weapon = await self.client.quefe(f"SELECT {slot_name} FROM personal_info WHERE id='{str(ctx.message.author.id)}';"); weapon = weapon[0]
 
-                # Get line
-                sw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{sw}';")
-                if sw_name: line_1 = f"`{sw}`|**{sw_name}** ➠ **right_hand**"
-                else: line_1 = '**right_hand** is left empty'
-                mw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{mw}';")
-                if mw_name: line_2 = f"`{mw}`|**{mw_name}** ➠ **{slots[raw[0]]}**'"
-                else: line_2 = f"**{slots[raw[0]]}** is left empty"
-                # Inform :)
-                await ctx.send(f":twisted_rightwards_arrows: {line_1} **|** {line_2} "); return
-            # E: Slot not found
-            except KeyError: pass
+                ##Equip
+                if item_id != weapon:
+                    await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}='{item_id}' WHERE id='{str(ctx.message.author.id)}';")
+                    # Inform, of course :)
+                    await ctx.send(f":fist: Equipped `{item_id}`|**{w_name}** to `{slot_name}` slot!"); return
+                ###Already equip    -----> Unequip
+                else:
+                    await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}=(SELECT item_id FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13') WHERE id='{ctx.author.id}'")
+                    await ctx.send(f":raised_hand: Unequipped item `{w_code}`|**{w_name}** from *{slot_name}* slot!")
+                    return
+
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
