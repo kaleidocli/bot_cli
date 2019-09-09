@@ -34,6 +34,7 @@ class avaHelper(commands.Cog):
         self.helper_preface = None
         self.helper_prefaceEmbs = None
 
+        self.concept_title = '**C O N C E P T S**⠀⠀|⠀⠀**R P G  W I K I**'
         self.concept_description = """
                 ```dsconfig
 Definition? Mechanism? Lore? Yaaa```
@@ -46,13 +47,23 @@ Definition? Mechanism? Lore? Yaaa```
                                 We, the devs, might not be able to please your curiosity, since... we sometimes cannot remember all of what the Pralaeyr can do!
                                 May it be a mistake, or may it be not enough, if you don't mind, please come to our support server! https://discord.gg/4wJHCBp
                                 """
+        self.concept_thumbnail = 'https://imgur.com/ZneprKF.png'
+        self.concept_banner = 'https://imgur.com/4ixM0TR.png'
+        self.concept_preface = None
+        self.concept_prefaceEmbs = None
+
+
 
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.helper_preface = await self.helperPerface_load()
         self.helper_prefaceEmbs = await self.helper_ember()
+        self.concept_preface = await self.conceptPerface_load()
+        self.concept_prefaceEmbs = await self.concept_ember()
         print("|| Helper --- READY!")
+
+
 
 
     @commands.command()
@@ -137,33 +148,17 @@ Definition? Mechanism? Lore? Yaaa```
 
         await ctx.send(embed=temb)
 
+
+
+
+
     @commands.command(aliases=['cc'])
     @commands.cooldown(1, 3, type=BucketType.user)
     async def concept(self, ctx, *args):
-        raw = list(args); temb_socket = []
+        raw = list(args)
+        temb_socket = self.concept_prefaceEmbs
 
         if not raw:
-            temball = discord.Embed(
-                title = '**C O N C E P T S**⠀⠀|⠀⠀**R P G  W I K I**',
-                description = self.concept_description,
-                                colour = discord.Colour(0xB1F1FA)
-            )
-            temball.set_thumbnail(url='https://imgur.com/ZneprKF.png')
-            temball.set_footer(text=f"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
-            temball.set_image(url='https://imgur.com/4ixM0TR.png')
-            temb_socket.append(temball)
-
-            tembs = [['**E N T I T Y**', "| **`Items` \n::** Things that you can keep in your inventory\n| **`Arsenal` \n::** Weaponary \n| **`Ingredients` \n::** Stuff that usually sold by traders\n| **`Supply`\n::** Stuff that usually sold in shops"],
-                    ['**M E C H A N I C**', "| **`LP` \n::** Basically HP\n| **`STR` \n::** Strength\n| **`INT` \n::** Intelligence\n| **`STA` \n::** Stamina\n| **`Charm` \n::** How pretty you are\n| **`Evolution` \n::** Or EVO. Show how many upgrades you've been through"]]
-            for stuff in tembs:
-                tembeach = discord.Embed(
-                    title = stuff[0],
-                    description = f"""______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______ ______
-                    {stuff[1]}""",
-                    colour = discord.Colour(0xB1F1FA)
-                )
-                tembeach.set_thumbnail(url='https://imgur.com/ZneprKF.png')
-                temb_socket.append(tembeach)
 
             async def browse():
                 async def attachreaction(msg):
@@ -174,7 +169,7 @@ Definition? Mechanism? Lore? Yaaa```
 
                 cursor = 0
                 emli = temb_socket
-                pages = len(temb_socket)
+                pages = len(self.concept_preface)
                 msg = await ctx.send(embed=emli[cursor])
                 await attachreaction(msg)
 
@@ -228,10 +223,12 @@ Definition? Mechanism? Lore? Yaaa```
                     title=f"**{concept.upper()}**⠀⠀|⠀⠀{typee}",
                     description=f'{description}',
                     colour = discord.Colour(0xB1F1FA))
-        temb.set_thumbnail(url='https://imgur.com/EQsptpa.png')
+        temb.set_thumbnail(url=self.concept_thumbnail)
         temb.set_footer(text=f"<{tags.replace(' - ', '> <')}>", icon_url='https://imgur.com/TW9dmXy.png')
 
         await ctx.send(embed=temb)
+
+
 
 
 
@@ -275,7 +272,53 @@ Definition? Mechanism? Lore? Yaaa```
                 {line}""",
                 colour = discord.Colour(0xB1F1FA)
             )
-            tembeach.set_thumbnail(url='https://imgur.com/EQsptpa.png')
+            tembeach.set_thumbnail(url=self.helper_thumbnail)
+            tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
+            temb_socket.append(tembeach)
+
+        return temb_socket
+
+    async def conceptPerface_load(self):
+        await asyncio.sleep(3)
+        cats = await self.client.quefe("SELECT DISTINCT type FROM sys_concept WHERE type<>'n/a';", type='all')
+        packs = await self.client.quefe("SELECT type, concept, short_description FROM sys_concept WHERE type<>'n/a';", type='all')
+        a = []
+        for cat in cats:
+            d = {}
+            for pack in packs:
+                if pack[0] != cat[0]: continue
+
+                d[pack[1]] = pack[2]
+            a.append([await self.utils.space_out(cat[0].upper()), d])
+        return a
+
+    async def concept_ember(self):
+        temb_socket = []
+
+        temball = discord.Embed(
+            title = self.concept_title,
+            description = self.concept_description,
+                            colour = discord.Colour(0xB1F1FA)
+        )
+        temball.set_thumbnail(url=self.concept_thumbnail)
+        temball.set_footer(text=f"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
+        temball.set_image(url=self.concept_banner)
+        temb_socket.append(temball)
+
+        pages = len(self.concept_preface)
+        count = 1
+        thre = '▱'*(pages-1)
+        for stuff in self.concept_preface:
+            line = ''
+            for k, v in stuff[1].items():
+                line = line + f"> **`{k}`**\n╚╡{v}\n"
+            tembeach = discord.Embed(
+                description = f"""
+                ```{stuff[0]}```
+                {line}""",
+                colour = discord.Colour(0xB1F1FA)
+            )
+            tembeach.set_thumbnail(url=self.concept_thumbnail)
             tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
             temb_socket.append(tembeach)
 

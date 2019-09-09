@@ -459,7 +459,7 @@ class avaCombat(commands.Cog):
 
             # AURA comes in
             aura_dict = {'FLAME': 'au_FLAME', 'ICE': 'au_ICE', 'DARK': 'au_DARK', 'HOLY': 'au_HOLY'}        # Normal
-            aura_redict = {'FLAME': 'au_ICE', 'ICE': 'au_FLAME', 'DARK': 'au_HOLY', 'HOLY': 'au_DARK'}      # Reversed
+            aura_redict = {'FLAME': 'au_ICE', 'ICE': 'au_HOLY', 'DARK': 'au_FLAME', 'HOLY': 'au_DARK'}      # Reversed
             # DMG is directional->UAura, is indirectional->reverseTAura     ||      DMG is then decreased by its oppo's parallel aura
             try: dmgdeal = int(my_dmgdeal*uDict[aura_dict[aDict['w_aura']]]/tDict[aura_redict[aDict['w_aura']]])
             except ZeroDivisionError: dmgdeal = int(my_dmgdeal*tDict[aura_dict[aDict['w_aura']]])
@@ -491,7 +491,7 @@ class avaCombat(commands.Cog):
 
             # AURA comes in
             aura_dict = {'FLAME': 'au_FLAME', 'ICE': 'au_ICE', 'DARK': 'au_DARK', 'HOLY': 'au_HOLY'}        # Normal
-            aura_redict = {'FLAME': 'au_ICE', 'ICE': 'au_FLAME', 'DARK': 'au_HOLY', 'HOLY': 'au_DARK'}      # Reversed
+            aura_redict = {'FLAME': 'au_ICE', 'ICE': 'au_HOLY', 'DARK': 'au_FLAME', 'HOLY': 'au_DARK'}      # Reversed
             # DMG is directional->UAura, is indirectional->reverseTAura     ||      DMG is then decreased by its oppo's parallel aura
             try: dmgdeal = int(my_dmgdeal*uDict[aura_dict[aDict['w_aura']]]/tDict[aura_redict[aDict['w_aura']]] - my_dmgdeal*tDict[aura_dict[aDict['w_aura']]])
             except ZeroDivisionError: dmgdeal = int(dmgdeal*tDict[aura_dict[aDict['w_aura']]])

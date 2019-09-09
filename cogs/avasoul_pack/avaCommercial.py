@@ -702,11 +702,11 @@ class avaCommercial(commands.Cog):
 
             # Get line
             sw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{sw}';")
-            if sw_name: line_1 = f"`{sw}`|**{sw_name[0]}** ➠ **right_hand**"
-            else: line_1 = '**right_hand** is left empty'
+            if sw_name: line_1 = f"`{sw}`|**{sw_name[0]}** ➠ `right_hand`"
+            else: line_1 = '`right_hand` is left empty'
             mw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{mw}';")
-            if mw_name: line_2 = f"`{mw}`|**{mw_name[0]}** ➠ **{slots['l']}**'"
-            else: line_2 = f"**{slots['l']}** is left empty"
+            if mw_name: line_2 = f"`{mw}`|**{mw_name[0]}** ➠ `{slots['l']}`"
+            else: line_2 = f"`{slots['l']}` is left empty"
             # Inform :)
             await ctx.send(f":twisted_rightwards_arrows: {line_1} \n:twisted_rightwards_arrows: {line_2} "); return
 
@@ -716,7 +716,7 @@ class avaCommercial(commands.Cog):
 
             # Invoke
             try:
-                await ctx.invoke('use', *(item_id[0], target_id, quantity))
+                await ctx.invoke(self.client.get_command('use'), *(item_id[0], target_id, str(quantity)))
             except discordErrors.HTTPException: pass
             # E: Slot name not found
             except TypeError: await ctx.send(f"<:osit:544356212846886924> Pocket name not found!")
@@ -767,7 +767,7 @@ class avaCommercial(commands.Cog):
                 ###Already equip    -----> Unequip
                 else:
                     await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}=(SELECT item_id FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13') WHERE id='{ctx.author.id}'")
-                    await ctx.send(f":raised_hand: Unequipped item `{w_code}`|**{w_name}** from *{slot_name}* slot!")
+                    await ctx.send(f":raised_hand: Unequipped item `{w_code}`|**{w_name}** from `{slot_name}` slot!")
                     return
 
 

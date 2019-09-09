@@ -49,15 +49,22 @@ class avaWorkshop(commands.Cog):
 
             # Get degree check sub-query
             try:
-                inflv_dict = {10: ('elementary', 'elemology'), 
-                            15: ('middleschool', 'elemology'),
-                            20: ('highschool', 'elemology'),
-                            25: ('associate', 'elemology'), 
-                            30: ('bachelor', 'elemology'),
-                            35: ('master', 'elemology'),
+                inflv_dict = {3: ('elementary', 'elemology'), 
+                            10: ('middleschool', 'elemology'),
+                            15: ('highschool', 'elemology'),
+                            20: ('associate', 'elemology'), 
+                            25: ('bachelor', 'elemology'),
+                            30: ('master', 'elemology'),
                             40: ('doctorate', 'elemology')}
-
-                d_check = f"AND EXISTS (SELECT * FROM pi_degrees WHERE user_id='{str(ctx.message.author.id)}' AND degree='{inflv_dict[w_evo][0]}' AND major='{inflv_dict[w_evo][1]}');"
+                if w_evo > 40: detemp = f" AND degree='{inflv_dict[40][0]}' AND major='{inflv_dict[40][1]}'"
+                elif w_evo > 30: detemp = f" AND degree='{inflv_dict[30][0]}' AND major='{inflv_dict[30][1]}'"
+                elif w_evo > 25: detemp = f" AND degree='{inflv_dict[25][0]}' AND major='{inflv_dict[25][1]}'"
+                elif w_evo > 20: detemp = f" AND degree='{inflv_dict[20][0]}' AND major='{inflv_dict[20][1]}'"
+                elif w_evo > 15: detemp = f" AND degree='{inflv_dict[15][0]}' AND major='{inflv_dict[15][1]}'"
+                elif w_evo > 10: detemp = f" AND degree='{inflv_dict[10][0]}' AND major='{inflv_dict[10][1]}'"
+                elif w_evo > 3: detemp = f" AND degree='{inflv_dict[3][0]}' AND major='{inflv_dict[3][1]}'"
+                else: detemp = ''
+                d_check = f"AND EXISTS (SELECT * FROM pi_degrees WHERE user_id='{str(ctx.message.author.id)}' {detemp});"
             except KeyError: d_check = ''
 
             # Preparing
@@ -67,8 +74,9 @@ class avaWorkshop(commands.Cog):
             if await self.client._cursor.execute(f"{t_w_infuse_query} {d_check};") == 0: await ctx.send(f"<:osit:544356212846886924> You cannot infuse EVO`{w_evo}` item with your current status."); return
 
             # Remove
-            if quantity == t_w_quantity: await self.client._cursor.execute(f"UPDATE pi_inventory SET existence='BAD' WHERE user_id='{ctx.author.id}' AND item_id='{raw[1]}';")
-            else: await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity-{quantity} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
+            await self.client._cursor.execute(f"SELECT func_i_delete('{ctx.author.id}', '{raw[1]}', {quantity});")
+            # if quantity == t_w_quantity: await self.client._cursor.execute(f"UPDATE pi_inventory SET existence='BAD' WHERE user_id='{ctx.author.id}' AND item_id='{raw[1]}';")
+            # else: await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity-{quantity} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
 
             # Inform :>
             await ctx.send(f":white_check_mark: Infusion with `{raw[0]}`|**{w_name}** was a success. The other item has been destroyed."); return
@@ -99,12 +107,12 @@ class avaWorkshop(commands.Cog):
             degrees = await self.client.quefe(f"SELECT degree FROM pi_degrees WHERE user_id='{str(ctx.message.author.id)}' AND major='engineering';"); degrees = set(degrees)
 
             # Price
-            price = (abs(w_evo - t_w_evo)*1000)//10*(10 - len(degrees))
+            price = (abs(w_evo - t_w_evo)*1000)//(1 + len(degrees))
 
             def UMCc_check(m):
                 return m.channel == ctx.channel and m.content == 'merging confirm' and m.author == ctx.author
 
-            await ctx.send(f":tools: Merching these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirmation` | Timeout=20s)")
+            await ctx.send(f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirmation` | Timeout=20s)")
             try: await self.client.wait_for('message', timeout=20, check=UMCc_check)
             except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timeout!"); return
 
