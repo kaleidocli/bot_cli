@@ -22,7 +22,7 @@ class avaHelper(commands.Cog):
 ⠀| [help <command>] for more info.
 ⠀| [tutorial] if you are beginner.```
                                 ╟ **NEW?** Use **`incarnate`** right away!
-                                ╟ Already incarnated? [Join the Pralaeyr!](https://discord.gg/NGtXxXj)
+                                ╟ Already incarnated? [Join support server!](https://discord.gg/NGtXxXj)
 
                                 ╟ **『LORE』**
                                 ⠀⠀You - a Remnant as many others - woke up in the middle of an unreal world, where reality mixed with fantasy, where space and time were torn apart into *regions*.

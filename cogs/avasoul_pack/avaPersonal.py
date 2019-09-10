@@ -578,13 +578,13 @@ class avaPersonal(commands.Cog):
 
 
         # EQUIPMENT (w/ item_id, handle) ===================
-        # Item ID
-        try: item_id = args[0]
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing item ID"); return
-
         # Handle
-        try: handle = args[1]
+        try: handle = args[0]
         except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing pocket's name or ID"); return
+
+        # Item ID
+        try: item_id = args[1]
+        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing item ID"); return
 
         # SLOT_ID
         if handle.isdigit():

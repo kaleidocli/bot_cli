@@ -186,7 +186,9 @@ class avaCombat(commands.Cog):
             dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst)
             dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick)
             # Crit
-            if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
+            try:
+                if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
+            except IndexError: pass
 
             # CE - Processing
             try:
@@ -405,7 +407,9 @@ class avaCombat(commands.Cog):
             dmg = round(dmg / 200 * dmgredu)
 
             # Crit
-            if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
+            try:
+                if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
+            except IndexError: pass
 
             # Combat Environment
             try:

@@ -58,15 +58,21 @@ extensions = ['cogs.error_handler',
 TOKEN = configs.TOKEN
 
 #prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
-#async def get_pref(bot, message):
+# async def get_pref(bot, message):
 #    if not message.guild:  # dms
 #        return ">"
 #    try: prefix = prefixes[message.guild.id]   # could also use a list of prefixes
 #    except KeyError: prefix = '>'
 #    return commands.when_mentioned_or(prefix)(bot, message)
 
-#client = commands.Bot(command_prefix=get_pref)
-client = commands.Bot(command_prefix='cli ')
+# client = commands.Bot(command_prefix=get_pref)
+
+async def get_pref(bot, message):
+   return commands.when_mentioned_or('cli ')(bot, message)
+
+client = commands.Bot(command_prefix=get_pref)
+
+# client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')
 
 @client.event
@@ -355,7 +361,7 @@ async def swear(ctx, *args):
     #model_sentenceNEGATIVE = ('not', "didn't", "don't", "doesn't", "isn't", "aren't", "haven't", "hasn't", "wasn't", "weren't", "didn't", "dont", "doesnt", "isnt", "arent", "havent", "hasnt", "wasnt", "werent", "hadn't", "hadnt")
 
     # Swear
-    if args[0] not in swears.keys(): lang = 'en'
+    if args[0] not in swears.keys(): lang = 'vn'
     else: lang = args[0]; args.pop(0)
 
     args = word_tokenize(' '.join(args).lower())

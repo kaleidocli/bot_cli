@@ -111,12 +111,20 @@ class avaSocial(commands.Cog):
             await ctx.send(f"<:sailu:559155210384048129> The whole Pralaeyr welcomes you, **{resp.content}**! May the Olds look upon you, {ctx.author.mention} and **{t_name}**.")
 
             # DAMAGING
+            dama_query = ''
             if gender == 'f':
                 LP = await self.tools.division_LP(LP, max_LP, time=8)
-                await self.client._cursor.execute(f"UPDATE personal_info SET LP={LP} WHERE id='{ctx.author.id}';")
             else:
-                t_LP = await self.tools.division_LP(t_LP, t_max_LP, time=4)
-                await self.client._cursor.execute(f"UPDATE personal_info SET LP={t_LP} WHERE id='{partner}';")
+                LP = await self.tools.division_LP(LP, max_LP, time=3)
+            dama_query = dama_query + f"UPDATE personal_info SET LP={LP} WHERE id='{ctx.author.id}';"
+
+            if (t_gender == 'f' and gender != 'f') or (t_gender == 'm' and gender == 'm'):
+                t_LP = await self.tools.division_LP(t_LP, t_max_LP, time=8)
+            else:
+                t_LP = await self.tools.division_LP(t_LP, t_max_LP, time=3)
+            dama_query = dama_query + f"UPDATE personal_info SET LP={t_LP} WHERE id='{partner}';"
+
+            await self.client._cursor.execute(dama_query)
 
         # ================== SEX
         else:
@@ -126,12 +134,16 @@ class avaSocial(commands.Cog):
                 return m.channel == ctx.channel and m.author == tar and m.content.lower() == 'sure'
 
             try: resp = await self.client.wait_for('message', timeout=20, check=UMCc_check)
-            except asyncio.TimeoutError: await ctx.send("<:gees:559192536195923999> Neither of them are sure..."); return
+            except asyncio.TimeoutError: await ctx.send(":pray: Neither of them are sure..."); return
 
-            slib = {'mf': ['https://media.giphy.com/media/HocMFeabR7rKU/giphy.gif', 'https://imgur.com/lA3AxJB.gif'],
-            'fm': ['https://media.giphy.com/media/HocMFeabR7rKU/giphy.gif'],
-            'mm': ['https://media.giphy.com/media/Ta8nU0hjzCB6o/giphy.gif'],
-            'ff': ['https://media.giphy.com/media/4Al6v0Mmu20gg/giphy.gif', 'https://media.giphy.com/media/rvOyFjbMz86Mo/giphy.gif']}
+            slib = {
+            'mf': ['https://media.giphy.com/media/HocMFeabR7rKU/giphy.gif', 'https://imgur.com/lA3AxJB.gif', 'https://imgur.com/N6TNtF8.gif',
+                    'https://imgur.com/BpW05Nr.gif'],
+            'fm': ['https://media.giphy.com/media/HocMFeabR7rKU/giphy.gif', 'https://imgur.com/4wRHBng.gif', 'https://imgur.com/Blx4P9E.gif'],
+            'mm': ['https://media.giphy.com/media/Ta8nU0hjzCB6o/giphy.gif', 'https://imgur.com/Do1G2RA.gif'],
+            'ff': ['https://media.giphy.com/media/4Al6v0Mmu20gg/giphy.gif', 'https://media.giphy.com/media/rvOyFjbMz86Mo/giphy.gif', 'https://imgur.com/TkcVesk.gif',
+                    'https://imgur.com/OXDfvur.gif', 'https://imgur.com/LvEQm9R.gif', 'https://imgur.com/1aCV43W.gif', 'https://imgur.com/6jjnbGI.gif']
+                    }
             reco_percent = (STA / max_STA + t_STA / t_max_STA) / 2
             
             await ctx.send(embed=discord.Embed(description="""```The two got closer, and closer, and closer, and close--...```""", colour=0xFFE2FF).set_image(url=random.choice(slib[gender+t_gender])))

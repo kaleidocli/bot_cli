@@ -712,7 +712,7 @@ class avaCommercial(commands.Cog):
 
         # Equipment (slot)
         elif handle not in slots:
-            item_id = await self.client.quefe(f"SELECT item_id FROM pi_equipment WHERE user_id='{ctx.author.id}' AND slot_name LIKE '{handle}' AND slot_type='belt';")
+            item_id = await self.client.quefe(f"SELECT item_id FROM pi_equipment WHERE user_id='{ctx.author.id}' AND slot_name='{handle}' AND slot_type='belt';")
 
             # Invoke
             try:
