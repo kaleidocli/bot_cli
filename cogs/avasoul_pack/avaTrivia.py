@@ -12,6 +12,14 @@ class avaTrivia(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
+        self.biome = {'SAVANNA': 'https://imgur.com/qc1NNIu.png',
+                    'JUNGLE': 'https://imgur.com/3j786qW.png',
+                    'DESERT': 'https://imgur.com/U0wtRU7.png',
+                    'RUIN': 'https://imgur.com/O8rHzCR.png',
+                    'FROST': 'https://imgur.com/rjwiDU4.png',
+                    'MOUNTAIN': 'https://imgur.com/cxwSH7m.png',
+                    'OCEAN': 'https://imgur.com/fQFO2b4.png'}
+
 
     @commands.Cog.listener()
     async def on_ready(self):

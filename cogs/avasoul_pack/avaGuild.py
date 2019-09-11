@@ -116,10 +116,10 @@ class avaGuild(commands.Cog):
                         await ctx.send("<:osit:544356212846886924> Quest has already been taken"); return
                     done_quests = await self.client.quefe(f"SELECT finished_quests FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
                     if raw[1] in done_quests[0].split(' - '): await ctx.send("<:osit:544356212846886924> Quest has already been done"); return
-                    if await self.client._cursor.execute(f"SELECT COUNT(user_id) FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='ONGOING'") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
+                    if await self.client._cursor.execute(f"SELECT user_id FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats in ('ONGOING', 'FULL')") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> Your rank isn't high enough to handle more than **{sample[rank]}** quests at a time"); return
 
                     # QUEST info get
-                    try: quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query, duration = await self.client.quefe(f"SELECT quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query, duration FROM model_quest WHERE quest_code='{raw[1]}' AND region='{current_place}' AND quest_line IN ('main', 'side');")
+                    try: quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query, duration = await self.client.quefe(f"SELECT quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, prerequisite, penalty_query, duration FROM model_quest WHERE quest_code='{raw[1]}' AND region='{current_place}' AND quest_line IN ('main', 'side', 'hidden');")
                     except TypeError: await ctx.send("<:osit:544356212846886924> Quest not found!"); return
                     try:
                         if await self.client._cursor.execute(prerequisite.replace('user_id_here', str(ctx.author.id))) == 0: await ctx.send("<:osit:544356212846886924> Prerequisite is not met!"); return
@@ -139,7 +139,7 @@ class avaGuild(commands.Cog):
 
 
                     # End_point calc from duration
-                    if duration == '0':
+                    if duration != '0':
                         end_point = datetime.now() + timedelta(seconds=duration)
                         end_point = f"'{end_point.strftime('%Y-%m-%d %H:%M:%S')}'"
                     else: end_point = 'NULL'
@@ -308,6 +308,9 @@ class avaGuild(commands.Cog):
                             line = line + f"\n╟{'◈'*rate + '◇'*(10-rate)}╢ ||({int(a) - int(b)}·**{c}**)||"
 
                     if pack[6]:
+                        if len(pack2[3]) > 100:
+                            pack2 = list(pack2)
+                            pack2[3] = pack2[3][:151] + '...'
                         if datetime.now() > pack[6]:
                             temb.add_field(name=f"`{pack[0]}`:fire:~~『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest~~\n\n> {pack2[3]}\n", value=line)
                         else:

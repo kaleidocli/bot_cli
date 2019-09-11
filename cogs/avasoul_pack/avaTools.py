@@ -183,16 +183,16 @@ class avaTools:
             await self.quefe(f"INSERT INTO personal_info VALUES ('{id}', '{ava['name']}', '{ava['dob']}', {ava['age']}, '{ava['gender']}', '{ava['race']}', {ava['height']}, {ava['weight']}, '{ava['size']}', 'GREEN', {ava['kills']}, {ava['deaths']}, {ava['charm']}, '{ava['partner']}', {ava['money']}, {ava['merit']}, {ava['perks']}, {ava['EVO']}, {ava['STR']}, {ava['INTT']}, {ava['STA']}, {ava['MAX_STA']}, {ava['LP']}, {ava['MAX_LP']}, {ava['auras'][0]}, {ava['auras'][1]}, {ava['auras'][2]}, {ava['auras'][3]}, '{ava['cur_MOB']}', '{ava['cur_USER']}', '{ava['cur_PLACE']}', {ava['cur_X']}, {ava['cur_Y']}, '{ava['cur_QUEST']}', '{ava['combat_HANDLING']}', '{ava['right_hand']}', '{ava['left_hand']}');")
             await self.quefe(f"INSERT INTO pi_degrees VALUES ('{id}', 'Instinct', NULL);")
             # Guild
-            await self.client._cursor.execute(f"INSERT INTO pi_guild VALUES ('{id}', 'region.0', 'iron', 0, 0);")
+            await self.client._cursor.execute(f"INSERT INTO pi_guild VALUES ('{id}', 'n/a', 'iron', 0, 0);")
             # Avatars
             for ava_code in ava['avatars']: await self.client._cursor.execute(f"INSERT INTO pi_avatars VALUES ('{id}', '{ava_code}');")
             await self.client._cursor.execute(f"INSERT INTO pi_backgrounds VALUES ('{id}', 'bg0');")
             await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}','DEFAULT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
             await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'CURRENT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
             # Arts
-            await self.client._cursor.execute(f"""INSERT INTO pi_arts VALUES ('{id}', 'melee', 'active_chain', 5);
-                                                INSERT INTO pi_arts VALUES ('{id}', 'general', 'passive_chain', 5);""")
-            #self.ava_dict[id] = ava
+            await self.client._cursor.execute(f"""SELECT func_aa_reward('{id}', 'aa0', 5);
+                                                    SELECT func_aa_reward('{id}', 'aa1', 5);""")
+
             if player: return 0
             else: return 2
         else:

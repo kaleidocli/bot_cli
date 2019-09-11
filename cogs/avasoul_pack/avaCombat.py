@@ -832,7 +832,7 @@ class avaCombat(commands.Cog):
 
 
         # Checking the length of moves
-        moves_to_check = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{str(ctx.message.author.id)}' AND art_type='melee' AND art_name='active_chain';")
+        moves_to_check = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{str(ctx.message.author.id)}' AND art_type='ability' AND art_code='aa0';")
         if not raw_move: raw_move = random.choices(['b', 'q', 'a'], k=moves_to_check[0])
         if len(raw_move) > moves_to_check[0]:
             await ctx.send(f"<:osit:544356212846886924> Your current movement limit is `{len(raw_move)}`, **{ctx.message.author.name}**!"); return
@@ -1227,7 +1227,7 @@ class avaCombat(commands.Cog):
         except KeyError: pass
 
         # Passive Combat Movement (PCM) =================
-        pcmLimit = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{ctx.author.id}' AND art_type='general' AND art_name='passive_chain';")
+        pcmLimit = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{ctx.author.id}' AND art_type='ability' AND art_code='aa1';")
         if len(args[0]) > pcmLimit[0]: await ctx.send(f"<:osit:544356212846886924> Your current PCM (PassiveCombatMovement) limit is `{pcmLimit[0]}`, **{ctx.author.name}**!"); return
 
         async def CE_maker(raw_pcm):
