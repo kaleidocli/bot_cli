@@ -53,7 +53,8 @@ extensions = ['cogs.error_handler',
                 'cogs.avasoul_pack.avaActivity',
                 'cogs.avasoul_pack.avaWorkshop',
                 'cogs.avasoul_pack.avaPersonal',
-                'cogs.avasoul_pack.avaPersonalUtils']
+                'cogs.avasoul_pack.avaPersonalUtils',
+                'cogs.avasoul_pack.avaDungeon']
 
 TOKEN = configs.TOKEN
 

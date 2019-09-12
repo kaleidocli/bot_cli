@@ -57,7 +57,9 @@ class avaAvatar(commands.Cog):
                         'av23': 'set_FURRY',
                         'av24': 'Req_Virgo',
                         'av25': 'Black_Survival',
-                        'av26': 'SAO_Sinon'}
+                        'av26': 'SAO_Sinon',
+                        'av27': 'SAO_Lisbeth',
+                        'av28': 'SAO_Asuna'}
 
 
         self.utils = avaUtils(self.client)
