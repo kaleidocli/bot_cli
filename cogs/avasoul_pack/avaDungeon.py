@@ -72,6 +72,7 @@ class dSession:
         self.timeline = []
 
     async def updateTimeline(self, event_in=None, player_in=None):
+        print("UPDDAAAAAAAAAAAAAAAA", event_in)
 
         # Generate event
         if not event_in: event = await self.eventGenerator()
@@ -82,7 +83,7 @@ class dSession:
 
         # RUN event
         if player_in: result = await self.eventEngine(event, player_in=player_in)
-        else: result = await self.eventEngine(event)
+        else: result = await self.eventEngine(event, player_in=self.timeline[-1].player)
 
         # Check if dead
         try: 
@@ -97,6 +98,7 @@ class dSession:
             else: new_player = result
         else:
             new_player = self.timeline[-1].player
+        print("NEW_PLAYERRRRRRRR: ", new_player, result)
 
         # INNER dive, but DO NOT archive the snapshot YET
         if isinstance(result, modelEvent):
@@ -140,17 +142,20 @@ class dSession:
 
 
     async def eventEngine(self, event, player_in=None):
+        print('EVENT ENNNNGGGGGGGGGGINE', player_in)
         # Type Handling
         # CHOICE ==============
         if event.type == 'choice':
-            msg = await self.ctx.send(event.line)
-            
+            msg = await self.ctx.send(event.line, delete_after=16)
+
             def R_check(reaction, user):
                 return user == self.ctx.author and str(reaction.emoji) in ('\U00002705', '\U0000274c')
 
             await msg.add_reaction('\U00002705')
             await msg.add_reaction('\U0000274c')
-            try: r, u = await self.client.wait_for('reaction_add', check=R_check, timeout=30)
+            if not event.duration: dura = 15
+            else: dura = event.duration
+            try: r, u = await self.client.wait_for('reaction_add', check=R_check, timeout=dura)
 
             # No --> node2
             except asyncio.TimeoutError:
@@ -169,6 +174,7 @@ class dSession:
 
         # DEAD ================
         elif event.type == 'dead':
+            await self.ctx.send(event.line, delete_after=16)
             return 'dead'
 
 
@@ -176,9 +182,9 @@ class dSession:
         # HURT ================
         elif event.type == 'hurt':
             if event.illulink:
-                await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink))
+                await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink), delete_after=16)
             else:
-                await self.ctx.send(event.line)
+                await self.ctx.send(event.line, delete_after=16)
             # Damage GET
             temp = event.value
             if not temp: temp = ['0']
@@ -188,9 +194,9 @@ class dSession:
         # HURT ================
         elif event.type == 'reward':
             if event.illulink:
-                await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink))
+                await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink), delete_after=16)
             else:
-                await self.ctx.send(event.line)
+                await self.ctx.send(event.line, delete_after=16)
             # Reward GET
             temp = event.value
             if not temp: temp = ['0']
@@ -198,22 +204,24 @@ class dSession:
             return player_in.updatePlayer(('getReward', temp))
 
         if event.illulink:
-            await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink))
+            await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink), delete_after=16)
         else:
-            await self.ctx.send(event.line)
+            await self.ctx.send(event.line, delete_after=16)
         return False
 
     async def eventGenerator(self, event_code=None):
         """Generate modelEvent object"""
 
         # GET Event info
+        # Tail
         if event_code:
-            code, type, line, node1, node2, vsPlayerEvent, value, illulink = await self.client.quefe(f"SELECT event_code, event_type, event_line, node1, node2, event_vsPlayer, event_value, illulink FROM model_dungeonevent WHERE event_code='{event_code}';")
+            code, type, line, node1, node2, vsPlayerEvent, value, illulink, duration = await self.client.quefe(f"SELECT event_code, event_type, event_line, node1, node2, event_vsPlayer, event_value, illulink, event_duration FROM model_dungeonevent WHERE event_code='{event_code}';")
+        # Head
         else:
-            try: code, type, line, node1, node2, vsPlayerEvent, value, illulink = await self.client.quefe(f"SELECT event_code, event_type, event_line, node1, node2, event_vsPlayer, event_value, illulink FROM model_dungeonevent WHERE node_type='head' AND range_min <= {self.timeline[-1].distance} AND {self.timeline[-1].distance} <= range_max ORDER BY RAND() LIMIT 1;")
-            except IndexError: code, type, line, node1, node2, vsPlayerEvent, value, illulink = await self.client.quefe(f"SELECT event_code, event_type, event_line, node1, node2, event_vsPlayer, event_value, illulink FROM model_dungeonevent WHERE range_min <= 0 AND 0 <= range_max ORDER BY RAND() LIMIT 1;")
+            try: code, type, line, node1, node2, vsPlayerEvent, value, illulink, duration = await self.client.quefe(f"SELECT event_code, event_type, event_line, node1, node2, event_vsPlayer, event_value, illulink, event_duration FROM model_dungeonevent WHERE node_type='head' AND range_min <= {self.timeline[-1].distance} AND {self.timeline[-1].distance} <= range_max ORDER BY RAND() LIMIT 1;")
+            except IndexError: code, type, line, node1, node2, vsPlayerEvent, value, illulink, duration = await self.client.quefe(f"SELECT event_code, event_type, event_line, node1, node2, event_vsPlayer, event_value, illulink, event_duration FROM model_dungeonevent WHERE node_type='head' AND range_min <= 0 AND 0 <= range_max ORDER BY RAND() LIMIT 1;")
 
-        return modelEvent(code, type, line, node1, node2, vsPlayerEvent, value=value, illulink=illulink)
+        return modelEvent(code, type, line, node1, node2, vsPlayerEvent, duration, value=value, illulink=illulink)
 
 
 
@@ -243,6 +251,7 @@ class dPlayer:
 
 
     def updatePlayer(self, *args):
+        print("Update PLAYER")
         for event in args:
             print(event, args)
             self.event_dict[event[0]](event[1])
@@ -274,7 +283,7 @@ class dPlayer:
 
 class modelEvent:
 
-    def __init__(self, code, type, line, node1, node2, vsPlayerEvent, value='', illulink=''):
+    def __init__(self, code, type, line, node1, node2, vsPlayerEvent, duration, value='', illulink=''):
         self.code = code
         self.type = type
         self.line = line
@@ -286,6 +295,7 @@ class modelEvent:
         try: self.value = value.split(' || ')
         except AttributeError: self.value = []
         self.illulink = illulink
+        self.duration = duration
 
 
 
