@@ -161,9 +161,11 @@ class avaAvatar(commands.Cog):
             self.prote_lib['card'][card_code].append(img)
 
         def bg_plugin():
+            """
             self.prote_lib['bg'] = {}
             self.prote_lib['bg_stock'] = []
             self.prote_lib['stock_bar'] = []
+            """
             self.prote_lib['bg_gif'] = []
             self.prote_lib['bg_deck'] = []
 
@@ -174,17 +176,19 @@ class avaAvatar(commands.Cog):
                     BackgroundGen_supporter(bg_name, rawimg)
                     #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
             """
-
+            """
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bg_roll.png').convert('RGBA')
             self.prote_lib['bg_stock'].append(img)
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bar.png').convert('RGBA')
             self.prote_lib['stock_bar'].append(img)
+            """
 
             # DECK =====================
+            """
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/board600.png').convert('RGBA')
             img = img.resize((600, 355))
             self.prote_lib['bg_deck'].append(img)
-
+            """
             """
             particle_after = []
             particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
@@ -224,16 +228,18 @@ class avaAvatar(commands.Cog):
             self.prote_lib['font']['stock_region_name'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 62)
 
         #print("HERE")
-        #await self.client.loop.run_in_executor(None, bg_plugin)
+        await self.client.loop.run_in_executor(None, bg_plugin)
         await self.client.loop.run_in_executor(None, form_plugin)
         await self.client.loop.run_in_executor(None, font_plugin)
         await self.client.loop.run_in_executor(None, badge_plugin)
 
+        """
         for char_name, card_code in card_codes.items():
             self.prote_lib['card'][card_code] = []
             for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/card/{char_name}'):
                 CardGen_supporter(char_name, rawimg)
                 #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
+        """
         """
         for char_name, char_id in prote_codes.items():
             self.prote_lib[char_id] = []
@@ -392,11 +398,13 @@ class avaAvatar(commands.Cog):
             return output_buffer
 
         # GIF ============        
-        async def gafiking(ctx, in_img, char_img):
+        async def gafiking(ctx, in_img, char_img, pos_offset=0, **kwargs):
+            """pos_offset: Positive value for lower pos, negative for upper pos"""
+
             # Info get
-            age, evo, kill, death, money, name = await self.client.quefe(f"SELECT age, evo, kills, deaths, money, name FROM personal_info WHERE id='{user_id}';")
-            guild_region, rank = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{user_id}';")
-            g_region_name = await self.client.quefe(f"SELECT name FROM environ WHERE environ_code='{guild_region}';"); g_region_name = g_region_name[0]
+            age, evo, kill, death, money, name = kwargs['pack_PI']
+            guild_region, rank = kwargs['pack_PG']
+            g_region_name = kwargs['pack_PI']; g_region_name = g_region_name
 
             #img = Image.open('sampleimg.jpg').convert('RGBA')
             form_img = self.prote_lib['form'][0]
@@ -457,7 +465,7 @@ class avaAvatar(commands.Cog):
             # Composing
             bg.alpha_composite(badge_img, dest=(800 - (badge_img.width + 5), 5))
             bg.alpha_composite(form_img)
-            bg.alpha_composite(char_img, dest=(char_midcoordX, 8))            #Prev=56
+            bg.alpha_composite(char_img, dest=(char_midcoordX, 8 + pos_offset))            #Prev=56
             bg.alpha_composite(name_box, dest=(0, 38), source=(108, 0))
             bg.alpha_composite(degree_box, dest=(0, 10), source=(45, 0))
             bg.alpha_composite(money_box, dest=(344, 89))
@@ -470,28 +478,71 @@ class avaAvatar(commands.Cog):
             #bg.show()
             return bg
 
-        async def cogif(ctx):
-            particles = []
-            outImPart = []
+        async def cogif(ctx, char_img):
 
-            particles = self.prote_lib['bg_gif'][0]
-            char_img = self.prote_lib[char_name][random.choice(range(10))]
-            count = 0; partilen = len(particles)
-            # This is for the sake of off-set
-            while True:
-                print(f"LOOOPPPPP {count}")
-                if count > partilen: break
+            # INFO prep =============================
+            pack_PI = await self.client.quefe(f"SELECT age, evo, kills, deaths, money, name FROM personal_info WHERE id='{user_id}';")
+            pack_PG = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{user_id}';")
+            pack_E = await self.client.quefe(f"SELECT name FROM environ WHERE environ_code='{pack_PG[0]}';"); pack_E = pack_E[0]
+
+            # PARTICLEs prep ========================
+            # particle_after = []
+            outImPart = []
+            particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
+            partilen = len(particles)
+
+            bar = 20                               # Set a maximum particles in ordercli a gif not overload
+            if partilen > bar:
+                divider = int(partilen/bar)
+            else: divider = 1
+            modulair = partilen%bar
+
+            # ANIMATION of char_img prep ================
+            # ODD amount of particles
+            if partilen%2:
+                temp = list(range((partilen-2-modulair)//(divider*2)))
+                temp2 = list(range((partilen-2-modulair)//(divider*2)))
+                temp2.reverse()
+                offset_band = [0] + temp + [temp2[0]+1] + temp2
+            # Non-odd amount of particles
+            else:
+                temp = list(range((partilen-1-modulair)//(divider*2)))
+                temp2 = list(range((partilen-1-modulair)//(divider*2)))
+                temp2.reverse()
+                offset_band = [0] + temp + [temp2[0]] + temp2
+            
+            # GATHERING particles =======================
+            print(offset_band, divider, partilen, modulair)
+            count = divider
+            obpointer = -1
+            for particle in particles:
+                # await asyncio.sleep(0.05)
+
+                if count == divider:
+                    count = 1
+                    offval = offset_band[obpointer]
+                    obpointer += 1
+                else:
+                    # print(count)
+                    count += 1
+                    continue
+                print(f"LOOOPPPPP {obpointer} {offval}")
+                a = Image.fromarray(particle)
+                a = a.resize((800, 600))
+                a = a.filter(ImageFilter.GaussianBlur(2.6))
+ 
+                # PROCESS and STITCH
                 try:
                     #particle = particles[count]
                     #a = Image.fromarray(particle)  
 
                     #out_img = await gafiking(ctx, a, char_img)
-                    out_img = await gafiking(ctx, particles[count], char_img)
+                    out_img = await gafiking(ctx, a, char_img, pos_offset=offval, pack_PI=pack_PI, pack_PG=pack_PG, pack_E=pack_E)
                     await asyncio.sleep(0.1)
                     #outImPart.append(np.asarray(a))
                     outImPart.append(out_img)
                 except IndexError: break
-                count += 15
+
 
             output_buffer = BytesIO()
             #imageio.mimwrite(output_buffer, outImPart)
@@ -507,12 +558,13 @@ class avaAvatar(commands.Cog):
             await ctx.send(file=discord.File(fp=output_buffer, filename='profile.png'))
         elif __mode == 'gif':
             await ctx.trigger_typing()
+            char_img = await self.char_generator(char_name)
             #output_buffer = await cogif(ctx)         
             #reembed = discord.Embed(colour = discord.Colour(0x011C3A))
             #reembed.set_image(url=output_buffer['link'])
             #await ctx.send(embed=reembed)
             #await ctx.send(file=discord.File(fp=output_buffer, filename='profile.gif'))
-            await cogif(ctx)
+            await cogif(ctx, char_img)
 
 
 

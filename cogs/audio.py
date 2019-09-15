@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
+import discord.errors as discordErrors
+
 import asyncio
 import random
 from time import sleep
@@ -303,13 +305,13 @@ class audio(commands.Cog):
 
 
 
-    async def dir_pagemaker(self, ctx, list, mother):
+    async def dir_pagemaker(self, ctx, lists, mother):
 
         def makeembed(top, least, pages, currentpage):
             line = ''
 
             line = f"-------------------- oo --------------------\n**" 
-            for i in list[top:least]:
+            for i in lists[top:least]:
                 line = line + f"{i}"
             line = line + "**-------------------- oo --------------------" 
             reembed = discord.Embed(title = f"<{mother[2:]}\>", colour = discord.Colour(0x011C3A), description=line)
@@ -324,42 +326,53 @@ class audio(commands.Cog):
             await msg.add_reaction("\U000027a1")    #Right
             await msg.add_reaction("\U000023ed")    #Top-right
 
-        pages = len(list)//10
-        if len(list)%10 != 0: pages += 1
+
+        pages = len(lists)//4
+        if len(lists)%4 != 0: pages += 1
         currentpage = 1
-        myembed = makeembed(0, 10, pages, currentpage)
-        msg = await ctx.send(embed=myembed)
-        await attachreaction(msg)
+        cursor = 0
+
+        emli = []
+        for curp in range(pages):
+            myembed = makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
+            emli.append(myembed)
+            currentpage += 1
+
+        if pages > 1: 
+            msg = await ctx.send(embed=emli[cursor])
+            await attachreaction(msg)
+        else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
+
+        def UM_check(reaction, user):
+            return user.id == ctx.message.author.id and reaction.message.id == msg.id
+
 
         while True:
             try:    
-                reaction, user = await self.client.wait_for_reaction(message=msg, timeout=30)
-                if reaction.emoji == "\U000027a1" and user.id == ctx.author.id and currentpage < pages:
-                    currentpage += 1
-                    myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
-                    await self.client.clear_reactions(msg)
-                    await self.client.edit_message(msg, embed=myembed)
-                    await attachreaction(msg)
-                elif reaction.emoji == "\U00002b05" and user.id == ctx.author.id and currentpage > 1:
-                    currentpage -= 1
-                    myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
-                    await self.client.clear_reactions(msg)
-                    await self.client.edit_message(msg, embed=myembed)
-                    await attachreaction(msg)
-                elif reaction.emoji == "\U000023ee" and user.id == ctx.author.id and currentpage != 1:
-                    currentpage = 1
-                    myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
-                    await self.client.clear_reactions(msg)
-                    await self.client.edit_message(msg, embed=myembed)
-                    await attachreaction(msg)
-                elif reaction.emoji == "\U000023ed" and user.id == ctx.author.id and currentpage != pages:
-                    currentpage = pages
-                    myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
-                    await self.client.clear_reactions(msg)
-                    await self.client.edit_message(msg, embed=myembed)
-                    await attachreaction(msg)
-            except TypeError: 
-                pass
+                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                    cursor += 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U00002b05" and cursor > 0:
+                    cursor -= 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ee" and cursor != 0:
+                    cursor = 0
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                    cursor = pages - 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+            except asyncio.TimeoutError:
+                await msg.delete(); return
+
 
     def scan(self, mother, type='path'):
         end = []

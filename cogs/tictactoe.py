@@ -27,7 +27,12 @@ class tictactoe(commands.Cog):
         
         # Transforming from seqs of <ticker> into <sequantum>, put it into <sequantum> socket
         for seq in seq_socket:
-            sequantum_socket.append(sequantum(seq, type))
+            # Ghost filtering
+            ghosted_ticks = list([tick for tick in seq if tick.ghosted])
+            # If ghosted
+            if ghosted_ticks: sequantum_socket.append(sequantum(seq, type, ghosted=True, ghost_ticks=ghosted_ticks))
+            # Else
+            else: sequantum_socket.append(sequantum(seq, type))
         # Make a copy of the <tick>, remove duplicants and ITSELF in the socket,
         # make the copy into a <sequantum> obj, then put back to the socket
         # Return <sequantum>  socket
@@ -145,32 +150,115 @@ class tictactoe(commands.Cog):
                     elif sequantum.seq_length == 2: R2.append(sequantum)
                     elif sequantum.seq_length == 3: R3.append(sequantum)
                     elif sequantum.seq_length == 4: R4.append(sequantum)
-                    elif sequantum.seq_length == 5: winning_condition = True    # <<<<<<<<<<<<<< WIN >>>>>>>>>>>>>
+                    elif sequantum.seq_length == 5 and not sequantum.ghosted: winning_condition = True    # <<<<<<<<<<<<<< WIN >>>>>>>>>>>>>
 
                 # Commence analizing and defensing
                 # Getting need-to-handle address, priotizing from rank R4 to R1
                 address = []; R_lock = False
-                if R4 and R_lock == False:
+                r4code = ''; r3code = ''
+                if R4:
+                    # Full addr >> Full ghost >> Half ghost >> Half addr
+                    full_seq = []; full_ghost = []; half_ghost = []; half_seq = []
+                    # Filtering seq type
                     for sequantum in R4:
-                        if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char:
-                            address.append((sequantum.nhead_x, sequantum.nhead_y))
-                        if self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
-                            address.append((sequantum.ntail_x, sequantum.ntail_y))   
-                    if address: R_lock = True                     
-                if R3 and R_lock == False:
+                        if sequantum.ghosted:
+                            # Random pick a tick
+                            ghost_tick = random.choice(sequantum.ghost_ticks)
+                            # If all three are empty
+                            if self.cord[ghost_tick.x][ghost_tick.y] == self.slot_char and self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char and self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
+                                full_ghost.append(ghost_tick)
+                            # If one of two heads is empty AND ghost point is empty
+                            elif self.cord[ghost_tick.x][ghost_tick.y] == self.slot_char and self.cord[sequantum.nhead_x][sequantum.nhead_y] != self.cord[sequantum.ntail_x][sequantum.ntail_y]:
+                                half_ghost.append(ghost_tick)
+                            continue
+
+                        if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char and self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
+                            full_seq.append(sequantum)
+                        elif self.cord[sequantum.nhead_x][sequantum.nhead_y] != self.cord[sequantum.ntail_x][sequantum.ntail_y]:
+                            half_seq.append(sequantum)
+
+                    # Extract seq
+                    if full_seq:
+                        for sequantum in full_seq:
+                            if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char:
+                                address.append((sequantum.nhead_x, sequantum.nhead_y))
+                            if self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
+                                address.append((sequantum.ntail_x, sequantum.ntail_y))
+                        r4code = 'r4fs'
+                    elif full_ghost:
+                        for sequantum in full_ghost:
+                            address.append((sequantum.x, sequantum.y))
+                        r4code = 'r4fg'
+                    elif half_ghost:
+                        for sequantum in half_ghost:
+                            address.append((sequantum.x, sequantum.y))
+                        r4code = 'r4hg'
+                    elif half_seq:
+                        for sequantum in half_seq:
+                            if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char:
+                                address.append((sequantum.nhead_x, sequantum.nhead_y))
+                            if self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
+                                address.append((sequantum.ntail_x, sequantum.ntail_y))
+                        r4code = 'r4hs'
+
+                    if address: R_lock = True
+                if R3:
+                    # Full addr >> Full ghost >> Half ghost >> Half addr
+                    full_seq = []; full_ghost = []; half_ghost = []; half_seq = []
+                    # Filtering seq type
                     for sequantum in R3:
-                        if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char:
-                            address.append((sequantum.nhead_x, sequantum.nhead_y))
-                        if self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
-                            address.append((sequantum.ntail_x, sequantum.ntail_y))    
-                    if address: R_lock = True    
+                        if sequantum.ghosted:
+                            # Random pick a tick
+                            ghost_tick = random.choice(sequantum.ghost_ticks)
+                            # If all three are empty
+                            if self.cord[ghost_tick.x][ghost_tick.y] == self.slot_char and self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char and self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
+                                full_ghost.append(ghost_tick)
+                            # If one of two heads is empty AND ghost point is empty
+                            elif self.cord[ghost_tick.x][ghost_tick.y] == self.slot_char and self.cord[sequantum.nhead_x][sequantum.nhead_y] != self.cord[sequantum.ntail_x][sequantum.ntail_y]:
+                                half_ghost.append(ghost_tick)
+                            continue
+
+                        if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char and self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
+                            full_seq.append(sequantum)
+                        elif self.cord[sequantum.nhead_x][sequantum.nhead_y] != self.cord[sequantum.ntail_x][sequantum.ntail_y]:
+                            half_seq.append(sequantum)
+
+                    # Extract seq
+                    if full_seq and r4code not in ('r4fs', 'r4fg', 'r4hs'):
+                        for sequantum in full_seq:
+                            if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char:
+                                address.append((sequantum.nhead_x, sequantum.nhead_y))
+                            if self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
+                                address.append((sequantum.ntail_x, sequantum.ntail_y))
+                        r3code = 'r3fs'
+                    elif full_ghost and r4code not in ('r4fs', 'r4fg', 'r4hg', 'r4hs'):
+                        for sequantum in full_ghost:
+                            address.append((sequantum.x, sequantum.y))
+                        r3code = 'r3fg'
+                    elif half_ghost and r4code not in ('r4fs', 'r4fg', 'r4hg', 'r4hs'):
+                        for sequantum in half_ghost:
+                            address.append((sequantum.x, sequantum.y))
+                        r3code = 'r3hg'
+                    elif half_seq and r4code not in ('r4fs', 'r4fg', 'r4hg', 'r4hs'):
+                        for sequantum in half_seq:
+                            if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char:
+                                address.append((sequantum.nhead_x, sequantum.nhead_y))
+                            if self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
+                                address.append((sequantum.ntail_x, sequantum.ntail_y))
+                        r3code = 'r3hs'
+
+                    if address: R_lock = True
+
+                # EMERGENCE camp =========
+
+
                 if R2 and R_lock == False:
                     for sequantum in R2:
                         if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char:
                             address.append((sequantum.nhead_x, sequantum.nhead_y))
                         if self.cord[sequantum.ntail_x][sequantum.ntail_y] == self.slot_char:
                             address.append((sequantum.ntail_x, sequantum.ntail_y))   
-                    if address: R_lock = True 
+                    if address: R_lock = True
                 if R1 and R_lock == False:
                     for sequantum in R1:
                         if self.cord[sequantum.nhead_x][sequantum.nhead_y] == self.slot_char:
@@ -201,11 +289,13 @@ class tictactoe(commands.Cog):
             except IndexError: pass
 
 
+
 class ticker:
-    def __init__(self, x, y, cord):
+    def __init__(self, x, y, cord, ghosted=False):
         self.x = int(x)
         self.y = int(y)
         self.cord = cord
+        self.ghosted = ghosted
         self.behalf = 'X'
         self.restricted_char = ['--', 'O']
     
@@ -234,126 +324,234 @@ class ticker:
         return list(set(seq_1 + seq_2))
 
     # ========= MAIN_DIAG
-    def down_right(self, seq, x, y):
+    def down_right(self, seq, x, y, step=0, steps=1):
         # The tick checks if the next slot have a tick
         if self.cord[x + 1][y + 1] not in self.restricted_char:
-            # Move to the NEXT slot
-            seq = self.cord[x + 1][y + 1].down_right(seq, self.cord[x + 1][y + 1].x, self.cord[x + 1][y + 1].y)
+            # If not stepping, move to the NEXT slot
+            if not step: seq = self.cord[x + 1][y + 1].down_right(seq, self.cord[x + 1][y + 1].x, self.cord[x + 1][y + 1].y, step=step, steps=steps)
+            # If steeping, STOP and RESET stepping
+            else: seq = self.cord[x + 1][y + 1].down_right(seq, self.cord[x + 1][y + 1].x, self.cord[x + 1][y + 1].y, step=-1, steps=-1)
+
             # Put ITS OWN tick into the seq
-            seq.append(self.cord[x][y])
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             # Pass the seq back
             return seq
         # If not, put ITS OWN tick into the seq, then pass back
         else:
-            seq.append(self.cord[x][y])
+            # Over-stepping, using ghosting ticker
+            if step < steps:
+                ghost_temp = ticker(x + 1, y + 1, self.cord, ghosted=True)
+                seq = ghost_temp.down_right(seq, ghost_temp.x, ghost_temp.y, step=step+1)
+            # Over-stepping done, but nothing found
+            elif step == steps and steps > 0:
+                return seq
+
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             return seq
 
-    def top_left(self, seq, x, y):
+    def top_left(self, seq, x, y, step=0, steps=1):
         # The tick checks if the next slot have a tick
         if self.cord[x - 1][y - 1] not in self.restricted_char:
-            # Move to the NEXT slot
-            seq = self.cord[x - 1][y - 1].top_left(seq, self.cord[x - 1][y - 1].x, self.cord[x - 1][y - 1].y)
+            # If not stepping, move to the NEXT slot
+            if not step: seq = self.cord[x - 1][y - 1].top_left(seq, self.cord[x - 1][y - 1].x, self.cord[x - 1][y - 1].y, step=step, steps=steps)
+            # If steeping, STOP and RESET stepping
+            else: seq = self.cord[x - 1][y - 1].top_left(seq, self.cord[x - 1][y - 1].x, self.cord[x - 1][y - 1].y, step=-1, steps=-1)
+
             # Put ITS OWN tick into the seq
-            seq.append(self.cord[x][y])
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             # Pass the seq back
             return seq
         # If not, put ITS OWN tick into the seq, then pass back
         else:
-            seq.append(self.cord[x][y])           
+            # Over-stepping, using ghosting ticker
+            if step < steps:
+                ghost_temp = ticker(x - 1, y - 1, self.cord, ghosted=True)
+                seq = ghost_temp.top_left(seq, ghost_temp.x, ghost_temp.y, step=step+1)
+            # Over-stepping done, but nothing found
+            elif step == steps and steps > 0:
+                return seq
+
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             return seq
 
     # ========= ANTI_DIAG
-    def down_left(self, seq, x, y):
+    def down_left(self, seq, x, y, step=0, steps=1):
         # The tick checks if the next slot have a tick
         if self.cord[x - 1][y + 1] not in self.restricted_char:
-            # Move to the NEXT slot
-            seq = self.cord[x - 1][y + 1].down_left(seq, self.cord[x - 1][y + 1].x, self.cord[x - 1][y + 1].y)
+            # If not stepping, move to the NEXT slot
+            if not step: seq = self.cord[x - 1][y + 1].down_left(seq, self.cord[x - 1][y + 1].x, self.cord[x - 1][y + 1].y, step=step, steps=steps)
+            # If steeping, STOP and RESET stepping
+            else: seq = self.cord[x - 1][y + 1].down_left(seq, self.cord[x - 1][y + 1].x, self.cord[x - 1][y + 1].y, step=-1, steps=-1)
+
             # Put ITS OWN tick into the seq
-            seq.append(self.cord[x][y])
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             # Pass the seq back
             return seq
         # If not, put ITS OWN tick into the seq, then pass back
         else:
-            seq.append(self.cord[x][y])
+            # Over-stepping, using ghosting ticker
+            if step < steps:
+                ghost_temp = ticker(x - 1, y + 1, self.cord, ghosted=True)
+                seq = ghost_temp.down_left(seq, ghost_temp.x, ghost_temp.y, step=step+1)
+            # Over-stepping done, but nothing found
+            elif step == steps and steps > 0:
+                return seq
+
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             return seq
 
-    def top_right(self, seq, x, y):
+    def top_right(self, seq, x, y, step=0, steps=1):
         # The tick checks if the next slot have a tick
         if self.cord[x + 1][y - 1] not in self.restricted_char:
-            # Move to the NEXT slot
-            seq = self.cord[x + 1][y - 1].top_right(seq, self.cord[x + 1][y - 1].x, self.cord[x + 1][y - 1].y)
+            # If not stepping, move to the NEXT slot
+            if not step: seq = self.cord[x + 1][y - 1].top_right(seq, self.cord[x + 1][y - 1].x, self.cord[x + 1][y - 1].y, step=step, steps=steps)
+            # If steeping, STOP and RESET stepping
+            else: seq = self.cord[x + 1][y - 1].top_right(seq, self.cord[x + 1][y - 1].x, self.cord[x + 1][y - 1].y, step=-1, steps=-1)
+
             # Put ITS OWN tick into the seq
-            seq.append(self.cord[x][y])
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             # Pass the seq back
             return seq
         # If not, put ITS OWN tick into the seq, then pass back
         else:
-            seq.append(self.cord[x][y])
+            # Over-stepping, using ghosting ticker
+            if step < steps:
+                ghost_temp = ticker(x + 1, y - 1, self.cord, ghosted=True)
+                seq = ghost_temp.top_right(seq, ghost_temp.x, ghost_temp.y, step=step+1)
+            # Over-stepping done, but nothing found
+            elif step == steps and steps > 0:
+                return seq
+
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             return seq
 
     # ========= HORIZONTAL
-    def horizontal_right(self, seq, x, y):
+    def horizontal_right(self, seq, x, y, step=0, steps=1):
         # The tick checks if the next slot have a tick
         if self.cord[x][y + 1] not in self.restricted_char:
-            # Move to the NEXT slot
-            seq = self.cord[x][y + 1].horizontal_right(seq, self.cord[x][y + 1].x, self.cord[x][y + 1].y)
+            # If not stepping, move to the NEXT slot
+            if not step: seq = self.cord[x][y + 1].horizontal_right(seq, self.cord[x][y + 1].x, self.cord[x][y + 1].y, step=step, steps=steps)
+            # If steeping, STOP and RESET stepping
+            else: seq = self.cord[x][y + 1].horizontal_right(seq, self.cord[x][y + 1].x, self.cord[x][y + 1].y, step=-1, steps=-1)
+
             # Put ITS OWN tick into the seq
-            seq.append(self.cord[x][y])
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             # Pass the seq back
             return seq
         # If not, put ITS OWN tick into the seq, then pass back
         else:
-            seq.append(self.cord[x][y])
+            # Over-stepping, using ghosting ticker
+            if step < steps:
+                ghost_temp = ticker(x, y + 1, self.cord, ghosted=True)
+                seq = ghost_temp.horizontal_right(seq, ghost_temp.x, ghost_temp.y, step=step+1)
+            # Over-stepping done, but nothing found
+            elif step == steps and steps > 0:
+                return seq
+
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             return seq
 
-    def horizontal_left(self, seq, x, y):
+    def horizontal_left(self, seq, x, y, step=0, steps=1):
         # The tick checks if the next slot have a tick
         if self.cord[x][y - 1] not in self.restricted_char:
-            # Move to the NEXT slot
-            seq = self.cord[x][y - 1].horizontal_left(seq, self.cord[x][y - 1].x, self.cord[x][y - 1].y)
+            # If not stepping, move to the NEXT slot
+            if not step: seq = self.cord[x][y - 1].horizontal_left(seq, self.cord[x][y - 1].x, self.cord[x][y - 1].y, step=step, steps=steps)
+            # If steeping, STOP and RESET stepping
+            else: seq = self.cord[x][y - 1].horizontal_left(seq, self.cord[x][y - 1].x, self.cord[x][y - 1].y, step=-1, steps=-1)
+
             # Put ITS OWN tick into the seq
-            seq.append(self.cord[x][y])
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             # Pass the seq back
             return seq
         # If not, put ITS OWN tick into the seq, then pass back
         else:
-            seq.append(self.cord[x][y])
+            # Over-stepping, using ghosting ticker
+            if step < steps:
+                ghost_temp = ticker(x, y - 1, self.cord, ghosted=True)
+                seq = ghost_temp.horizontal_left(seq, ghost_temp.x, ghost_temp.y, step=step+1)
+            # Over-stepping done, but nothing found
+            elif step == steps and steps > 0:
+                return seq
+                
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             return seq
 
     # ========= VERTICAL
-    def vertical_up(self, seq, x, y):
+    def vertical_up(self, seq, x, y, step=0, steps=1):
         # The tick checks if the next slot have a tick
         if self.cord[x - 1][y] not in self.restricted_char:
-            # Move to the NEXT slot
-            seq = self.cord[x - 1][y].vertical_up(seq, self.cord[x - 1][y].x, self.cord[x - 1][y].y)
+            # If not stepping, move to the NEXT slot
+            if not step: seq = self.cord[x - 1][y].vertical_up(seq, self.cord[x - 1][y].x, self.cord[x - 1][y].y, step=step, steps=steps)
+            # If steeping, STOP and RESET stepping
+            else: seq = self.cord[x - 1][y].vertical_up(seq, self.cord[x - 1][y].x, self.cord[x - 1][y].y, step=-1, steps=-1)
+
             # Put ITS OWN tick into the seq
-            seq.append(self.cord[x][y])
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             # Pass the seq back
             return seq
         # If not, put ITS OWN tick into the seq, then pass back
         else:
-            seq.append(self.cord[x][y])
+            # Over-stepping, using ghosting ticker
+            if step < steps:
+                ghost_temp = ticker(x - 1, y, self.cord, ghosted=True)
+                seq = ghost_temp.vertical_up(seq, ghost_temp.x, ghost_temp.y, step=step+1)
+            # Over-stepping done, but nothing found
+            elif step == steps and steps > 0:
+                return seq
+
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             return seq
 
-    def vertical_down(self, seq, x, y):
+    def vertical_down(self, seq, x, y, step=0, steps=1):
         # The tick checks if the next slot have a tick
         if self.cord[x + 1][y] not in self.restricted_char:
-            # Move to the NEXT slot
-            seq = self.cord[x + 1][y].vertical_down(seq, self.cord[x + 1][y].x, self.cord[x + 1][y].y)
+            # If not stepping, move to the NEXT slot
+            if not step: seq = self.cord[x + 1][y].vertical_down(seq, self.cord[x + 1][y].x, self.cord[x + 1][y].y, step=step, steps=steps)
+            # If steeping, STOP and RESET stepping
+            else: seq = self.cord[x + 1][y].vertical_down(seq, self.cord[x + 1][y].x, self.cord[x + 1][y].y, step=-1, steps=-1)
+
             # Put ITS OWN tick into the seq
-            seq.append(self.cord[x][y])
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             # Pass the seq back
             return seq
         # If not, put ITS OWN tick into the seq, then pass back
         else:
-            seq.append(self.cord[x][y])
+            # Over-stepping, using ghosting ticker
+            if step < steps:
+                ghost_temp = ticker(x + 1, y, self.cord, ghosted=True)
+                seq = ghost_temp.vertical_down(seq, ghost_temp.x, ghost_temp.y, step=step+1)
+            # Over-stepping done, but nothing found
+            elif step == steps and steps > 0:
+                return seq
+
+            if isinstance(self.cord[x][y], ticker): seq.append(self.cord[x][y])
+            else: seq.append(ticker(x, y, self.cord, ghosted=True))
             return seq
 
+
+
 class sequantum:
-    def __init__(self, seq, type):
+    def __init__(self, seq, type, ghosted=False, ghost_ticks=[]):
         self.seq = seq
         #print(f"SEQ {type}: {seq}")
         self.type = type
+        self.ghosted = ghosted
+        self.ghost_ticks = ghost_ticks
         self.seq_length = len(self.seq)
         # Getting head and tail of a <sequantum>
         self.head, self.tail, self.nhead_x, self.nhead_y, self.ntail_x, self.ntail_y = self.sorting(self.seq, self.type)

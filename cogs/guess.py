@@ -61,11 +61,13 @@ class guess(commands.Cog):
         await ctx.send(f":bulb: **HINT:** {hint}")
 
         def UMCc_check(m):
-            return m.channel == ctx.channel and m.author == ctx.author and m.content.lower() == answer
+            return m.channel == ctx.channel and m.author == ctx.author and m.content.lower() == answer.lower()
+
+        print(answer.lower())
 
         try: await self.client.wait_for('message', timeout=15, check=UMCc_check)
         except asyncio.TimeoutError:
-            await ctx.send("<:fufu:508437298808094742> Duh loserrrrr")
+            await ctx.send("<:SagiriBleh:457194206000316437> Duh loserrrrr")
             await _cursor.execute(f"UPDATE tz_quiz SET lose=lose+1 WHERE user_id='{ctx.author.id}';")
             return
 

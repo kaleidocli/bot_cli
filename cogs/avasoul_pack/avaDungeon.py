@@ -133,7 +133,7 @@ class dSession:
             self.timeline.append(snapshot)
 
             # Inform
-            await self.ctx.send(f"> `LP: {new_player.lp}` · ${new_player.money} · `Distance: {self.timeline[-1].distance}m`")
+            await self.ctx.send(f"> `LP: {new_player.lp}` · ${new_player.money} · `Distance: {self.timeline[-1].distance}m`", delete_after=15)
 
             return False
 

@@ -115,7 +115,7 @@ class avaCombat(commands.Cog):
 
             # ==================================
             # Get the <mob> prototype
-            name, branch, lp, strr, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, t_evo = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, evo FROM model_mob WHERE mob_code='{mob_code}';")
+            name, branch, lp, strr, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, t_evo, description, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, evo, description, illulink FROM model_mob WHERE mob_code='{mob_code}';")
             rewards = rewards.split(' | ')
 
             # Generating rewards
@@ -148,7 +148,7 @@ class avaCombat(commands.Cog):
             await self.client._cursor.execute(f"DELETE FROM environ_mob WHERE mob_id='{target_id}';")
 
             # Insert the mob to DB
-            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", '{branch}', {lp}, {strr}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_DARK}, {au_HOLY}, '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, 'n/a');""")
+            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_DARK}, {au_HOLY}, '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, 'n/a', "{illulink}");""")
             counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
             await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
 
@@ -243,7 +243,7 @@ class avaCombat(commands.Cog):
             if len(raw_move)*w_sta <= STA:
                 if w_sta >= 100: await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-2 WHERE id='{MSG.author.id}';")
                 else: await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-1 WHERE id='{MSG.author.id}';")
-            else: await MSG.channel.send(f"<:osit:544356212846886924> {MSG.author.mention}, out of `STA`!"); return
+            else: await MSG.channel.send(f"<:osit:544356212846886924> {MSG.author.mention}, your STA is not enough for a `{len(raw_move)}`-chain melee move!"); return
 
             # Calc dmg
             dmg, dmg_q, m_art, bonus, icon_sequence = await dmg_calc(raw_move)
