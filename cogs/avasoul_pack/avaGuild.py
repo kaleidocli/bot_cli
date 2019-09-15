@@ -90,7 +90,7 @@ class avaGuild(commands.Cog):
 
         except IndexError: await ctx.send(f"<:guild_p:619743808959283201> **`{ctx.message.author.name}`'s G.U.I.L.D card** <:guild_p:619743808959283201> \n------------------------------------------------\n**`Guild`** · `{name}`|**{name}**\n**`Rank`** · {rank}\n**`Total quests done`** · {total_quests}"); return
 
-    @commands.command()
+    @commands.command(aliases=['q'])
     @commands.cooldown(1, 5, type=BucketType.user)
     async def quest(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return

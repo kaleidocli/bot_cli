@@ -257,6 +257,33 @@ class avaAdmin(commands.Cog):
             except IndexError: await ctx.send("Hey you, I need an id."); return
             await ctx.send(f"Deleted todo `{args[1]}`")
 
+    @commands.command()
+    @checks.check_author()
+    async def viewitem(self, ctx, *args):
+
+        item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price FROM model_item WHERE item_code='{args[0]}';""")
+
+        # Pointer
+        if 'magic' in tags: pointer = ':crystal_ball:'
+        else: pointer = '<:gun_pistol:508213644375621632>'
+        # Aura icon
+        aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
+
+        line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n\n```"{description}"```\n"""
+        
+        reembed = discord.Embed(title=f"`{item_code}`|**{' '.join([x for x in name.upper()])}**", colour = discord.Colour(0x011C3A), description=line)
+        reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
+
+        try: acc_per = 10//accuracy_randomness
+        except ZeroDivisionError: acc_per = 0
+        reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**-------------------**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
+
+        reembed.set_thumbnail(url=aui[aura])
+        if illulink != 'n/a': reembed.set_image(url=illulink)
+
+        await ctx.send(embed=reembed); return
+
+
 
 
 def setup(client):
