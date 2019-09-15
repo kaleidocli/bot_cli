@@ -128,7 +128,8 @@ class avaSocial(commands.Cog):
 
         # ================== SEX
         else:
-            await ctx.send(f":heart: {tar.mention}, **{ctx.author.name}** is feeling *unsure*.\nType `sure` to make {ctx.author.name} sure, 20 secs left to grab your chance!")
+            try: await ctx.send(f":heart: {tar.mention}, **{ctx.author.name}** is feeling *unsure*.\nType `sure` to make {ctx.author.name} sure, 20 secs left to grab your chance!")
+            except AttributeError: await ctx.send(f":heart: {t_name}, **{ctx.author.name}** is feeling *unsure*.\nType `sure` to make {ctx.author.name} sure, 20 secs left to grab your chance!")
 
             def UMCc_check(m):
                 return m.channel == ctx.channel and m.author == tar and m.content.lower() == 'sure'

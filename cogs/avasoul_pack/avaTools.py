@@ -190,8 +190,8 @@ class avaTools:
             await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}','DEFAULT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
             await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'CURRENT', 'av0', 'bg0', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
             # Arts
-            await self.client._cursor.execute(f"""SELECT func_aa_reward('{id}', 'aa0', 5);
-                                                    SELECT func_aa_reward('{id}', 'aa1', 5);""")
+            await self.client._cursor.execute(f"""SELECT func_aa_reward('{id}', 'aa0', 1);
+                                                    SELECT func_aa_reward('{id}', 'aa1', 1);""")
 
             if player: return 0
             else: return 2

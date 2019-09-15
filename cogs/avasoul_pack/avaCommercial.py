@@ -744,7 +744,7 @@ class avaCommercial(commands.Cog):
                     af_query = af_query + w_eq
 
                 ## Adjusting things with quantity
-                await self.client._cursor.execute(f"SELECT func_i_delete('{ctx.author.id}', '{item_id}', {quantity}); " + af_query)
+                await self.client._cursor.execute(f"SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity}); " + af_query)
                 await self.tools.ava_scan(ctx.message, type='normalize', target_id=target_id)
                 await ctx.send(f":white_check_mark: Used {quantity} `{item_id}`|**{w_name}** on **{target_name}**")     
 
