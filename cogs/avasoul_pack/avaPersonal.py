@@ -148,7 +148,7 @@ class avaPersonal(commands.Cog):
         #line = f"""{LP_line}"""
 
         #box = f"\n░░░░ **{name}** | {lmao[gender].capitalize()}, {age} ░░░░\n╟**`Money`** · <:36pxGold:548661444133126185>{money}\n╟**`Merit`** · {merit}\n╟**`Degrees`** · `{degrees}`\n━━━━━╾ {combat_HANDLING.capitalize()} hand ╼━━━━\n╟**`RIGHT`** · {right_hand}\n╟**`LEFT`** · {left_hand}\n━━━━━╾ **`EVO`** {evo} ╼━━━━━━\n**·** `STA` {STA}/{MAX_STA}\n**·** `LP` {LP}/{MAX_LP}\n**·** `STR` {STR}\n**·** `INT` {INTT}"
-        box = discord.Embed(title = f"{age} {lmao[gender].capitalize()} ||<:merit_badge:620137704662761512>`{merit}`|| | **{name}**", colour = discord.Colour(0x36393F))
+        box = discord.Embed(title = f"{age} {lmao[gender].capitalize()} | **{name}** ||<:merit_badge:620137704662761512>`{merit}`||", colour = discord.Colour(0x36393F))
         box.add_field(name=f"`LP` · **{LP}**/{MAX_LP}", value=f"""{LP_line}""", inline=True)
         box.add_field(name=f"`STA` · **{STA}**/{MAX_STA}", value=f"""{STA_line}""", inline=True)
         box.add_field(name=f'>>> **`EVO`** · {evo}\n**`STR`** · {STR}\n**`INT`** · {INTT}\n**`CHARM`** · {charm}', value=f"<:right_hand:521197677346553861>{right_hand}")

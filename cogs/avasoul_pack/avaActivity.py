@@ -47,7 +47,7 @@ class avaActivity(commands.Cog):
                 STA, money = await self.client.quefe(f"""SELECT STA, money FROM personal_info WHERE id='{ctx.author.id}' {full_cheq};""")
                 if STA < sta: await ctx.send(f"Grab something to *eat*, **{ctx.author.name}** <:fufu:605255050289348620> You can't do anything with such STA."); return
 
-                await ctx.send(f":briefcase: **{ctx.author.name}** wants to be `{raw[0]}`|**{jname}** for `{int(duration/240)}` days. We'll prepay you **<:36pxGold:548661444133126185>{reward}**!")
+                await ctx.send(f":briefcase: **{ctx.author.name}** assigns as `{raw[0]}`|**{jname}** for `{(duration/60):.2f}`. The guild will pay you **<:36pxGold:548661444133126185>{reward}** in advance!")
                 await self.client._cursor.execute(f"UPDATE personal_info SET STA={STA - sta}, money={money + reward} WHERE id='{ctx.author.id}'")
             # E: Unpack on empty query, due to degree not found
             except TypeError: await ctx.send(f""":briefcase: You need `{"', '".join(requirement.split(' - '))}` to apply for this job!"""); return

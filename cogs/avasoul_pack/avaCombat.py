@@ -58,7 +58,7 @@ class avaCombat(commands.Cog):
 
         # GET Mob info =======================
         try:
-            t_name, t_speed, t_str, t_chain, t_lp = await self.client.quefe(f"SELECT name, speed, str, chain, LP FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+            t_name, t_speed, t_str, t_chain, t_lp, t_illulink = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
         except TypeError: await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
 
 
@@ -286,6 +286,7 @@ class avaCombat(commands.Cog):
                 #pack_1 = f"\n:dagger: **「`{target_id}` | {t_name}」** ⋙ *{t_dmg}* ⋙ **{MSG.author.mention}**"
                 tEmbed = discord.Embed(color=0xF15C4A)
                 tEmbed.add_field(name=f":dagger: **「`{target_id}` | {t_name}」**  ⋙**[{t_dmg}]**⋙**{MSG.author.name}**", value=f":dagger: {t_icon_sequence}")
+                if t_illulink: tEmbed.set_thumbnail(url=t_illulink)
                 pack_1 = tEmbed
 
             
@@ -773,20 +774,22 @@ class avaCombat(commands.Cog):
             # PVE   |    USING MOB'S ID
             elif copo.startswith('mob.') or copo.startswith('boss'):
                 # If there's no current_enemy   |   # If there is, and the target is the current_enemy
-                if CE:
-                    if 'lock' in CE:
-                        if copo == 'boss': 
-                            target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}';")
-                            target = target[0]; __mode = 'PVE'; target_id = target
-                            # CE - Processing/lock
-                            CE['lock'] = target_id
-                        else:
-                            target = copo; __mode = 'PVE'; target_id = target
-                            # CE - Processing/lock
-                            CE['lock'] = target_id
-                    # If there is, but the target IS NOT the current_enemy
-                    #elif copo != CE['lock']:
-                    #    await ctx.send(f"<:osit:544356212846886924> Please finish your current fight with the `{CE['lock']}`!"); return
+                # if CE:
+                # if 'lock' in CE:
+                if copo == 'boss':
+                    target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+                    target = target[0]; __mode = 'PVE'; target_id = target
+                    # CE - Processing/lock
+                    try: CE['lock'] = target_id
+                    except NameError: pass
+                else:
+                    target = copo; __mode = 'PVE'; target_id = target
+                    # CE - Processing/lock
+                    try: CE['lock'] = target_id
+                    except NameError: pass
+                # If there is, but the target IS NOT the current_enemy
+                #elif copo != CE['lock']:
+                #    await ctx.send(f"<:osit:544356212846886924> Please finish your current fight with the `{CE['lock']}`!"); return
 
 
 
