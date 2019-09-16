@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
 import pymysql.err as mysqlError
 
 import json
@@ -284,6 +285,33 @@ class avaAdmin(commands.Cog):
         await ctx.send(embed=reembed); return
 
 
+
+
+    # UPDATING command ===================================
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    @checks.check_author()
+    async def ituda(self, ctx, *args):
+
+        codes = await self.client.quefe(f"SELECT item_code FROM pi_inventory WHERE item_code LIKE 'it%' OR item_code LIKE 'ar%' OR item_code LIKE 'am%';", type='all')
+
+        for code in codes:
+            await self.client._cursor.execute(f"UPDATE pi_inventory p INNER JOIN model_item m ON m.item_code='{code[0]}' SET p.tags=m.tags, p.weight=m.weight, p.defend=m.defend, p.multiplier=p.multiplier, p.str=m.str, p.intt=m.intt, p.sta=m.sta, p.speed=m.speed, p.round=m.round, p.accuracy_randomness=m.accuracy_randomness, p.accuracy_range=m.accuracy_range, p.range_min=m.range_min, p.range_max=m.range_max, p.firing_rate=m.firing_rate, p.reload_query=m.reload_query, p.effect_query=m.effect_query, p.infuse_query=m.infuse_query, p.passive_query=m.passive_query, p.ultima_query=m.ultima_query, p.price=m.price, p.dmg=m.dmg, p.stealth=m.stealth, p.evo=m.evo, p.aura=m.aura, p.craft_value=m.craft_value, p.illulink=m.illulink WHERE p.item_code='{code[0]}';")
+
+        await ctx.send(":white_check_mark:")
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    @checks.check_author()
+    async def mobuda(self, ctx, *args):
+
+        codes = await self.client.quefe(f"SELECT DISTINCT mob_code FROM model_mob;", type='all')
+
+        for code in codes:
+            await self.client._cursor.execute(f"UPDATE environ_mob e INNER JOIN model_mob m ON m.mob_code='{code[0]}' SET e.name=m.name, e.description=m.description, e.lp=m.lp, e.str=m.str, e.chain=m.chain, e.speed=m.speed, e.au_FLAME=m.au_FLAME, e.au_ICE=m.au_ICE, e.au_HOLY=m.au_HOLY, e.au_DARK=m.au_DARK, e.rewards=m.rewards, e.illulink=m.illulink WHERE e.mob_code='{code[0]}';")
+
+        await ctx.send(":white_check_mark:")
 
 
 def setup(client):

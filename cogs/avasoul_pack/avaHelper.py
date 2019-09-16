@@ -205,7 +205,7 @@ Definition? Mechanism? Lore? Yaaa```
             await browse(); return
 
         # Search
-        try: concept, description, tags, typee = await self.client.quefe(f"SELECT concept, description, tags, type FROM sys_concept WHERE concept='{raw[0]}';")
+        try: concept, description, tags, typee, illulink = await self.client.quefe(f"SELECT concept, description, tags, type, illulink FROM sys_concept WHERE concept='{raw[0]}';")
         # E: No result. Instead try to search for familiar
         except TypeError:
             packs = await self.client.quefe(f"SELECT concept FROM sys_concept WHERE concept LIKE '%{raw[0]}%' OR tags LIKE '%{raw[0]}%';", type='all')
@@ -225,6 +225,7 @@ Definition? Mechanism? Lore? Yaaa```
                     colour = discord.Colour(0xB1F1FA))
         temb.set_thumbnail(url=self.concept_thumbnail)
         temb.set_footer(text=f"<{tags.replace(' - ', '> <')}>", icon_url='https://imgur.com/TW9dmXy.png')
+        if illulink: temb.set_image(url=illulink)
 
         await ctx.send(embed=temb)
 

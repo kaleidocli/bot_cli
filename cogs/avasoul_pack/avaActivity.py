@@ -301,7 +301,9 @@ class avaActivity(commands.Cog):
         degrees = ['elementary', 'middleschool', 'highschool', 'associate', 'bachelor', 'master', 'doctorate']
         major = ['astrophysic', 'biology', 'chemistry', 'georaphy', 'mathematics', 'physics', 'education', 'archaeology', 'history', 'humanities', 'linguistics', 'literature', 'philosophy', 'psychology', 'management', 'international_bussiness', 'elemology', 'electronics', 'robotics', 'engineering']
  
-        try: resp = args[0]
+        try:
+            resp = args[0]
+            if resp not in args[0]: await ctx.send("<:osit:544356212846886924> Invalid degree!")
         except IndexError: await ctx.send(f":books: Welcome to **Ascending Sanctuary of Siegfields**. Please, take time and have a look.\n:books: **`{'` ➠ `'.join(degrees)}`**"); return
 
         # Check if the previous course has been finished yet

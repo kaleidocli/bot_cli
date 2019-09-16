@@ -464,7 +464,7 @@ class avaPersonal(commands.Cog):
                 await ctx.send("<:osit:544356212846886924> Mutation done! Check your profile immidiately..."); return
 
 
-            if await self.client._cursor.execute(self.evo_dict[raw[0].lower()].replace('user_id_here', ctx.author.id)) == 0: await ctx.send("<:osit:544356212846886924> Not enough perks!"); return
+            if await self.client._cursor.execute(self.evo_dict[raw[0].lower()].replace('user_id_here', str(ctx.author.id))) == 0: await ctx.send("<:osit:544356212846886924> Not enough perks!"); return
 
         # E: Attributes not found
         except KeyError: await ctx.send("<:osit:544356212846886924> Invalid attribute!"); return

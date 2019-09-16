@@ -103,7 +103,7 @@ class avaDungeon(commands.Cog):
                 await msg.delete(); return
 
 
-    @commands.command()
+    @commands.command(aliases=['dng'])
     @commands.cooldown(1, 2, type=BucketType.user)
     async def dungeon(self, ctx, *args):
 
@@ -111,6 +111,12 @@ class avaDungeon(commands.Cog):
         try:
             if args[0] == 'enter':
                 if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+                # Check if user is currently in another session
+                try:
+                    cur_dun = self.dSessionSocket[ctx.author.id]
+                    await ctx.send(f"<:osit:544356212846886924> You've already in dungeon `{cur_dun.dungeon.dungeon_code}`|**{cur_dun.dungeon.dungeon_name}**."); return
+                except KeyError: pass
 
                 try: temp = self.dungeondict[args[1]]
                 except IndexError: await ctx.send("<:osit:544356212846886924> Missing `dungeon_code`!"); return
@@ -120,7 +126,7 @@ class avaDungeon(commands.Cog):
                 money, lp, merit = await self.client.quefe(f"SELECT money, lp, merit FROM personal_info WHERE id='{ctx.author.id}';")
                 if money < temp.price: await ctx.send(f"<:osit:544356212846886924> You need <:36pxGold:548661444133126185>{temp.price} as entry fee to enter this dungeon, {ctx.author.mention}!"); return
  
-                msg = await ctx.send(f"<:guild_p:619743808959283201> A snapshot of your character will transmitted into dungeon `{temp.dungeon_code}`|**{temp.dungeon_name}**. That snapshot will not be saved until next checkpoint.\n<a:RingingBell:559282950190006282> Entry fee is <:36pxGold:548661444133126185>{temp.price}. Do you wish to continue?")
+                msg = await ctx.send(f"<:guild_p:619743808959283201> A snapshot of your character will be transmitted into dungeon `{temp.dungeon_code}`|**{temp.dungeon_name}**, and will not be saved until next checkpoint.\n<a:RingingBell:559282950190006282> Entry fee is <:36pxGold:548661444133126185>{temp.price}. Do you wish to continue?")
                 await msg.add_reaction("\U00002705")
                 try: await self.client.wait_for('reaction_add', timeout=15, check=lambda r, u: u.id == ctx.author.id and r.message.id == msg.id)
                 except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Entry request is aborted."); return
@@ -136,12 +142,18 @@ class avaDungeon(commands.Cog):
         except KeyError: await ctx.send("<:osit:544356212846886924> You haven't enter any dungeon yet. Please use `dungeon enter [dungeon_code]`."); return
 
         your_session.ctx = ctx
+        # Lock check (and lock ON)
+        if not your_session.lock: your_session.lock = True
+        else: await ctx.send(f"<:osit:544356212846886924> Please finish your current event!"); return
         res = await your_session.updateTimeline() 
 
         # In case dead
         try:
             if res == 'dead': self.sessionDel(ctx)
         except TypeError: pass
+
+        # Lock OFF
+        your_session.lock = False
 
 
 
@@ -189,10 +201,10 @@ class dSession:
         self.dungeon = dungeon
         self.dungeondict = dungeondict
         self.pdb_pack = pdb_pack
+        self.lock = False
         self.timeline = []
 
     async def updateTimeline(self, event_in=None, player_in=None):
-        print("UPDDAAAAAAAAAAAAAAAA", event_in)
 
         # Generate event
         if not event_in: event = await self.eventGenerator()
@@ -218,7 +230,6 @@ class dSession:
             else: new_player = result
         else:
             new_player = self.timeline[-1].player
-        print("NEW_PLAYERRRRRRRR: ", new_player, result)
 
         # INNER dive, but DO NOT archive the snapshot YET
         if isinstance(result, modelEvent):
@@ -254,7 +265,9 @@ class dSession:
             self.timeline.append(snapshot)
 
             # Inform
-            await self.ctx.send(f"> `LP: {new_player.lp}` · `ATK/DEF: {new_player.attack}/{new_player.defense}` · `Distance: {self.timeline[-1].distance}m`\n> <:36pxGold:548661444133126185>{new_player.money} <:merit_badge:620137704662761512>{new_player.merit}", delete_after=15)
+            try: await self.ctx.send(f"> ||{new_player.user.mention}|| <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_shield:622955471640199198>`{new_player.attack}` · <:star_sword:622955471854370826>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}` · <:racing:622958702873280537>`{self.timeline[-1].distance}m`", delete_after=15)
+            # E: Faux-player
+            except AttributeError: await self.ctx.send(f"> **{new_player.user.name}** ╟<:healing_heart:508220588872171522>`{new_player.lp}` · <:star_shield:622955471640199198>`{new_player.attack}` · <:star_sword:622955471854370826>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}` · <:racing:622958702873280537>`{self.timeline[-1].distance}m`", delete_after=15)
 
             return False
 
@@ -263,7 +276,6 @@ class dSession:
 
 
     async def eventEngine(self, event, player_in=None):
-        print('EVENT ENNNNGGGGGGGGGGINE', player_in)
         # Type Handling
 
         # NAIVE ===============
@@ -284,6 +296,14 @@ class dSession:
 
         # CHOICE ==============
         elif event.type == 'choice':
+            # Update distance, only when event is <NAIVE>
+            if self.timeline[-1].direction == 'forward':
+                self.timeline[-1].distance += 1
+                player_in.merit += self.dungeon.merit_per_meter
+            elif self.timeline[-1].distance:
+                self.timeline[-1].distance -= 1
+                player_in.merit -= self.dungeon.merit_per_meter
+
             msg = await self.ctx.send(event.line, delete_after=11)
 
             def R_check(reaction, user):
@@ -343,13 +363,13 @@ class dSession:
 
         # BATTLE ===============
         elif event.type == 'battle':
-            mob_in = random.choice(self.mobdict[event.value])
-            player_in, result = event.eventBattle(player_in, mob_in)
+            mob_in = self.mobdict[random.choice(event.value)]
+            player_in, result, mob_name = event.eventBattle(player_in, mob_in)
             if result:
-                await self.ctx.send(f"{event.line}\nAnd WON!", delete_after=11)
+                await self.ctx.send(f"{event.line}\nAnd WON against a **{mob_name}**!", delete_after=11)
                 player_in.merit += mob_in.merit
             else:
-                await self.ctx.send(f"{event.line}\nAnd LOST...", delete_after=11)
+                await self.ctx.send(f"{event.line}\nAnd LOST to a **{mob_name}**...", delete_after=11)
             return player_in
 
 
@@ -396,7 +416,7 @@ class dPlayer:
         self.client = client
         self.user = user
         self.lp, self.merit = pdb_pack
-        self.attack = 0
+        self.attack = 1
         self.defense = 0
         self.money = money
         self.effect = []
@@ -407,9 +427,7 @@ class dPlayer:
 
 
     def updatePlayer(self, *args):
-        print("Update PLAYER")
         for event in args:
-            print(event, args)
             self.event_dict[event[0]](event[1])
 
         # return self.fullcopy()
@@ -468,13 +486,14 @@ class modelEvent:
         p_hit = player.lp//m_attack
         m_hit = mob.lp//p_attack
 
+        print(p_hit, m_hit)
         # PLAYER lose
-        if m_hit <= p_hit:
+        if m_hit >= p_hit:
             player.lp -= m_attack*m_hit
-            return player, False
+            return player, False, mob.mob_name
         else:
             player.lp -= m_attack*m_hit
-            return player, True        
+            return player, True, mob.mob_name
 
 
 

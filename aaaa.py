@@ -242,7 +242,7 @@ async def shutdown(ctx):
 @check_id()
 async def delele(ctx, *args):
     try:
-        msg = await ctx.channel.get_message(int(args[0]))
+        msg = await ctx.channel.fetch_message(int(args[0]))
         await msg.delete()
     # E: Invalid args
     except ValueError: await ctx.send(":warning: Invalid **`message id`**"); return
@@ -636,6 +636,7 @@ async def minikey(ctx, *args):
     minikeylist.remove(ctx.channel.id)
 
 @client.command()
+@check_id()
 async def source(ctx, *args):
     await ctx.send('https://github.com/kaleidocli/bot_cli')
 

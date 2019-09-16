@@ -115,7 +115,10 @@ class avaGuild(commands.Cog):
                     if await self.client._cursor.execute(f"SELECT * FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_code='{raw[1]}';") >= 1:
                         await ctx.send("<:osit:544356212846886924> Quest has already been taken"); return
                     done_quests = await self.client.quefe(f"SELECT finished_quests FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
-                    if raw[1] in done_quests[0].split(' - '): await ctx.send("<:osit:544356212846886924> Quest has already been done"); return
+                    try:
+                        if raw[1] in done_quests[0].split(' - '): await ctx.send("<:osit:544356212846886924> Quest has already been done"); return
+                    # No finished quests
+                    except TypeError: pass
                     if await self.client._cursor.execute(f"SELECT user_id FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats in ('ONGOING', 'FULL')") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> Your rank isn't high enough to handle more than **{sample[rank]}** quests at a time"); return
 
                     # QUEST info get
