@@ -21,8 +21,9 @@ import emoji
 import aiohttp
 import psutil
 
-import configs
+from cogs.configs import SConfig
 
+config = SConfig()
 help_dict = {}
 ava_dict = {}
 bulb = True
@@ -56,7 +57,7 @@ extensions = ['cogs.error_handler',
                 'cogs.avasoul_pack.avaPersonalUtils',
                 'cogs.avasoul_pack.avaDungeon']
 
-TOKEN = configs.TOKEN
+TOKEN = config.TOKEN
 
 #prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
 # async def get_pref(bot, message):
@@ -83,6 +84,8 @@ async def on_ready():
     await client.change_presence(activity=discord.Game(name='with aknalumos <3'))
     print("|||||   THE BOT IS READY   |||||")
 
+
+
 @client.event
 async def on_guild_join(guild):
     await client.get_channel(563592973170769922).send(f":white_check_mark: **JOINED -->** `{guild.id}` | {guild.name}")
@@ -91,49 +94,17 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     await client.get_channel(563592973170769922).send(f":x: **LEFT -->** `{guild.id}` | {guild.name}")
 
+
+
+
 def check_id():
     def inner(ctx):
         return ctx.author.id == 214128381762076672
     return commands.check(inner)
 
-async def help(ctx, *args):
-    global help_dict
-    raw = list(args)
-
-    prefix = 'cli '
-
-    # Overall help
-    if not raw:
-        box = discord.Embed(
-            title = '**K A L E I D O S C O P E    C L I**',
-            description = f"""⠀⠀ | A tiny rpg bot with tiny rpg functions.
-                            ```dsconfig
-⠀| For RPG commands, please use: {prefix}guide
-⠀| For RPG concepts, please use: {prefix}concept
-⠀| For normal commands, please use: {prefix}help```""",
-            colour = discord.Colour(0xB1F1FA)
-        )
-        box.set_footer(text="""⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀by aknalumos#7317""")
-        box.set_thumbnail(url='https://imgur.com/TW9dmXy.png')
-        #box.add_field(name=f'**||** ~~Audio~~', value='`join` | `leave` | `stop` \n`volume` | `cli` | `yolo` ', inline=True)
-        #box.add_field(name='**||** ~~Configuration~~', value='`help` | `setting` \n`invite` | `dir`', inline=True)
-        #box.add_field(name=f'**||** ~~NSFW~~', value='`hen` | `nhen` | `dhen`', inline=True)
-        box.add_field(name=f'**||** RPG', value=f'RPG games. Gather a party and real-timely fight mobs side by side to fulfill quests!\nGet degrees, work hard for money, hunt for ingredients to craft weapons and stuff. Marry your love ones, make children and teach them!\n· Use `{prefix}guide` for more info', inline=True)
-        box.add_field(name=f'**||** Miscellaneous', value='`guess` | `ttt` | `say`', inline=True)
-        box.add_field(name=f'⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀', value='**||** Support server! https://discord.gg/4wJHCBp')
-
-    # Specific help
-    else:
-        try: des = f"『**Description**』\n{help_dict[raw[0]]['description']}\n\n『**Syntax**』\n{help_dict[raw[0]]['syntax']}\n\n『**Note**』\n{help_dict[raw[0]]['note']}\n\n『**Aliase**』\n{help_dict[raw[0]]['aliase']}"
-        except KeyError: ctx.send("I'm not gonna tell ya <:fufu:508437298808094742>"); return
-        box = discord.Embed(
-            title = raw[0],
-            description = des,
-            colour = discord.Colour(0xB1F1FA)           
-        )
 
 
-    await ctx.send(embed=box)
+
 
 @client.command()
 async def statas(ctx, *args):
@@ -142,6 +113,10 @@ async def statas(ctx, *args):
     temb = discord.Embed(title=f"<a:ramspin:547325170726207499> {bytes2human(mem.used)}/{bytes2human(mem.total)} ({round(mem.used/mem.total*100)}%)", colour = discord.Colour(0xB1F1FA))
 
     await ctx.send(embed=temb)
+
+@client.command()
+async def vote(ctx, *args):
+    await ctx.send(embed=discord.Embed(description=f"**Love me? Love me not?** Heheh I know you love me~ [Thank you for voting me~!](https://discordbots.org/bot/449278811369111553/vote)", colour = discord.Colour(0x36393E)))
 
 @client.command()
 @check_id()
@@ -349,7 +324,7 @@ async def say(ctx, *args):
 async def swear(ctx, *args):
     args = list(args)
     resp = ''; resp2 = ''
-    swears = {'vn': ['địt', 'đĩ', 'đụ', 'cặc', 'cằc', 'đéo', 'cứt', 'lồn', 'nứng', 'vãi', 'lồn má', 'đĩ lồn', 'tét lồn', 'dí lồn', 'địt mẹ', 'lồn trâu', 'lồn voi', 'lồn ngựa'],
+    swears = {'vn': ['địt', 'đĩ', 'đụ', 'cặc', 'cằc', 'đéo', 'cứt', 'lồn', 'nứng', 'vãi', 'lồn má', 'đĩ lồn', 'tét lồn', 'dí lồn', 'địt mẹ', 'lồn trâu', 'lồn voi', 'lồn ngựa', 'con mẹ', 'bú', 'mút cặc'],
             'en': ['fucking', 'cunt', 'shit', 'motherfucker', 'faggot', 'retard', 'goddamn', 'jerk']}
     subj = ['fucking', 'faggot', 'goddamn', 'jerk', 'asshole', 'freaking', 'son of the bitch']
     endp = [', you fucking hear me?', ' faggot', ', you fucking gay', ' fucking retard', ' motherfucker', ' bitch', ' faggot', ' asshole', ', dickkk', ', and fuck you', ', fucking idiots', ' you shitty head']

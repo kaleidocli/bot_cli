@@ -47,7 +47,7 @@ class avaActivity(commands.Cog):
                 STA, money = await self.client.quefe(f"""SELECT STA, money FROM personal_info WHERE id='{ctx.author.id}' {full_cheq};""")
                 if STA < sta: await ctx.send(f"Grab something to *eat*, **{ctx.author.name}** <:fufu:605255050289348620> You can't do anything with such STA."); return
 
-                await ctx.send(f":briefcase: **{ctx.author.name}** assigns as `{raw[0]}`|**{jname}** for `{(duration/60):.2f}`. The guild will pay you **<:36pxGold:548661444133126185>{reward}** in advance!")
+                await ctx.send(f":briefcase: **{ctx.author.name}** assigns as `{raw[0]}`|**{jname}** for `{(duration/60):.0f}` min(s). The guild will pay you **<:36pxGold:548661444133126185>{reward}** in advance!")
                 await self.client._cursor.execute(f"UPDATE personal_info SET STA={STA - sta}, money={money + reward} WHERE id='{ctx.author.id}'")
             # E: Unpack on empty query, due to degree not found
             except TypeError: await ctx.send(f""":briefcase: You need `{"', '".join(requirement.split(' - '))}` to apply for this job!"""); return
@@ -291,7 +291,7 @@ class avaActivity(commands.Cog):
         await ctx.send(f":sunrise_over_mountains: Beneath piles of cotton growling an annoying voice... *Groaaarrr!* Good.. morning? You've recovered **{sta_receive}**`STA`!"); return
 
     @commands.command(aliases=['edu'])
-    @commands.cooldown(1, 10, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def education(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
         cur_X, cur_Y = await self.client.quefe(f"SELECT cur_X, cur_Y FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
@@ -301,10 +301,16 @@ class avaActivity(commands.Cog):
         degrees = ['elementary', 'middleschool', 'highschool', 'associate', 'bachelor', 'master', 'doctorate']
         major = ['astrophysic', 'biology', 'chemistry', 'georaphy', 'mathematics', 'physics', 'education', 'archaeology', 'history', 'humanities', 'linguistics', 'literature', 'philosophy', 'psychology', 'management', 'international_bussiness', 'elemology', 'electronics', 'robotics', 'engineering']
  
+        # INFO
         try:
-            resp = args[0]
-            if resp not in args[0]: await ctx.send("<:osit:544356212846886924> Invalid degree!")
-        except IndexError: await ctx.send(f":books: Welcome to **Ascending Sanctuary of Siegfields**. Please, take time and have a look.\n:books: **`{'` ➠ `'.join(degrees)}`**"); return
+            if args[0] == 'degree':
+                await ctx.send(f"""> `{'` ➠ `'.join(degrees)}`""")
+                return
+            elif args[0] == 'major':
+                await ctx.send(f"`{'` · `'.join(major)}`")
+                return
+        except IndexError:
+            await ctx.send(f"Welcome to :books: **Ascending Sanctuary of Siegfields**.\n╟`education degree` to view all degree.\n╟`education major` to view all majors."); return
 
         # Check if the previous course has been finished yet
         if not await self.__cd_check(ctx.message, cmd_tag, f":books: *Enlightening requires one's most persevere and patience.*"): return
@@ -312,53 +318,47 @@ class avaActivity(commands.Cog):
         def UMC_check(m):
             return m.channel == ctx.channel and m.author == ctx.author 
 
+        # MAJOR
         try:
-            temp1 = await ctx.send(f":bulb: ... and what major would you prefer?\n| **`{'` · `'.join(major)}`**")
+            if args[1] not in major: await ctx.send(f"<:osit:544356212846886924> Major not found!"); return
+        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing `major` argument!"); return
 
-            try: resp2 = await self.client.wait_for('message', check=UMC_check, timeout=20)
-            # E: No respond
-            except asyncio.TimeoutError: await ctx.send(":books: May the Olds look upon you..."); return
-            # Major check
-            if resp2.content.lower() not in major: await ctx.send(f"<:osit:544356212846886924> Invalid major!"); return
+        # DEGREE
+        try: price, INTT_require, INTT_reward, degree_require, duration = await self.client.quefe(f"SELECT price, INTT_require, INTT_reward, degree_require, duration FROM model_degree WHERE degree='{args[0].lower()}';")
+        except TypeError: await ctx.send(f"<:osit:544356212846886924> Degree not found!"); return
+        degree_require = degree_require.split(' of ')
 
-            await temp1.delete()
+        # DEGREE (and MAJOR) prequisite check
+        query = f"SELECT money, INTT FROM personal_info WHERE EXISTS (SELECT * FROM pi_degrees WHERE user_id='{ctx.author.id}' AND degree='{degree_require[0]}'"
 
-            price, INTT_require, INTT_reward, degree_require, duration = await self.client.quefe(f"SELECT price, INTT_require, INTT_reward, degree_require, duration FROM model_degree WHERE degree='{resp.lower()}';")
-            degree_require = degree_require.split(' of ')
+        try:
+            try: money, INTT = await self.client.quefe(query + f" AND major='{degree_require[1]}') AND id='{ctx.author.id}';")
+            # E: No major required
+            except IndexError: money, INTT = await self.client.quefe(query + f") AND id='{ctx.author.id}';")
+        # E: Query return NONE
+        except TypeError: await ctx.send(f"<:osit:544356212846886924> Your application does not meet the degree/major requirements, **{ctx.message.author.name}**."); return
 
-            # DEGREE (and MAJOR) check
-            query = f"SELECT money, INTT FROM personal_info WHERE EXISTS (SELECT * FROM pi_degrees WHERE user_id='{ctx.author.id}' AND degree='{degree_require[0]}'"
+        # MONEY and INTT check
+        if money < price: await ctx.send(f"<:osit:544356212846886924> You need **<:36pxGold:548661444133126185>{price}** to enroll this program!"); return
+        if INTT < INTT_require: await ctx.send(f"<:osit:544356212846886924> You need **{INTT_require}**`INT` to enroll this program!"); return
+        
+        temp2 = await ctx.send(f">>> :books: Program for `{args[0].capitalize()} of {args[1].capitalize()}`:\n| **Price:** <:36pxGold:548661444133126185>{price}\n| **Duration:** {duration/7200} months\n**Result:** · **`{args[0].capitalize()} of {args[1].capitalize()}`** · `{INTT_reward}` INT. \n<a:RingingBell:559282950190006282> Do you wish to proceed? (Key: `enroll confirm` | Timeout=15s)")
 
-            try:
-                try: money, INTT = await self.client.quefe(query + f" AND major='{degree_require[1]}') AND id='{ctx.author.id}';")
-                # E: No major required
-                except IndexError: money, INTT = await self.client.quefe(query + f") AND id='{ctx.author.id}';")
-            # E: Query return NONE
-            except TypeError: await ctx.send(f"<:osit:544356212846886924> Your application does not meet the degree/major requirements, **{ctx.message.author.name}**."); return
+        def UMCc_check(m):
+            return m.channel == ctx.channel and m.author == ctx.author and m.content.lower() == 'enroll confirm'
 
-            # MONEY and INTT check
-            if money < price: await ctx.send(f"<:osit:544356212846886924> You need **<:36pxGold:548661444133126185>{price}** to enroll this program!"); return
-            if INTT < INTT_require: await ctx.send(f"<:osit:544356212846886924> You need **{INTT_require}**`INT` to enroll this program!"); return
-            
-            temp2 = await ctx.send(f":books: Program for `{resp.capitalize()} of {resp2.content.capitalize()}`:\n| **Price:** <:36pxGold:548661444133126185>{price}\n| **Duration:** {duration/7200} months\n**Result:** · **`{resp.capitalize()} of {resp2.content.capitalize()}`** · `{INTT_reward}` INT. \n<a:RingingBell:559282950190006282> Do you wish to proceed? (Key: `enroll confirm` | Timeout=15s)")
+        try: await self.client.wait_for('message', timeout=15, check=UMCc_check)
+        except asyncio.TimeoutError: await ctx.send(f"<:osit:544356212846886924> Assignment session of {ctx.message.author.mention} is closed."); return
+        await temp2.delete()
 
-            def UMCc_check(m):
-                return m.channel == ctx.channel and m.author == ctx.author and m.content.lower() == 'enroll confirm'
+        # Initialize
+        try: await self.client._cursor.execute(f"INSERT INTO pi_degrees VALUES ('{ctx.author.id}', '{args[0].lower()}', '{args[1].lower()}');")
+        except AttributeError: await self.client._cursor.execute(f"INSERT INTO pi_degrees VALUES ('{str(ctx.message.author.id)}', '{args[0].lower()}', NULL);")
+        await self.client._cursor.execute(f"UPDATE personal_info SET INTT={INTT + INTT_reward}, STA=0, money={money - price} WHERE id='{ctx.author.id}';")
+        # Cooldown set
+        await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{price}** has been deducted from your account.")
+        await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'degreeing', ex=duration, nx=True))
 
-            try: await self.client.wait_for('message', timeout=15, check=UMCc_check)
-            except asyncio.TimeoutError: await ctx.send(f"<:osit:544356212846886924> Assignment session of {ctx.message.author.mention} is closed."); return
-            await temp2.delete()
-
-            # Initialize
-            try: await self.client._cursor.execute(f"INSERT INTO pi_degrees VALUES ('{ctx.author.id}', '{resp.lower()}', '{resp2.content.lower()}');")
-            except AttributeError: await self.client._cursor.execute(f"INSERT INTO pi_degrees VALUES ('{str(ctx.message.author.id)}', '{resp.lower()}', NULL);")
-            await self.client._cursor.execute(f"UPDATE personal_info SET INTT={INTT + INTT_reward}, STA=0, money={money - price} WHERE id='{ctx.author.id}';")
-            # Cooldown set
-            await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{price}** has been deducted from your account.")
-            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'degreeing', ex=duration, nx=True))
-
-        # E: Invalid degree
-        except ZeroDivisionError: await ctx.send("<:osit:544356212846886924> Invalid degree!"); return
 
     @commands.command(aliases=['med'])
     @commands.cooldown(1, 5, type=BucketType.user)

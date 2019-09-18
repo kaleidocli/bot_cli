@@ -5,13 +5,17 @@ import discord.errors as discordErrors
 
 import asyncio
 import random
+import math
 from copy import deepcopy
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 from utils import checks
 
 class avaDungeon(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.dSessionSocket = {}
@@ -25,6 +29,7 @@ class avaDungeon(commands.Cog):
         await asyncio.sleep(1)
         self.mobdict = await self.mobdictLoad()
         self.dungeondict = await self.dungeondictLoad()
+        self.checkpointdict = await self.checkpointdictLoad()
 
         print("|| Dungeon ---- READY!")
 
@@ -102,49 +107,87 @@ class avaDungeon(commands.Cog):
             except asyncio.TimeoutError: 
                 await msg.delete(); return
 
-
     @commands.command(aliases=['dng'])
     @commands.cooldown(1, 2, type=BucketType.user)
     async def dungeon(self, ctx, *args):
 
-        # Check ===============
+        # CHOICE ===================================
         try:
             if args[0] == 'enter':
                 if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
-                # Check if user is currently in another session
-                try:
-                    cur_dun = self.dSessionSocket[ctx.author.id]
-                    await ctx.send(f"<:osit:544356212846886924> You've already in dungeon `{cur_dun.dungeon.dungeon_code}`|**{cur_dun.dungeon.dungeon_name}**."); return
-                except KeyError: pass
-
+                # Check args
                 try: temp = self.dungeondict[args[1]]
                 except IndexError: await ctx.send("<:osit:544356212846886924> Missing `dungeon_code`!"); return
                 except KeyError: await ctx.send("<:osit:544356212846886924> Unknown `dungeon_code`."); return
                 temp.price = 0
 
-                money, lp, merit = await self.client.quefe(f"SELECT money, lp, merit FROM personal_info WHERE id='{ctx.author.id}';")
+                # Check if user is currently in another session. If is, suggest to make new one
+                try:
+                    try:
+                        cur_dun = self.dSessionSocket[ctx.author.id]
+                        delta = relativedelta(datetime.now(), cur_dun.start_point)
+                        msg = await ctx.send(f"<:guild_p:619743808959283201> You're currently in `{cur_dun.dungeon.dungeon_code}`|**{cur_dun.dungeon.dungeon_name}**.\n╟Distance · `{cur_dun.timeline[-1].distance}`\n╟Duration · `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`\nContinue?")
+                    except KeyError:
+                        distance, start_point, dungeon_code = await self.client.quefe(f"SELECT distance, start_point, dungeon_code FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
+                        delta = relativedelta(datetime.now(), start_point)
+                        msg = await ctx.send(f"<:guild_p:619743808959283201> You're currently in dungeon **`{dungeon_code}`**.\n╟Distance · `{distance}`\n╟Duration · `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`\nContinue?")
+                    await msg.add_reaction('\U00002705')
+                    try: await self.client.wait_for('reaction_add', check=lambda reaction, user: user == ctx.author, timeout=15)
+                    except asyncio.TimeoutError: return
+
+                # E: Already have a session, or session's timeline is empty
+                except (TypeError, IndexError): pass
+
+                # Get user info
+                money, lp, strr = await self.client.quefe(f"SELECT money, lp, STR FROM personal_info WHERE id='{ctx.author.id}';")
                 if money < temp.price: await ctx.send(f"<:osit:544356212846886924> You need <:36pxGold:548661444133126185>{temp.price} as entry fee to enter this dungeon, {ctx.author.mention}!"); return
  
                 msg = await ctx.send(f"<:guild_p:619743808959283201> A snapshot of your character will be transmitted into dungeon `{temp.dungeon_code}`|**{temp.dungeon_name}**, and will not be saved until next checkpoint.\n<a:RingingBell:559282950190006282> Entry fee is <:36pxGold:548661444133126185>{temp.price}. Do you wish to continue?")
                 await msg.add_reaction("\U00002705")
                 try: await self.client.wait_for('reaction_add', timeout=15, check=lambda r, u: u.id == ctx.author.id and r.message.id == msg.id)
-                except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Entry request is aborted."); return
+                except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Entry request is cancelled."); return
 
-                self.dSessionSocket[ctx.author.id] = dSession(self.client, ctx, self.mobdict, self.dungeondict, temp, pdb_pack=(lp, merit))
-                await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{temp.price} WHERE id='{ctx.author.id}';")
+                self.dSessionSocket[ctx.author.id] = dSession(self.client, ctx, self.mobdict, self.dungeondict, temp, self.checkpointdict, pdb_pack=(lp, strr, 0, 0, 0, 0))
+                # Update user      ||       Purge user's abdundant session (if available)
+                await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{temp.price} WHERE id='{ctx.author.id}'; DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
                 await ctx.send(f"<:guild_p:619743808959283201> Your snapshot has been transmitted into `{temp.dungeon_code}`|**{temp.dungeon_name}**! May the Olds look upon you...")
                 return
             else: return
         except IndexError: pass
 
-        try: your_session = self.dSessionSocket[ctx.author.id]
-        except KeyError: await ctx.send("<:osit:544356212846886924> You haven't enter any dungeon yet. Please use `dungeon enter [dungeon_code]`."); return
+        # SESSION get ===================================
+        try:
+            # Check cache session
+            try: your_session = self.dSessionSocket[ctx.author.id]
+            except KeyError:
+                # Check db session // Load session if possible
+                lp, attack, defense, money, merit, dungeon_code, distance, checkpoints, start_point = await self.client.quefe(f"SELECT lp, attack, defense, money, merit, dungeon_code, distance, checkpoints, start_point FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
+                your_session = dSession(self.client, ctx, self.mobdict, self.dungeondict, self.dungeondict[dungeon_code], self.checkpointdict, cp_pack=(lp, attack, defense, money, merit), cp_pack2=(distance,), start_point=start_point)
+                if checkpoints:
+                    your_session.checkpoint = True
+                    your_session.checkpoints = deepcopy(checkpoints.split(' || '))
+                self.dSessionSocket[ctx.author.id] = your_session
+        except TypeError: await ctx.send("<:osit:544356212846886924> You haven't enter any dungeon yet. Please use `dungeon enter [dungeon_code]`."); return
 
-        your_session.ctx = ctx
-        # Lock check (and lock ON)
+        # Lock check (and lock ON) =======================
         if not your_session.lock: your_session.lock = True
         else: await ctx.send(f"<:osit:544356212846886924> Please finish your current event!"); return
+        your_session.ctx = ctx
+
+        # Checkpoint check ===============================
+        if your_session.checkpoint:
+            msg = await ctx.send(f"Leaving the checkpoint area, {ctx.author.mention}?", delete_after=5)
+            await msg.add_reaction('\U00002705')
+            
+            try: await self.client.wait_for('reaction_add', check=lambda reaction, user: user == ctx.author, timeout=5)
+            except asyncio.TimeoutError:
+                your_session.lock = False
+                return
+
+            # Change checkpoint status
+            your_session.checkpoint = False
+
         res = await your_session.updateTimeline() 
 
         # In case dead
@@ -155,6 +198,44 @@ class avaDungeon(commands.Cog):
         # Lock OFF
         your_session.lock = False
 
+    @commands.command(aliases=['cp'])
+    @commands.cooldown(1, 2, type=BucketType.user)
+    async def checkpoint(self, ctx, *args):
+
+        # SESSION check/get
+        try:
+            try: ses = self.dSessionSocket[ctx.author.id]
+            except KeyError:
+                # Check db session // Load session if possible
+                lp, attack, defense, money, merit, dungeon_code, distance, checkpoints, start_point = await self.client.quefe(f"SELECT lp, attack, defense, money, merit, dungeon_code, distance, checkpoints, start_point FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
+                ses = dSession(self.client, ctx, self.mobdict, self.dungeondict, self.dungeondict[dungeon_code], self.checkpointdict, cp_pack=(lp, attack, defense, money, merit), cp_pack2=(distance,), start_point=start_point)
+                if checkpoints:
+                    ses.checkpoint = True
+                    ses.checkpoints = deepcopy(checkpoints.split(' || '))
+                self.dSessionSocket[ctx.author.id] = ses
+        except TypeError: await ctx.send(f"<:osit:544356212846886924> You are not in any dungeon at the moment."); return
+
+        # GENERAL ==========================
+        if not args:
+
+            # Checkpoint check/get
+            if not ses.checkpoint: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
+            cp = self.checkpointdict[ses.checkpoints[-1]]
+
+            await ctx.send(embed=discord.Embed(title=f"Checkpoint#{cp.cp_tier} | **{cp.cp_name}**", description=f"```{cp.cp_description}```").set_thumbnail(url='https://imgur.com/aPSzsZD.gif'))
+
+        # RETURN ===========================
+        if args[0] == 'return':
+            delta = relativedelta(datetime.now(), ses.start_point)
+            new_player = ses.timeline[-1].player
+            msg = await ctx.send(f"<:guild_p:619743808959283201> {ctx.author.mention}, you're currently in `{ses.dungeon.dungeon_code}`|**{ses.dungeon.dungeon_name}**.\n> <:racing:622958702873280537>`{ses.timeline[-1].distance}m`\n> :stopwatch:`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`\n> <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`\n**Return?**")
+            await msg.add_reaction('\U00002705')
+            try: await self.client.wait_for('reaction_add', check=lambda reaction, user: user == ctx.author, timeout=15)
+            except asyncio.TimeoutError: await ctx.send("<:guild_p:619743808959283201> Returning request is aborted!"); return
+            
+            await asyncio.sleep(0.1)
+            await self.client._cursor.execute(f"UPDATE personal_info SET money=money+{new_player.money}, merit=merit+{int(new_player.merit)} WHERE id='{ctx.author.id}'; DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
+            await ctx.send(f"<:guild_p:619743808959283201> Welcome back, {ctx.author.mention}! Money and merit are also rewarded to your profile!"); return
 
 
 
@@ -181,6 +262,15 @@ class avaDungeon(commands.Cog):
 
         return dungeondict
 
+    async def checkpointdictLoad(self):
+        checkpointdict = {}
+        packs = await self.client.quefe(f"SELECT cp_code, cp_name, cp_description, cp_tier, cp_shop, cp_tax_money, cp_tax_merit, cp_line FROM model_dungeoncheckpoint;", type='all')
+
+        for pack in packs:
+            checkpointdict[pack[0]] = dCheckpoint(pack)
+
+        return checkpointdict
+
 
 
 
@@ -194,24 +284,31 @@ def setup(client):
 
 class dSession:
 
-    def __init__(self, client, ctx, mobdict, dungeondict, dungeon, pdb_pack=None):
+    def __init__(self, client, ctx, mobdict, dungeondict, dungeon, checkpointdict, start_point=None, pdb_pack=None, cp_pack=None, cp_pack2=None):
         self.client = client
         self.ctx = ctx
         self.mobdict = mobdict
         self.dungeon = dungeon
         self.dungeondict = dungeondict
+        self.checkpointdict = checkpointdict
         self.pdb_pack = pdb_pack
+        self.cp_pack = cp_pack
+        self.cp_pack2 = cp_pack2
         self.lock = False
+        self.checkpoint = False
+        self.checkpoints = []       # Visited checkpoints
         self.timeline = []
+        if start_point: self.start_point = start_point
+        else: self.start_point = datetime.now()
+
+        # Init timeline
+        self.timeline.append(dEnvironment(dPlayer(self.ctx.author, self.client, pdb_pack=self.pdb_pack, cp_pack=self.cp_pack), None, cp_pack=self.cp_pack2))
 
     async def updateTimeline(self, event_in=None, player_in=None):
 
         # Generate event
         if not event_in: event = await self.eventGenerator()
         else: event = event_in
-        # Timeline check
-        if not self.timeline:
-            self.timeline.append(dEnvironment(dPlayer(self.ctx.author, self.client, pdb_pack=self.pdb_pack), event))
 
         # RUN event
         if player_in: result = await self.eventEngine(event, player_in=player_in)
@@ -265,9 +362,9 @@ class dSession:
             self.timeline.append(snapshot)
 
             # Inform
-            try: await self.ctx.send(f"> ||{new_player.user.mention}|| <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_shield:622955471640199198>`{new_player.attack}` · <:star_sword:622955471854370826>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}` · <:racing:622958702873280537>`{self.timeline[-1].distance}m`", delete_after=15)
+            try: await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||{new_player.user.mention}||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`", delete_after=15)
             # E: Faux-player
-            except AttributeError: await self.ctx.send(f"> **{new_player.user.name}** ╟<:healing_heart:508220588872171522>`{new_player.lp}` · <:star_shield:622955471640199198>`{new_player.attack}` · <:star_sword:622955471854370826>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}` · <:racing:622958702873280537>`{self.timeline[-1].distance}m`", delete_after=15)
+            except AttributeError: await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||**{new_player.user.name}**||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`", delete_after=15)
 
             return False
 
@@ -276,8 +373,10 @@ class dSession:
 
 
     async def eventEngine(self, event, player_in=None):
-        # Type Handling
+        # Prep
+        line_in = random.choice(event.line)
 
+        # Handling types
         # NAIVE ===============
         if event.type == 'naive':
             # Update distance, only when event is <NAIVE>
@@ -289,31 +388,26 @@ class dSession:
                 player_in.merit -= self.dungeon.merit_per_meter
 
             if event.illulink:
-                await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink), delete_after=11)
+                await self.ctx.send(line_in, embed=discord.Embed().set_image(url=event.illulink), delete_after=11)
             else:
-                await self.ctx.send(event.line, delete_after=11)
+                await self.ctx.send(line_in, delete_after=11)
             return False
 
         # CHOICE ==============
         elif event.type == 'choice':
             # Update distance, only when event is <NAIVE>
             if self.timeline[-1].direction == 'forward':
-                self.timeline[-1].distance += 1
                 player_in.merit += self.dungeon.merit_per_meter
             elif self.timeline[-1].distance:
-                self.timeline[-1].distance -= 1
                 player_in.merit -= self.dungeon.merit_per_meter
 
-            msg = await self.ctx.send(event.line, delete_after=11)
-
-            def R_check(reaction, user):
-                return user == self.ctx.author and str(reaction.emoji) in ('\U00002705', '\U0000274c')
+            msg = await self.ctx.send(line_in, delete_after=11)
 
             await msg.add_reaction('\U00002705')
             await msg.add_reaction('\U0000274c')
             if not event.duration: dura = 15
             else: dura = event.duration
-            try: r, u = await self.client.wait_for('reaction_add', check=R_check, timeout=dura)
+            try: r, u = await self.client.wait_for('reaction_add', check=lambda reaction, user: user == self.ctx.author and str(reaction.emoji) in ('\U00002705', '\U0000274c'), timeout=dura)
 
             # No --> node2
             except asyncio.TimeoutError:
@@ -332,7 +426,7 @@ class dSession:
 
         # DEAD ================
         elif event.type == 'dead':
-            await self.ctx.send(event.line, delete_after=11)
+            await self.ctx.send(line_in, delete_after=11)
             return 'dead'
 
 
@@ -340,9 +434,9 @@ class dSession:
         # HURT ================
         elif event.type == 'hurt':
             if event.illulink:
-                await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink), delete_after=11)
+                await self.ctx.send(line_in, embed=discord.Embed().set_image(url=event.illulink), delete_after=11)
             else:
-                await self.ctx.send(event.line, delete_after=11)
+                await self.ctx.send(line_in, delete_after=11)
             # Damage GET
             temp = event.value
             if not temp: temp = ['0']
@@ -352,9 +446,9 @@ class dSession:
         # REWARD ================
         elif event.type == 'reward':
             if event.illulink:
-                await self.ctx.send(event.line, embed=discord.Embed().set_image(url=event.illulink), delete_after=11)
+                await self.ctx.send(line_in, embed=discord.Embed().set_image(url=event.illulink), delete_after=11)
             else:
-                await self.ctx.send(event.line, delete_after=11)
+                await self.ctx.send(line_in, delete_after=11)
             # Reward GET
             temp = event.value
             if not temp: temp = ['0']
@@ -366,11 +460,27 @@ class dSession:
             mob_in = self.mobdict[random.choice(event.value)]
             player_in, result, mob_name = event.eventBattle(player_in, mob_in)
             if result:
-                await self.ctx.send(f"{event.line}\nAnd WON against a **{mob_name}**!", delete_after=11)
+                await self.ctx.send(f"{line_in}\nAnd WON against a **{mob_name}**!", delete_after=11)
                 player_in.merit += mob_in.merit
             else:
-                await self.ctx.send(f"{event.line}\nAnd LOST to a **{mob_name}**...", delete_after=11)
+                await self.ctx.send(f"{line_in}\nAnd LOST to a **{mob_name}**...", delete_after=11)
             return player_in
+
+        # CHECKPOINT ===============
+        elif event.type == 'checkpoint':
+            # If checkpoint has already been visited
+            cp_in = random.choice(event.value)
+            if cp_in in self.checkpoints: await self.ctx.send(f"You found a checkpoint, but looks like it's been abandoned for a while...", delete_after=11); return player_in
+
+            self.checkpoint = True
+            self.checkpoints.append(self.checkpointdict[cp_in].cp_code)
+            
+            # Save into database
+            if not await self.client._cursor.execute(f"UPDATE pi_dungeoncheckpoint SET distance={self.timeline[-1].distance}, lp={player_in.lp}, attack={player_in.base_attack}, defense={player_in.base_defense}, money={player_in.money}, merit={player_in.merit}, checkpoints='{' || '.join(self.checkpoints)}' WHERE user_id='{self.ctx.author.id}';"):
+                await self.client._cursor.execute(f"INSERT INTO pi_dungeoncheckpoint VALUES (0, '{self.ctx.author.id}', '{self.dungeon.dungeon_code}', {self.timeline[-1].distance}, {player_in.lp}, {player_in.attack}, {player_in.defense}, {player_in.money}, {player_in.merit}, '{' || '.join(self.checkpoints)}', '{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}');")
+
+            await self.ctx.send(f"<:guild_p:619743808959283201> You've found an active checkpoint! All `checkpoint` commands are now enabled!", delete_after=11); return player_in
+            
 
 
     async def eventGenerator(self, event_code=None):
@@ -395,10 +505,11 @@ class dSession:
 
 class dEnvironment:
 
-    def __init__(self, player, event, distance=0):
+    def __init__(self, player, event, distance=0, cp_pack=None):
         self.event = event
         self.player = player.fullcopy()
-        self.distance = distance
+        if not cp_pack: self.distance = distance
+        else: self.distance = cp_pack[0]
         self.direction = 'forward'
 
 
@@ -407,20 +518,39 @@ class dDungeon:
     def __init__(self, pack):
         self.dungeon_code, self.dungeon_name, self.description, self.length, self.merit_per_meter, self.price, self.region, self.illulink = pack
 
+class dCheckpoint:
+
+    def __init__(self, pack):
+        self.cp_code, self.cp_name, self.cp_description, self.cp_tier, self.cp_shop, self.cp_tax_money, self.cp_tax_merit, self.cp_line = pack
+        try: self.cp_line = self.cp_line.split(' || ')
+        except AttributeError: pass
+
+
 
 
 
 class dPlayer:
 
-    def __init__(self, user, client, lp=100, money=0, pdb_pack=None):
+    def __init__(self, user, client, lp=100, money=0, pdb_pack=None, cp_pack=None):
         self.client = client
         self.user = user
-        self.lp, self.merit = pdb_pack
-        self.attack = 1
-        self.defense = 0
-        self.money = money
+        # From cache
+        if not cp_pack:
+            self.lp, self.attack, self.defense, self.base_attack, self.base_defense, self.merit = pdb_pack
+            # Construct
+            if not self.attack and not self.defense:
+                self.base_attack = math.ceil(self.base_attack)
+                self.base_defense = self.base_attack
+                self.attack = self.base_attack
+                self.defense = self.base_defense
+            self.money = money
+        # From db
+        else:
+            self.lp, self.base_attack, self.base_defense, self.money, self.merit = cp_pack
+            self.attack = self.base_attack
+            self.defense = self.base_defense
         self.effect = []
-        self.tube = []
+        self.inventory = []
         self.event_dict = {'takeDamage': self.player_takeDamage,
                             'getReward': self.player_getReward}
 
@@ -434,7 +564,7 @@ class dPlayer:
         return self
 
     def fullcopy(self):
-        temp = dPlayer(self.user, lp=self.lp, client=self.client, money=self.money, pdb_pack=(self.lp, self.merit))
+        temp = dPlayer(self.user, lp=self.lp, client=self.client, money=self.money, pdb_pack=(self.lp, self.attack, self.defense, self.base_attack, self.base_defense, self.merit))
         temp.effect = deepcopy(self.effect)
         return temp
 
@@ -466,7 +596,7 @@ class modelEvent:
     def __init__(self, code, type, line, node1, node2, vsPlayerEvent, duration, value='', illulink=''):
         self.code = code
         self.type = type
-        self.line = line
+        self.line = line.split(' || ')
         try: self.node1 = node1.split(' - ')
         except AttributeError: self.node1 = None
         try: self.node2 = node2.split(' - ')
