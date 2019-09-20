@@ -127,7 +127,7 @@ class avaDungeon(commands.Cog):
                     try:
                         cur_dun = self.dSessionSocket[ctx.author.id]
                         delta = relativedelta(datetime.now(), cur_dun.start_point)
-                        msg = await ctx.send(f"<:guild_p:619743808959283201> You're currently in `{cur_dun.dungeon.dungeon_code}`|**{cur_dun.dungeon.dungeon_name}**.\n╟Distance · `{cur_dun.timeline[-1].distance}`\n╟Duration · `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`\nContinue?")
+                        msg = await ctx.send(f"<:guild_p:619743808959283201> You're currently in `{cur_dun.dungeon.dungeon_code}`|**{cur_dun.dungeon.dungeon_name}**.\n╟Distance · `{cur_dun.timeline[-1].distance}`\n╟Duration · `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`\nAbort this dungeon and continue?")
                     except KeyError:
                         distance, start_point, dungeon_code = await self.client.quefe(f"SELECT distance, start_point, dungeon_code FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
                         delta = relativedelta(datetime.now(), start_point)
@@ -222,7 +222,7 @@ class avaDungeon(commands.Cog):
             if not ses.checkpoint: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
             cp = self.checkpointdict[ses.checkpoints[-1]]
 
-            await ctx.send(embed=discord.Embed(title=f"Checkpoint#{cp.cp_tier} | **{cp.cp_name}**", description=f"```{cp.cp_description}```").set_thumbnail(url='https://imgur.com/aPSzsZD.gif'))
+            await ctx.send(embed=discord.Embed(title=f"Checkpoint#{cp.cp_tier} | **{cp.cp_name}**", description=f"```{cp.cp_description}```").set_thumbnail(url='https://imgur.com/ER8IFx3.gif'))
 
         # RETURN ===========================
         if args[0] == 'return':
@@ -234,8 +234,10 @@ class avaDungeon(commands.Cog):
             except asyncio.TimeoutError: await ctx.send("<:guild_p:619743808959283201> Returning request is aborted!"); return
             
             await asyncio.sleep(0.1)
+            self.sessionDel(ctx)
+            await ctx.send(f"<:guild_p:619743808959283201> Welcome back, {ctx.author.mention}! Money and merit are also rewarded to your profile!")
             await self.client._cursor.execute(f"UPDATE personal_info SET money=money+{new_player.money}, merit=merit+{int(new_player.merit)} WHERE id='{ctx.author.id}'; DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
-            await ctx.send(f"<:guild_p:619743808959283201> Welcome back, {ctx.author.mention}! Money and merit are also rewarded to your profile!"); return
+            return
 
 
 

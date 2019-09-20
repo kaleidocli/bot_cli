@@ -47,7 +47,7 @@ Definition? Mechanism? Lore? Yaaa```
                                 We, the devs, might not be able to please your curiosity, since... we sometimes cannot remember all of what the Pralaeyr can do!
                                 May it be a mistake, or may it be not enough, if you don't mind, please come to our support server! https://discord.gg/4wJHCBp
                                 """
-        self.concept_thumbnail = 'https://imgur.com/ZneprKF.png'
+        self.concept_thumbnail = 'https://imgur.com/ZneprKF.gif'
         self.concept_banner = 'https://imgur.com/4ixM0TR.png'
         self.concept_preface = None
         self.concept_prefaceEmbs = None

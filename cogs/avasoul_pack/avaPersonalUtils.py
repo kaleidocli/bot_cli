@@ -227,7 +227,9 @@ class avaPersonalUtils(commands.Cog):
             if cur_PLACE == args[0]: await ctx.send("<:osit:544356212846886924> You're already there :|"); return
 
             # Region INFO
-            if args[0].startswith('region.'): r_name, border_X, border_Y, pass_query = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query FROM environ WHERE environ_code='{args[0]}'")
+            if args[0].startswith('region.'):
+                try: r_name, border_X, border_Y, pass_query = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query FROM environ WHERE environ_code='{args[0]}'")
+                except TypeError: await ctx.send(f"**{args[0]}**... There is no such place here, perhap it's from another era?"); return
             # Land INFO
             else:
                 try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{args[0]}'")
@@ -272,17 +274,14 @@ class avaPersonalUtils(commands.Cog):
             cmd_tag = 'dailyquest'
             if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:605255050289348620> Once a day, **{ctx.author.name}**. Don't push yourself too hard ~!"): return
             
-            name, rank = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{ctx.author.id}';")
-
-            try:
-                if name == 'n/a':
-                    await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
-            except IndexError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
+            # Get personal guild info
+            try: guild_code, rank = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{ctx.author.id}';")
+            except TypeError: await ctx.send("<:osit:544356212846886924> You haven't joined any guild yet!"); return
 
             current_place = await self.client.quefe(f"SELECT cur_PLACE, money FROM personal_info WHERE id='{ctx.author.id}'"); current_place = current_place[0]
 
             sample = {'iron': 3, 'bronze': 4, 'silver': 5, 'gold': 6, 'adamantite': 8, 'mithryl': 10}
-            if await self.client._cursor.execute(f"SELECT COUNT(user_id) FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='ONGOING'") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
+            if await self.client._cursor.execute(f"SELECT COUNT(user_id) FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats in ('ONGOING', 'FULL');") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
 
             # QUEST info get
             try: quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, penalty_query, duration = await self.client.quefe(f"SELECT quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, penalty_query, duration FROM model_quest WHERE region='{current_place}' AND quest_line='daily' ORDER BY RAND() LIMIT 1;")
@@ -310,11 +309,12 @@ class avaPersonalUtils(commands.Cog):
             await self.client._cursor.execute(f"""INSERT INTO pi_quests VALUES (0, '{quest_code}', '{ctx.author.id}', "{snap_query}", '{snapshot}', '{quest_sample}', '{eval_meth}', "{effect_query}", "{reward_query}", "{penalty_query}", '{end_point}', 'FULL'); {effect_query}""")
             
             await ctx.send(f":white_check_mark: {quest_line.capitalize()} quest `{quest_code}`|**{quest_name}** accepted! Use `quest` to check your progress.")
-            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'dailyquest', ex=82800, nx=True))
+            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'dailyquest', ex=duration, nx=True))
             
 
     @commands.command()
     async def kms(self, ctx, *args):
+        return
         query = f"""DELETE FROM pi_degrees WHERE user_id='{ctx.author.id}';
                     DELETE FROM pi_guild WHERE user_id='{ctx.author.id}';
                     DELETE FROM cosmetic_preset WHERE user_id='{ctx.author.id}';

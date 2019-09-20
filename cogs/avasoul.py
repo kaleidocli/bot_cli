@@ -2056,8 +2056,8 @@ class avasoul(commands.Cog):
                         # Quantity of kind in a diversity check
                         qk = await self.client.quefe(f"SELECT COUNT(*) FROM environ_mob WHERE mob_code='{mob[0]}' AND region='{region}';")
 
-                        if qk[0] == mob[1]: continue
-                        elif qk[0] < mob[1]: mob[1] -= qk[0]
+                        if int(qk[0]) == mob[1]: continue
+                        elif int(qk[0]) < mob[1]: mob[1] -= int(qk[0])
                         
                         # Get the <mob> prototype
                         name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, description, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, description, illulink FROM model_mob WHERE mob_code='{mob[0]}';")

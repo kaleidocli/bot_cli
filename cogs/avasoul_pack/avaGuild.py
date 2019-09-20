@@ -25,6 +25,13 @@ class avaGuild(commands.Cog):
                             'adamantite': ['mithryl', 755], 
                             'mithryl': ['n/a', 980]}
 
+        self.guild_rank_image = {'iron': 'https://imgur.com/8Udallk.png',
+                                'bronze': 'https://imgur.com/9k4fYPm.png',
+                                'silver': 'https://imgur.com/eVlDR59.png',
+                                'gold': 'https://imgur.com/E7d64Rh.png',
+                                'adamantite': 'https://imgur.com/86OFaqJ.png',
+                                'mithryl': 'https://imgur.com/IybhU0l.png'}
+
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -38,57 +45,72 @@ class avaGuild(commands.Cog):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         await self.tools.ava_scan(ctx.message)
-        raw = list(args)
 
-        name, rank, total_quests = await self.client.quefe(f"SELECT name, rank, total_quests FROM pi_guild WHERE user_id='{ctx.author.id}';")
+        # DISPLAY guild
+        if not args:
+            # GET personal guild info
+            try: guild_code, rank, total_quests = await self.client.quefe(f"SELECT guild_code, rank, total_quests FROM pi_guild WHERE user_id='{ctx.author.id}' AND guild_code<>'n/a';")
+            except TypeError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
 
-        try:
-            if name == 'n/a' and raw[0] != 'join':
-                await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
-        except IndexError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
+            # GE guild's info
+            guild_name, description, region = await self.client.quefe(f"SELECT guild_name, description, region FROM model_guild WHERE guild_code='{guild_code}';")
 
-        current_place, money = await self.client.quefe(f"SELECT cur_PLACE, money FROM personal_info WHERE id='{ctx.author.id}'")
+            temb = discord.Embed(description=f"```{description}```", colour=0x36393E)
+            temb.set_author(name="⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙", icon_url=ctx.author.avatar_url)
+            temb.add_field(name=f"<:guild_p:619743808959283201> `{guild_code}`|**{guild_name}**", value=f"╟`Region` · **{region}**", inline=True)
+            temb.add_field(name=f":bookmark: {ctx.author.name}'s info", value=f"╟`Quests done` · **{total_quests}**", inline=True)
+            temb.set_thumbnail(url=self.guild_rank_image[rank])
+            await ctx.send(embed=temb)
+            return
 
-        try:
-            if raw[0] == 'join':
-                # Check if user's in the same guild
-                if name == current_place:
-                    await ctx.send(f"<:osit:544356212846886924> You've already been in that guild, **{ctx.message.author.name}**!"); return
-                # ... or in other guilds
-                elif name != 'n/a':
-                    cost = abs(2000* (int(name.split('.')[1]) - int(current_place.split('.')[1])))
-                # ... jor just want to join
-                else: cost = 0
+        if args[0] == 'join':
+            # GET personal info
+            current_place, money = await self.client.quefe(f"SELECT cur_PLACE, money FROM personal_info WHERE id='{ctx.author.id}'")
 
-                def UMCc_check(m):
-                    return m.channel == ctx.channel and m.content == 'joining confirm' and m.author == ctx.author
+            # GET personal guild info
+            p_guild_code = await self.client.quefe(f"SELECT guild_code FROM pi_guild WHERE user_id='{ctx.author.id}';"); p_guild_code = p_guild_code[0]
 
-                await ctx.send(f":scales: **G.U.I.L.D** of `{current_place} | {name}` :scales:\n------------------------------------------------\nJoining will require **<:36pxGold:548661444133126185>{cost}** as a deposit which will be returned when you leave guild if: \n· You don't have any bad records.\n· You're alive.\n· You leave the guild before joining others\n------------------------------------------------\n<a:RingingBell:559282950190006282> **Do you wish to proceed?** (key: `joining confirm` | timeout=20s)")
-                try: await self.client.wait_for('message', timeout=20, check=UMCc_check)           
-                except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timed out!"); return
+            # GET guild info
+            try:
+                # guild_code given..
+                try: guild_code, guild_name, entry_fee = await self.client.quefe(f"SELECT guild_code, guild_name, entry_fee FROM model_guild WHERE guild_code='{args[1]}' AND region='{current_place}';")
+                # .. or not, then search by region of currentplace
+                except IndexError: guild_code, guild_name, entry_fee = await self.client.quefe(f"SELECT guild_code, guild_name, entry_fee FROM model_guild WHERE region='{current_place}';")
+            # E: Guild not found
+            except TypeError: await ctx.send("<:osit:544356212846886924> There aren't any guild available in your current region, it seems..."); return
 
-                # Money check
-                if money < cost: await ctx.send("<:osit:544356212846886924> Insufficient balance!"); return
+            # Check if user's in the same guild
+            if guild_code == p_guild_code:
+                await ctx.send(f"<:osit:544356212846886924> You've already been in that guild, **{ctx.author.name}**!"); return
+            # ... or in other guilds
+            elif p_guild_code != 'n/a':
+                await ctx.send(f"<:osit:544356212846886924> You've already been in another guild, **{ctx.author.name}**!"); return
+            # ... jor just want to join
+            else: cost = entry_fee
 
-                await self.client._cursor.execute(f"UPDATE personal_info SET money={money - cost} WHERE id='{str(ctx.message.author.id)}';")
-                await self.client._cursor.execute(f"UPDATE pi_guild SET name='{current_place}', deposit=deposit+{cost} WHERE user_id='{str(ctx.message.author.id)}';")
-                await ctx.send(f"<:guild_p:619743808959283201> Welcome, {ctx.message.author.mention}, to our big family all over Pralayr <:guild_p:619743808959283201>\nYou are no longer a lonely, nameless adventurer, but a member of `{current_place} | {name}` guild, a part of **G.U.I.L.D**'s league. Please, newcomer, make yourself at home <3"); return
+            await ctx.send(f":scales: **G.U.I.L.D** of `{current_place} | {guild_code}` :scales:\n------------------------------------------------\nJoining will require **<:36pxGold:548661444133126185>{cost}** as a deposit which will be returned when you leave guild if: \n· You don't have any bad records.\n· You're alive.\n· You leave the guild before joining others\n------------------------------------------------\n<a:RingingBell:559282950190006282> **Do you wish to proceed?** (key: `joining confirm` | timeout=20s)")
+            try: await self.client.wait_for('message', timeout=20, check=lambda m: m.channel == ctx.channel and m.content == 'joining confirm' and m.author == ctx.author)           
+            except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timed out!"); return
 
-            elif raw[0] == 'leave':
-                name, deposit = await self.client.quefe(f"SELECT name, deposit FROM pi_guild WHERE user_id='{str(ctx.message.author.id)}'")
+            # Money check
+            if money < cost: await ctx.send("<:osit:544356212846886924> Insufficient balance!"); return
 
-                def UMCc_check(m):
-                    return m.channel == ctx.channel and m.content == 'leaving confirm' and m.author == ctx.author
+            await self.client._cursor.execute(f"UPDATE personal_info SET money={money - cost} WHERE id='{ctx.author.id}';")
+            await self.client._cursor.execute(f"UPDATE pi_guild SET guild_code='{current_place}', deposit=deposit+{cost} WHERE user_id='{ctx.author.id}';")
+            await ctx.send(f"<:guild_p:619743808959283201> Welcome, {ctx.message.author.mention}, to our big family all over Pralayr <:guild_p:619743808959283201>\nYou are no longer a lonely, nameless adventurer, but a member of `{current_place} | {guild_code}` guild, a part of **G.U.I.L.D**'s league. Please, newcomer, make yourself at home <3"); return
 
-                await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, leaving `{current_place}|{name}` guild? (key: `leaving confirm` | timeout=5s)")
-                try: await self.client.wait_for('message', timeout=5, check=UMCc_check)
-                except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timed out!"); return
+        elif args[0] == 'leave':
+            # GET personal guild info
+            try: p_guild_code, deposit = await self.client.quefe(f"SELECT guild_code, deposit FROM pi_guild WHERE user_id='{ctx.author.id}' AND guild_code<>'n/a';")
+            except TypeError: await ctx.send("<:osit:544356212846886924> You haven't joined any guild yet!"); return
 
-                await self.client._cursor.execute(f"UPDATE personal_info SET money=money+{deposit} WHERE id='{str(ctx.message.author.id)}';")
-                await self.client._cursor.execute(f"UPDATE pi_guild SET name='n/a', deposit=0 WHERE user_id='{str(ctx.message.author.id)}';")
-                await ctx.send(f":white_check_mark: Left guild. Deposit of **<:36pxGold:548661444133126185>{deposit}** has been returned"); return
+            await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, leaving `{current_place}|{guild_code}` guild? (key: `leaving confirm` | timeout=5s)")
+            try: await self.client.wait_for('message', timeout=5, check=lambda m: m.channel == ctx.channel and m.content == 'leaving confirm' and m.author == ctx.author)
+            except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timed out!"); return
 
-        except IndexError: await ctx.send(f"<:guild_p:619743808959283201> **`{ctx.message.author.name}`'s G.U.I.L.D card** <:guild_p:619743808959283201> \n------------------------------------------------\n**`Guild`** · `{name}`|**{name}**\n**`Rank`** · {rank}\n**`Total quests done`** · {total_quests}"); return
+            await self.client._cursor.execute(f"UPDATE personal_info SET money=money+{deposit} WHERE id='{ctx.author.id}';")
+            await self.client._cursor.execute(f"UPDATE pi_guild SET guild_code='n/a', deposit=0 WHERE user_id='{ctx.author.id}';")
+            await ctx.send(f":white_check_mark: Left guild. Deposit of **<:36pxGold:548661444133126185>{deposit}** has been returned"); return
 
     @commands.command(aliases=['q'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -98,7 +120,7 @@ class avaGuild(commands.Cog):
         await self.tools.ava_scan(ctx.message)
         raw = list(args)
 
-        name, rank = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{ctx.author.id}';")
+        name, rank = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{ctx.author.id}';")
 
         try:
             if name == 'n/a':
@@ -234,7 +256,7 @@ class avaGuild(commands.Cog):
                 # Inform
                 await ctx.send(f"<:guild_p:619743808959283201> Quest completion is confirmed. **{ctx.author.name}**, may the Olds look upon you!")
                 # Ranking check
-                if await self.client._cursor.execute(f"UPDATE pi_guild SET rank='{self.guild_rank[rank][0]}' WHERE user_id='{str(ctx.message.author.id)}' AND total_quests>={self.guild_rank[rank][1]};") == 1:
+                if await self.client._cursor.execute(f"UPDATE pi_guild SET rank='{self.guild_rank[rank][0]}' WHERE user_id='{ctx.author.id}' AND total_quests>={self.guild_rank[rank][1]};") == 1:
                     await ctx.send(f":beginner: Congrats, {ctx.message.author.mention}! You've been promoted to **{self.guild_rank[rank][0].upper()}**!")                         
 
         except IndexError:
@@ -380,9 +402,8 @@ class avaGuild(commands.Cog):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         await self.tools.ava_scan(ctx.message)
-        raw = list(args)
 
-        name = await self.client.quefe(f"SELECT name FROM pi_guild WHERE user_id='{ctx.author.id}';"); name = name[0]
+        name = await self.client.quefe(f"SELECT guild_code FROM pi_guild WHERE user_id='{ctx.author.id}';"); name = name[0]
 
         try:
             if name == 'n/a':

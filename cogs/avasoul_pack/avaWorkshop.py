@@ -69,6 +69,8 @@ class avaWorkshop(commands.Cog):
 
             # Preparing
             t_w_infuse_query = t_w_infuse_query.replace('user_id_here', str(ctx.message.author.id)).replace('item_id_here', raw[0])
+            if d_check and t_w_infuse_query.endswith(';'):
+                t_w_infuse_query = t_w_infuse_query[:-1]
 
             # INFUSE
             if await self.client._cursor.execute(f"{t_w_infuse_query} {d_check};") == 0: await ctx.send(f"<:osit:544356212846886924> You cannot infuse EVO`{w_evo}` item with your current status."); return

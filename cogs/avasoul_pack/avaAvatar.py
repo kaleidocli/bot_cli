@@ -319,8 +319,8 @@ class avaAvatar(commands.Cog):
             age, evo, kill, death, money, name, partner_temp, partner = await self.client.quefe(f"SELECT age, evo, LP, STA, money, name, partner AS prtn, (SELECT name FROM personal_info WHERE id=prtn) FROM personal_info WHERE id='{user_id}';")
             if not partner: partner = '---------------------'
             #pylint: enable=unused-variable
-            guild_region, rank = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{user_id}';")
-            g_region_name = await self.client.quefe(f"SELECT name FROM environ WHERE environ_code='{guild_region}';"); g_region_name = g_region_name[0]
+            guild_code, rank = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{user_id}';")
+            guild_name = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{guild_code}';"); guild_name = guild_name[0]
 
             form_img = self.prote_lib['form'][0]
             """char_img = random.choice(self.prote_lib[char_name])"""
@@ -355,7 +355,7 @@ class avaAvatar(commands.Cog):
             kill = str(kill).upper()
             death = str(death).upper()
             money = str(money).upper()
-            guild = f"{guild_region} | {g_region_name}"
+            guild = f"{guild_code} | {guild_name}"
             rank = rank.upper()
             # Get text canvas
             nb = ImageDraw.Draw(name_box)
@@ -403,8 +403,8 @@ class avaAvatar(commands.Cog):
 
             # Info get
             age, evo, kill, death, money, name = kwargs['pack_PI']
-            guild_region, rank = kwargs['pack_PG']
-            g_region_name = kwargs['pack_PI']; g_region_name = g_region_name
+            guild_code, rank = kwargs['pack_PG']
+            guild_name = kwargs['pack_PI']; guild_name = guild_name
 
             #img = Image.open('sampleimg.jpg').convert('RGBA')
             form_img = self.prote_lib['form'][0]
@@ -436,7 +436,7 @@ class avaAvatar(commands.Cog):
             kill = str(kill).upper()
             death = str(death).upper()
             money = str(money).upper()
-            guild = f"{guild_region} | {g_region_name}"
+            guild = f"{guild_code} | {guild_name}"
             rank = rank.upper()
             # Get text canvas
             nb = ImageDraw.Draw(name_box)
@@ -482,8 +482,8 @@ class avaAvatar(commands.Cog):
 
             # INFO prep =============================
             pack_PI = await self.client.quefe(f"SELECT age, evo, kills, deaths, money, name FROM personal_info WHERE id='{user_id}';")
-            pack_PG = await self.client.quefe(f"SELECT name, rank FROM pi_guild WHERE user_id='{user_id}';")
-            pack_E = await self.client.quefe(f"SELECT name FROM environ WHERE environ_code='{pack_PG[0]}';"); pack_E = pack_E[0]
+            pack_PG = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{user_id}';")
+            pack_E = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{pack_PG[0]}';"); pack_E = pack_E[0]
 
             # PARTICLEs prep ========================
             # particle_after = []
@@ -516,7 +516,7 @@ class avaAvatar(commands.Cog):
             count = divider
             obpointer = -1
             for particle in particles:
-                # await asyncio.sleep(0.05)
+                await asyncio.sleep(0.05)
 
                 if count == divider:
                     count = 1
