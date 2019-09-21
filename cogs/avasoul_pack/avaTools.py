@@ -181,7 +181,7 @@ class avaTools:
             await self.quefe(f"INSERT INTO pi_equipment VALUES (0, '{id}', 'Untitled', 'belt', 'n/a'); INSERT INTO pi_equipment VALUES (0, '{id}', 'Untitled', 'belt', 'n/a');")
 
             await self.quefe(f"INSERT INTO personal_info VALUES ('{id}', '{ava['name']}', '{ava['dob']}', {ava['age']}, '{ava['gender']}', '{ava['race']}', {ava['height']}, {ava['weight']}, '{ava['size']}', 'GREEN', {ava['kills']}, {ava['deaths']}, {ava['charm']}, '{ava['partner']}', {ava['money']}, {ava['merit']}, {ava['perks']}, {ava['EVO']}, {ava['STR']}, {ava['INTT']}, {ava['STA']}, {ava['MAX_STA']}, {ava['LP']}, {ava['MAX_LP']}, {ava['auras'][0]}, {ava['auras'][1]}, {ava['auras'][2]}, {ava['auras'][3]}, '{ava['cur_MOB']}', '{ava['cur_USER']}', '{ava['cur_PLACE']}', {ava['cur_X']}, {ava['cur_Y']}, '{ava['cur_QUEST']}', '{ava['combat_HANDLING']}', '{ava['right_hand']}', '{ava['left_hand']}');")
-            await self.quefe(f"INSERT INTO pi_degrees VALUES ('{id}', 'Instinct', NULL);")
+            await self.quefe(f"INSERT INTO pi_degrees VALUES (0, '{id}', 'Instinct', NULL);")
             # Guild
             await self.client._cursor.execute(f"INSERT INTO pi_guild VALUES ('{id}', 'n/a', 'iron', 0, 0);")
             # Avatars

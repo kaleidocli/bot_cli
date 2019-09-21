@@ -217,7 +217,7 @@ class avaCommercial(commands.Cog):
             
         reembed = discord.Embed(title = f"------------- KINUKIZA's MARKET of `{cur_PLACE}`|**{r_name}** -----------", colour = discord.Colour(0x011C3A), description=line)
         temp1 = await ctx.send(embed=reembed)
-        await ctx.send('<a:RingingBell:559282950190006282> Syntax: `!buy` `[item_code]` |  Time out: 60s')
+        await ctx.send('<a:RingingBell:559282950190006282> Syntax: `!buy` `[item_code]` `[quantity]` |  Time out: 60s')
 
         def UMCc_check(m):
             return m.channel == ctx.channel and m.content.startswith('!buy') and m.author == ctx.author

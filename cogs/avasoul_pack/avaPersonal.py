@@ -599,7 +599,18 @@ class avaPersonal(commands.Cog):
             await ctx.send(f"<:armor_p:619743809286438929> Item `{item_id}` is put out of pocket `{handle}`"); return
         else: await ctx.send(f"<:armor_p:619743809286438929> Item `{item_id}` is put in pocket `{handle}`"); return
 
+    @commands.command()
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def degrees(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
+        degrees = await self.client.quefe(f"SELECT degree, major FROM pi_degrees WHERE user_id='{ctx.author.id}';", type='all')
+        line = ''
+
+        for d in degrees:
+            line = line + f" `{d[0]} of {d[1]}` **|**"
+
+        await ctx.send(line, delete_after=20)
 
 
 

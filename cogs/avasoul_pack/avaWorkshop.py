@@ -101,53 +101,68 @@ class avaWorkshop(commands.Cog):
             # Item's info get
             try:
                 w_name, w_evo, w_weight, w_defend, w_multiplier, w_str, w_intt, w_sta, w_speed, w_acc_randomness, w_acc_range, w_r_min, w_r_max, w_firing_rate, w_dmg, w_stealth = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
-                t_w_evo, t_w_weight, t_w_defend, t_w_multiplier, t_w_str, t_w_intt, t_w_sta, t_w_speed, t_w_acc_randomness, t_w_acc_range, t_w_r_min, t_w_r_max, t_w_firing_rate, t_w_dmg, t_w_stealth = await self.client.quefe(f"SELECT evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
+                t_w_name, t_w_evo, t_w_weight, t_w_defend, t_w_multiplier, t_w_str, t_w_intt, t_w_sta, t_w_speed, t_w_acc_randomness, t_w_acc_range, t_w_r_min, t_w_r_max, t_w_firing_rate, t_w_dmg, t_w_stealth = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
             # E: Item's not found
             except TypeError: await ctx.send("<:osit:544356212846886924> Item's not found!"); return
 
             # Degrees
-            degrees = await self.client.quefe(f"SELECT degree FROM pi_degrees WHERE user_id='{str(ctx.message.author.id)}' AND major='engineering';"); degrees = set(degrees)
+            degrees = await self.client.quefe(f"SELECT degree FROM pi_degrees WHERE user_id='{str(ctx.message.author.id)}' AND major='engineering';")
+            try: degrees = set(degrees)
+            # E: No engineering degree
+            except TypeError: degrees = ()
 
             # Price
             price = (abs(w_evo - t_w_evo)*1000)//(1 + len(degrees))
+            if price < 1: price = 1
 
-            def UMCc_check(m):
-                return m.channel == ctx.channel and m.content == 'merging confirm' and m.author == ctx.author
-
-            await ctx.send(f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirmation` | Timeout=20s)")
-            try: await self.client.wait_for('message', timeout=20, check=UMCc_check)
+            await ctx.send(f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirm` | Timeout=20s)")
+            try: await self.client.wait_for('message', timeout=20, check=lambda m: m.channel == ctx.channel and m.content == 'merging confirm' and m.author == ctx.author)
             except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timeout!"); return
 
             # Deduct money
-            if await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{price} WHERE id'{str(ctx.message.author.id)}' AND money >= {price};") == 0:
+            if await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{price} WHERE id = '{ctx.author.id}' AND money >= {price};") == 0:
                 await ctx.send("<:osit:544356212846886924> Insufficient balance!"); return
 
             # MERGE
-            W_weight = random.choice(range(w_weight + t_w_weight))
-            W_defend = random.choice(range(w_defend + t_w_defend))
-            W_multiplier = random.choice(range(w_multiplier + t_w_multiplier))
-            W_str = random.choice(range(w_str, t_w_str))
-            W_intt = random.choice(range(w_intt + t_w_intt))
-            W_sta = random.choice(range(w_sta + t_w_sta))
-            W_speed = random.choice(range(w_speed + t_w_speed))
-            W_acc_randomness = random.choice(range(w_acc_randomness + t_w_acc_randomness))
-            W_acc_range = random.choice(range(w_acc_range + t_w_acc_range))
-            W_r_min = random.choice(range(w_r_min + t_w_r_min))
-            W_r_max = random.choice(range(w_r_max + t_w_r_max))
-            W_firing_rate = random.choice(range(w_firing_rate + t_w_firing_rate))
-            W_dmg = random.choice(range(w_dmg + t_w_dmg))
-            W_stealth = random.choice(range(w_stealth + t_w_stealth))
+            try: W_weight = round(random.uniform(0, w_weight + t_w_weight), 1)
+            except IndexError: W_weight = 0
+            try: W_defend = round(random.uniform(0, w_defend + t_w_defend), 1)
+            except IndexError: W_defend = 0
+            try: W_multiplier = round(random.uniform(0, w_multiplier + t_w_multiplier), 1)
+            except IndexError: W_multiplier = 0
+            try: W_str = round(random.uniform(0, w_str + t_w_str), 1)
+            except IndexError: W_str = 0
+            try: W_intt = round(random.uniform(0, w_intt + t_w_intt), 1)
+            except IndexError: W_intt = 0
+            try: W_sta = round(random.uniform(0, w_sta + t_w_sta), 1)
+            except IndexError: W_sta = 0
+            try: W_speed = round(random.uniform(0, w_speed + t_w_speed), 1)
+            except IndexError: W_speed = 0
+            try: W_acc_randomness = round(random.choice(range(int(w_acc_randomness + t_w_acc_randomness))), 1)
+            except IndexError: W_acc_randomness = 0
+            try: W_acc_range = round(random.choice(range(int(w_acc_range + t_w_acc_range))), 1)
+            except IndexError: W_acc_range = 0
+            try: W_r_min = round(random.choice(range(int(w_r_min + t_w_r_min))), 1)
+            except IndexError: W_r_min = 0
+            try: W_r_max = round(random.choice(range(int(w_r_max + t_w_r_max))), 1)
+            except IndexError: W_r_max = 0
+            try: W_firing_rate = round(random.choice(range(int(w_firing_rate + t_w_firing_rate))), 1)
+            except IndexError: W_firing_rate = 0
+            try: W_dmg = round(random.choice(range(int(w_dmg + t_w_dmg))), 1)
+            except IndexError: W_dmg = 0
+            try: W_stealth = round(random.choice(range(int(w_stealth + t_w_stealth))), 1)
+            except IndexError: W_stealth = 0
 
             # Insert
             await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, defend={W_defend}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, firing_rate={W_firing_rate}, dmg={W_dmg}, stealth={W_stealth} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
             await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, defend={W_defend}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, firing_rate={W_firing_rate}, dmg={W_dmg}, stealth={W_stealth} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
 
             # Inform :>
-            await ctx.send(f":white_check_mark: Merged `{raw[0]}`|**{w_name}** with `{raw[0]}`|**{w_name}**!")
+            await ctx.send(f":white_check_mark: Merged `{raw[0]}`|**{w_name}** with `{raw[1]}`|**{t_w_name}**!")
             await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{str(ctx.message.author.id)}', 'merging', ex=7200, nx=True))
 
         # E: Not enough args
-        except IndexError: await ctx.send("<:osit:544356212846886924> How could you even merge something with its own?!"); return
+        except ZeroDivisionError: await ctx.send("<:osit:544356212846886924> How could you even merge something with its own?!"); return
 
     @commands.command()
     @commands.cooldown(1, 10, type=BucketType.user)

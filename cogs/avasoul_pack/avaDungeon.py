@@ -226,6 +226,9 @@ class avaDungeon(commands.Cog):
 
         # RETURN ===========================
         if args[0] == 'return':
+            # Checkpoint check/get
+            if not ses.checkpoint: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
+
             delta = relativedelta(datetime.now(), ses.start_point)
             new_player = ses.timeline[-1].player
             msg = await ctx.send(f"<:guild_p:619743808959283201> {ctx.author.mention}, you're currently in `{ses.dungeon.dungeon_code}`|**{ses.dungeon.dungeon_name}**.\n> <:racing:622958702873280537>`{ses.timeline[-1].distance}m`\n> :stopwatch:`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`\n> <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`\n**Return?**")

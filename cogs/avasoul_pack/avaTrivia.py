@@ -228,7 +228,7 @@ class avaTrivia(commands.Cog):
                     await msg.edit(embed=emli[cursor][0])
                     try: await msg.remove_reaction(reaction.emoji, user)
                     except discordErrors.Forbidden: pass
-            except asyncio.TimeoutError: 
+            except asyncio.TimeoutError:
                 await msg.delete(); return
 
     @commands.command()

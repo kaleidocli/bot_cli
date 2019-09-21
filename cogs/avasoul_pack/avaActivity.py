@@ -352,8 +352,8 @@ class avaActivity(commands.Cog):
         await temp2.delete()
 
         # Initialize
-        try: await self.client._cursor.execute(f"INSERT INTO pi_degrees VALUES ('{ctx.author.id}', '{args[0].lower()}', '{args[1].lower()}');")
-        except AttributeError: await self.client._cursor.execute(f"INSERT INTO pi_degrees VALUES ('{str(ctx.message.author.id)}', '{args[0].lower()}', NULL);")
+        try: await self.client._cursor.execute(f"INSERT INTO pi_degrees VALUES (0, '{ctx.author.id}', '{args[0].lower()}', '{args[1].lower()}');")
+        except AttributeError: await self.client._cursor.execute(f"INSERT INTO pi_degrees VALUES (0, '{str(ctx.message.author.id)}', '{args[0].lower()}', NULL);")
         await self.client._cursor.execute(f"UPDATE personal_info SET INTT={INTT + INTT_reward}, STA=0, money={money - price} WHERE id='{ctx.author.id}';")
         # Cooldown set
         await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{price}** has been deducted from your account.")

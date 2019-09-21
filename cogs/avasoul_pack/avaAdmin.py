@@ -169,7 +169,6 @@ class avaAdmin(commands.Cog):
             await ctx.send(fmt)
 
     @commands.command(pass_context=True)
-    @checks.check_author()
     async def get_imgur(self, ctx, *args):
         if args:
             if '.png' not in args[0] or '.jpg' not in args[0] or '.jpeg' not in args[0] or '.gif' not in args[0]:
