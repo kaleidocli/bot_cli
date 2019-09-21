@@ -8,6 +8,9 @@ import os
 from io import BytesIO
 import importlib
 import sys
+# import win32api
+import signal
+import atexit
 import random
 import asyncio
 import json
@@ -136,7 +139,7 @@ async def megaturn(ctx, *args):
 @client.command()
 @check_id()
 async def megarestart(ctx, *args):
-    await ctx.send(f"<a:dukwalk:555241951390334998> **Okai!**")
+    await ctx.send(f"<a:dukwalk:589872260651679746> **Okai!**")
     os.system("python C:/Users/DELL/Desktop/bot_cli/aaaa.py")
     await client.logout()
 
@@ -685,10 +688,10 @@ def help_dict_plugin():
 
 @client.event
 async def on_message(message):
-    #global bulb; global blacklist
+    global bulb; global blacklist
 
     if message.author.bot: return
-    #if str(message.author.id) in blacklist: return
+    if str(message.author.id) in blacklist: return
 
     #if not bulb:
     #    try:
@@ -716,7 +719,13 @@ def prepformain():
         client.load_count += 1
     client.run(TOKEN, bot=True, reconnect=True)
 
+
+
+def exitest():
+    print("=========================== EXIT HERE ===================================")
+
 if __name__ == '__main__':
+    atexit.register(exitest)
     prepformain()
 
 
@@ -726,98 +735,3 @@ if __name__ == '__main__':
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    #@client.command(pass_context=True)
-
-
-
-
-
-
-
-
-
-
-
-# ====================================
-
-#async def guess(ctx):
- #   key = ''; fname = ''; hint_list = []; hint = ''
-#
- #   #Get key
- #   key = file_gen_random('game/q')
- #   print(key)
- #   #Get image file name from the <key> folder and send it. Generate the hint.
- #   fname = file_gen_random(f'game/q/{key}')
- #   await client.send_file(ctx.message.channel, f"game/q/{key}/{fname}")
- #   for c in key:
- #       if c == ' ': hint_list.append(c)
-#        else: hint_list.append('-')
-#    hint = ''.join(hint_list)
-#    await client.say(f":bulb: **HINT:** {hint}")
-#
-#    #Wait for the answer
-#    answer = await client.wait_for_message(content=key, timeout=30, channel=ctx.message.channel, author=ctx.message.author)
-#    try:
-#        if answer.content.lower() == key.lower():
-#            await client.say("**Congrats!!!**")
-#    except AttributeError:
-#        await client.say("**Duh loseerrrrr**")

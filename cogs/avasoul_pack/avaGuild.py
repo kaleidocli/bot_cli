@@ -4,6 +4,7 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import pymysql.err as mysqlError
 
+import random
 import asyncio
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -56,7 +57,7 @@ class avaGuild(commands.Cog):
             guild_name, description, region = await self.client.quefe(f"SELECT guild_name, description, region FROM model_guild WHERE guild_code='{guild_code}';")
 
             temb = discord.Embed(description=f"```{description}```", colour=0x36393E)
-            temb.set_author(name="⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙⋙", icon_url=ctx.author.avatar_url)
+            temb.set_author(name="―――――――――――――――――――――――――――――――――――", icon_url=ctx.author.avatar_url)
             temb.add_field(name=f"<:guild_p:619743808959283201> `{guild_code}`|**{guild_name}**", value=f"╟`Region` · **{region}**", inline=True)
             temb.add_field(name=f":bookmark: {ctx.author.name}'s info", value=f"╟`Quests done` · **{total_quests}**", inline=True)
             temb.set_thumbnail(url=self.guild_rank_image[rank])
@@ -693,6 +694,144 @@ class avaGuild(commands.Cog):
             except TypeError: await ctx.send(f"<:osit:544356212846886924> You've not joined any parties yet, **{ctx.author.name}**!"); return
 
             await ctx.send(embed=discord.Embed(description=f"{marker[role]} Currently in party `{party_id}` as a {role.lower()}.", colour=0xF4A400)); return
+
+
+    @commands.command()
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def art(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        arts = await self.client.quefe(f"SELECT art_code, art_name, art_type, description, value, tier, tier_cost, upgrade_increment, illulink FROM pi_arts WHERE user_id='{ctx.author.id}';", type='all')
+        
+        async def makeembed(curp, pages, currentpage):
+            d = arts[curp]
+
+            if not d[5]: uplus = ''
+            else: uplus = f"+{d[5]}"
+
+            value_in = ''
+            if d[3]: value_in = d[3].replace('value_in', str(d[4]))
+
+            reembed = discord.Embed(title = f"{d[2].upper()} <:skill_icon:624779119019950100> `{d[0]}`|**{d[1]}** {uplus}", description = f"""```{value_in}```""", colour = discord.Colour(0x011C3A))
+            reembed.set_footer(text=f">> Require {(float(d[6])*(float(d[5]) + 1)):.0f} for next tier (+{d[7]})")
+            if d[8]: reembed.set_image(url=random.choice(d[8].split(" || ")))
+            return reembed
+        
+        async def attachreaction(msg):
+            await msg.add_reaction("\U000023ee")    #Top-left
+            await msg.add_reaction("\U00002b05")    #Left
+            await msg.add_reaction("\U000027a1")    #Right
+            await msg.add_reaction("\U000023ed")    #Top-right
+
+        pages = len(arts)
+        currentpage = 1
+        cursor = 0
+
+        emli = []
+        for curp in range(pages):
+            myembed = await makeembed(curp, pages, currentpage)
+            emli.append(myembed)
+            currentpage += 1
+
+        msg = await ctx.send(embed=emli[cursor])
+        if pages > 1: await attachreaction(msg)
+        else: return
+
+        while True:
+            try:
+                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
+                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                    cursor += 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U00002b05" and cursor > 0:
+                    cursor -= 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ee" and cursor != 0:
+                    cursor = 0
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                    cursor = pages - 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+            except asyncio.TimeoutError: 
+                await msg.delete(); return
+
+
+    @commands.command()
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def arts(self, ctx, *args):
+
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        allowed_arts = await self.client.quefe(f"SELECT arts FROM model_guild WHERE guild_code=(SELECT guild_code FROM pi_guild WHERE user_id='{ctx.author.id}');")
+        arts = await self.client.quefe(f"""SELECT art_code, art_name, art_type, description, value, tier, tier_cost, upgrade_increment, illulink FROM model_arts WHERE art_code IN ('{"', '".join(allowed_arts[0].split(' - '))}');""", type='all')
+        
+        async def makeembed(curp, pages, currentpage):
+            d = arts[curp]
+
+            if not d[5]: uplus = ''
+            else: uplus = f"+{d[5]}"
+
+            value_in = ''
+            if d[3]: value_in = d[3].replace('value_in', str(d[4]))
+
+            reembed = discord.Embed(title = f"{d[2].upper()} <:skill_icon:624779119019950100> `{d[0]}`|**{d[1]}** {uplus}", description = f"""```{value_in}```""", colour = discord.Colour(0x011C3A))
+            reembed.set_footer(text=f">> Require {(float(d[6])*(float(d[5]) + 1)):.0f} for next tier (+{d[7]})")
+            if d[8]: reembed.set_image(url=random.choice(d[8].split(" || ")))
+            return reembed
+        
+        async def attachreaction(msg):
+            await msg.add_reaction("\U000023ee")    #Top-left
+            await msg.add_reaction("\U00002b05")    #Left
+            await msg.add_reaction("\U000027a1")    #Right
+            await msg.add_reaction("\U000023ed")    #Top-right
+
+        pages = len(arts)
+        currentpage = 1
+        cursor = 0
+
+        emli = []
+        for curp in range(pages):
+            myembed = await makeembed(curp, pages, currentpage)
+            emli.append(myembed)
+            currentpage += 1
+
+        msg = await ctx.send(embed=emli[cursor])
+        if pages > 1: await attachreaction(msg)
+        else: return
+
+        while True:
+            try:
+                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
+                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                    cursor += 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U00002b05" and cursor > 0:
+                    cursor -= 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ee" and cursor != 0:
+                    cursor = 0
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                    cursor = pages - 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+            except asyncio.TimeoutError: 
+                await msg.delete(); return
 
 
 

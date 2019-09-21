@@ -58,7 +58,9 @@ class avasoul(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         await self.data_plugin()
-
+        # time.sleep(3)
+        # await self.correctResetArt()
+        # time.sleep(3)
 
 
     @commands.command(aliases=['tut'])
@@ -1946,7 +1948,7 @@ class avasoul(commands.Cog):
 
 
 
-# ============= DATA MANIPULATION =================
+# ============= DATA =================
 
 
     async def data_plugin(self):
@@ -2186,15 +2188,14 @@ class avasoul(commands.Cog):
                 iid = await self.client.quefe(f"SELECT item_id FROM pi_inventory WHERE user_id='{user[0]}' AND item_code='ar13';")
             await self.client._cursor.execute(f"UPDATE personal_info SET right_hand='{iid[0]}', left_hand='{iid[0]}' WHERE id='{user[0]}';")
     """
-
     """
-    async def correctPCMArt(self):
-        users = await self.client.quefe("SELECT user_id FROM pi_arts WHERE user_id NOT IN (SELECT user_id FROM pi_arts WHERE art_type='general');", type='all')
+    async def correctResetArt(self):
+        users = await self.client.quefe("SELECT id FROM personal_info;", type='all')
 
         for user in users:
-            await self.client._cursor.execute(f"INSERT INTO pi_arts VALUES ('{user[0]}', 'general', 'passive_chain', 5);")
+            print(user)
+            await self.client._cursor.execute(f"SELECT func_aa_reward('{user[0]}', 'aa0', 1); SELECT func_aa_reward('{user[0]}', 'aa1', 1);")
     """
-
     """
     async def initEquipment(self):
         users = await self.client.quefe("SELECT id FROM personal_info", type='all')
