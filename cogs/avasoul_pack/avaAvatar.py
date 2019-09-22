@@ -30,7 +30,8 @@ class avaAvatar(commands.Cog):
                     'bg7': 'rocha_crimson',
                     'bg8': 'rocha_gold',
                     'bg9': 'rocha_green', 
-                    'bg10': 'pengzhen_zhang'}
+                    'bg10': 'pengzhen_zhang',
+                    'bg11': 'persona5'}
         self.char_dict = {'av0': 'Iris',
                         'av1': 'Zoey',
                         'av2': 'Ardena',
@@ -59,7 +60,11 @@ class avaAvatar(commands.Cog):
                         'av25': 'Black_Survival',
                         'av26': 'SAO_Sinon',
                         'av27': 'SAO_Lisbeth',
-                        'av28': 'SAO_Asuna'}
+                        'av28': 'SAO_Asuna',
+                        'av29': 'P5_Ann'}
+        self.font_dict = {'fnt0': 'ERASLGHT.ttf',
+                        'fnt1': 'Persona_Non_Grata.ttf',
+                        'fnt2': 'Phorssa.ttf'}
 
 
         self.utils = avaUtils(self.client)
@@ -95,44 +100,6 @@ class avaAvatar(commands.Cog):
         #    img.save(output_buffer, 'png')
         #    output_buffer.seek(0)
         #    self.prote_lib[char].append(output_buffer)
-        """
-        prote_codes = {'Iris': 'av0',
-                        'Zoey': 'av1',
-                        'Ardena': 'av2',
-                        'Yamabuki': 'av3',
-                        'Yamabuki_Cosplay': 'av4',
-                        'Yamabuki_NSFW': 'av5',
-                        'Myu': 'av6',
-                        'Myu_NSFW': 'av7',
-                        'Enju': 'av8',
-                        'Enju_NSFW': 'av9',
-                        'Enju_Cosplay': 'av10',
-                        'Shima_Rin': 'av11',
-                        'Akari': 'av12',
-                        'Akari_NSFW': 'av13',
-                        'Akari_Cosplay': 'av14',
-                        'RPG_Girl_1': 'av15',
-                        'GBF_Female': 'av16',
-                        'GBF_Male': 'av17',
-                        'GBF_Female_2': 'av18',
-                        'Djeeta': 'av19',
-                        'Ricka': 'av20',
-                        'Ricka_Cosplay': 'av21',
-                        'Ricka_NSFW': 'av22',
-                        'set_FURRY': 'av23'}
-
-        ##bg_codes = {'LoveRibbon/evening': 'bg0'}
-        bg_codes = {'medieval_indoor': 'bg0',
-                    'medieval_outdoor': 'bg1',
-                    'modern_indoor': 'bg2',
-                    'modern_outdoor': 'bg3',
-                    'fengfeng': 'bg4',
-                    'sleepypang': 'bg5',
-                    'rocha_cold': 'bg6',
-                    'rocha_crimson': 'bg7',
-                    'rocha_gold': 'bg8',
-                    'rocha_green': 'bg9'}
-        """
 
         # Cards get
         cards = await self.client.quefe("SELECT hero_code FROM model_hero;", type='all')
@@ -140,6 +107,20 @@ class avaAvatar(commands.Cog):
         card_codes = {}
         for card in cards:
             card_codes[card[0]] = card[0]
+
+        # Fonts get
+        self.prote_lib['font'] = {}
+        fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
+        for font in fonts:
+            self.prote_lib['font'][font[0]] = {}
+            self.prote_lib['font'][font[0]]['name'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 70)    # Name
+            self.prote_lib['font'][font[0]]['degree'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 14)  # Degrees
+            self.prote_lib['font'][font[0]]['age'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 54)     # Age
+            self.prote_lib['font'][font[0]]['k/d'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 59)    # K/D
+            self.prote_lib['font'][font[0]]['evo'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 122)    # Evo
+            self.prote_lib['font'][font[0]]['guild'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 19)   # Guild
+            self.prote_lib['font'][font[0]]['rank'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 39)    # Rank
+            self.prote_lib['font'][font[0]]['money'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 53)   # Money
 
         """
         def ImageGen_supporter(char, rawimg):
@@ -214,15 +195,6 @@ class avaAvatar(commands.Cog):
                 self.prote_lib['badge'][key] = badge_img
 
         def font_plugin():
-            self.prote_lib['font'] = {}
-            self.prote_lib['font']['name'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/profile/ERASLGHT.ttf', 70)    # Name
-            self.prote_lib['font']['degree'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/profile/ERASLGHT.ttf', 14)  # Degrees
-            self.prote_lib['font']['age'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/profile/ERASLGHT.ttf', 54)     # Age
-            self.prote_lib['font']['k/d'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/profile/ERASLGHT.ttf', 59)    # K/D
-            self.prote_lib['font']['evo'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/profile/ERASLGHT.ttf', 122)    # Evo
-            self.prote_lib['font']['guild'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/profile/ERASLGHT.ttf', 19)   # Guild
-            self.prote_lib['font']['rank'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/profile/ERASLGHT.ttf', 39)    # Rank
-            self.prote_lib['font']['money'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/profile/ERASLGHT.ttf', 53)   # Money
             self.prote_lib['font']['stock_region'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 31)
             self.prote_lib['font']['stock_region_bar'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 15)
             self.prote_lib['font']['stock_region_name'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 62)
@@ -285,6 +257,19 @@ class avaAvatar(commands.Cog):
             master_que = master_que + que
         await self.client._cursor.execute(master_que)
 
+        # FONTs
+        temp = await self.client.quefe(f"SELECT font_id FROM model_font", type='all')
+        avas = [i[0] for i in temp]
+
+        user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
+        master_que = ''
+        for pack in user_ids:
+            que = ''
+            for ava in avas:
+                que = que + f"INSERT INTO pi_fonts (user_id, font_id) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_fonts WHERE user_id='{pack[0]}' AND font_id='{ava}'); "
+            master_que = master_que + que
+        await self.client._cursor.execute(master_que)
+
         await ctx.send(":white_check_mark:")
 
     @commands.command(aliases=['a'])
@@ -307,7 +292,7 @@ class avaAvatar(commands.Cog):
         except IndexError: user_id = ctx.author.id
 
         # Colour n Character get
-        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code = await self.client.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id, bg_code FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
+        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id = await self.client.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id, bg_code, font_id FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
         except TypeError: await ctx.send(f"<:osit:544356212846886924> User has not incarnated! ({user_id})"); return
         #co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = ('#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')
 
@@ -339,14 +324,14 @@ class avaAvatar(commands.Cog):
             horizontal = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
 
             # Font Set
-            fnt_name = self.prote_lib['font']['name']            # Name
-            fnt_degree = self.prote_lib['font']['guild']        # Degrees
-            fnt_age = self.prote_lib['font']['age']              # Age
-            fnt_kd = self.prote_lib['font']['k/d']               # K/D
-            fnt_guild = self.prote_lib['font']['guild']          # Guild
-            fnt_rank = self.prote_lib['font']['rank']            # Rank
-            fnt_evo = self.prote_lib['font']['evo']              # evo
-            fnt_money = self.prote_lib['font']['money']          # Money
+            fnt_name = self.prote_lib['font'][font_id]['name']            # Name
+            fnt_degree = self.prote_lib['font'][font_id]['guild']        # Degrees
+            fnt_age = self.prote_lib['font'][font_id]['age']              # Age
+            fnt_kd = self.prote_lib['font'][font_id]['k/d']               # K/D
+            fnt_guild = self.prote_lib['font'][font_id]['guild']          # Guild
+            fnt_rank = self.prote_lib['font'][font_id]['rank']            # Rank
+            fnt_evo = self.prote_lib['font'][font_id]['evo']              # evo
+            fnt_money = self.prote_lib['font'][font_id]['money']          # Money
 
             # Get info
             age = str(age).upper()
@@ -420,14 +405,14 @@ class avaAvatar(commands.Cog):
             horizontal = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
 
             # Font Set
-            fnt_name = self.prote_lib['font']['name']            # Name
-            fnt_degree = self.prote_lib['font']['degree']        # Degrees
-            fnt_age = self.prote_lib['font']['age']              # Age
-            fnt_kd = self.prote_lib['font']['k/d']               # K/D
-            fnt_guild = self.prote_lib['font']['guild']          # Guild
-            fnt_rank = self.prote_lib['font']['rank']            # Rank
-            fnt_evo = self.prote_lib['font']['evo']              # evo
-            fnt_money = self.prote_lib['font']['money']          # Money
+            fnt_name = self.prote_lib['font'][font_id]['name']            # Name
+            fnt_degree = self.prote_lib['font'][font_id]['degree']        # Degrees
+            fnt_age = self.prote_lib['font'][font_id]['age']              # Age
+            fnt_kd = self.prote_lib['font'][font_id]['k/d']               # K/D
+            fnt_guild = self.prote_lib['font'][font_id]['guild']          # Guild
+            fnt_rank = self.prote_lib['font'][font_id]['rank']            # Rank
+            fnt_evo = self.prote_lib['font'][font_id]['evo']              # evo
+            fnt_money = self.prote_lib['font'][font_id]['money']          # Money
 
             # Get info
             age = str(age).upper()

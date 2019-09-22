@@ -218,10 +218,12 @@ class avaPersonal(commands.Cog):
 
             elif raw[0] in ['background', 'bg']: raise IndexError
 
+            elif raw[0] in ['font', 'fnt']: raise ZeroDivisionError
+
             else:
                 # COLOUR
                 try:
-                    if not re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}<:36pxGold:548661444133126185>', raw[1]): await ctx.send("<:osit:544356212846886924> Please use **hexa-decimal** colour code!\n:moyai: You can get them here --> https://htmlcolorcodes.com/"); return
+                    if not re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', raw[1]): await ctx.send("<:osit:544356212846886924> Please use **hexa-decimal** colour code!\n:moyai: You can get them here --> https://htmlcolorcodes.com/"); return
                     
                     coattri = {'name': 'co_name', 'age': 'co_age', 'money': 'co_money', 'partner': 'co_partner', 'guild': 'co_guild', 'rank': 'co_rank', 'evo': 'co_evo', 'kills': 'co_kill', 'deaths': 'co_death'}
                     try:
@@ -230,7 +232,7 @@ class avaPersonal(commands.Cog):
                     # E: Attributes not found
                     except KeyError: await ctx.send(f":moyai: Please use the following attributes: **`{'`** **`'.join(list(coattri.keys()))}`**"); return
 
-                # AVATAR
+                # Avatar/Background/Font
                 # E: Color not given
                 except IndexError:
                     if raw[0].startswith('av'):
@@ -239,6 +241,12 @@ class avaPersonal(commands.Cog):
                                 await ctx.send(f"<:osit:544356212846886924> You don't own this avatar, **{ctx.author.name}**!"); return
                             await ctx.send(f":white_check_mark: Changed to `{raw[0]}`"); return
                         except mysqlError.IntegrityError: await ctx.send(f"<:osit:544356212846886924> Avatar not found!"); return
+                    elif raw[0].startswith('fnt'):
+                        try: 
+                            if await self.client._cursor.execute(f"UPDATE cosmetic_preset SET font_id='{raw[0]}' WHERE user_id='{ctx.author.id}' AND stats='CURRENT' AND EXISTS (SELECT * FROM pi_fonts WHERE user_id='{ctx.author.id}' AND font_id='{raw[0]}');") == 0:
+                                await ctx.send(f"<:osit:544356212846886924> You don't own this font, **{ctx.author.name}**!"); return
+                            await ctx.send(f":white_check_mark: Changed to `{raw[0]}`"); return
+                        except mysqlError.IntegrityError: await ctx.send(f"<:osit:544356212846886924> Font not found!"); return 
                     else:
                         try: 
                             if await self.client._cursor.execute(f"UPDATE cosmetic_preset SET bg_code='{raw[0]}' WHERE user_id='{ctx.author.id}' AND stats='CURRENT' AND EXISTS (SELECT * FROM pi_backgrounds WHERE user_id='{ctx.author.id}' AND bg_code='{raw[0]}');") == 0:
@@ -403,6 +411,84 @@ class avaPersonal(commands.Cog):
                             await msg.delete(); return
 
             await browse()
+
+        # FONTs
+        except ZeroDivisionError:
+            items2 = await self.client.quefe(f"SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}';", type='all')
+            if not items2: await ctx.send(f":x: No result..."); return
+
+            items = []
+            for item in items2:
+                ava_id, name, description = await self.client.quefe(f"SELECT font_id, name, description FROM model_font WHERE font_id='{item[0]}';")
+                items.append([ava_id, name, description])
+
+            def makeembed(top, least, pages, currentpage):
+                line = '' 
+
+                for item in items[top:least]:
+                    
+                    line = line + f"""\n`{item[0]}` · **{item[1]}**\n⠀⠀⠀| *"{item[2]}"*"""
+
+                reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
+                reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                return reembed
+                #else:
+                #    await ctx.send("*Nothing but dust here...*")
+            
+            async def attachreaction(msg):
+                await msg.add_reaction("\U000023ee")    #Top-left
+                await msg.add_reaction("\U00002b05")    #Left
+                await msg.add_reaction("\U000027a1")    #Right
+                await msg.add_reaction("\U000023ed")    #Top-right
+
+            pages = int(len(items)/5)
+            if len(items)%5 != 0: pages += 1
+            currentpage = 1
+            cursor = 0
+
+            emli = []
+            for curp in range(pages):
+                myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
+
+            if pages > 1:
+                msg = await ctx.send(embed=emli[cursor])
+                await attachreaction(msg)
+            else: 
+                msg = await ctx.send(embed=emli[cursor], delete_after=15)
+                return
+
+            def UM_check(reaction, user):
+                return user.id == ctx.author.id and reaction.message.id == msg.id
+
+            while True:
+                try:
+                    reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
+                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                        cursor += 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U00002b05" and cursor > 0:
+                        cursor -= 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ee" and cursor != 0:
+                        cursor = 0
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                        cursor = pages - 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                except asyncio.TimeoutError:
+                    await msg.delete(); return
+
+
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)

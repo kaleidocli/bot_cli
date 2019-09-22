@@ -697,7 +697,7 @@ class avaGuild(commands.Cog):
 
 
     @commands.command()
-    @commands.cooldown(1, 3, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def art(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
@@ -763,9 +763,8 @@ class avaGuild(commands.Cog):
             except asyncio.TimeoutError: 
                 await msg.delete(); return
 
-
     @commands.command()
-    @commands.cooldown(1, 3, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def arts(self, ctx, *args):
 
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
@@ -832,6 +831,34 @@ class avaGuild(commands.Cog):
                     except discordErrors.Forbidden: pass
             except asyncio.TimeoutError: 
                 await msg.delete(); return
+
+    @commands.command()
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def learn(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        # UPGRADE
+        try:
+            art_code, art_name, art_type, value, upgrade_increment, tier_cost, tier = await self.client.quefe(f"SELECT art_code, art_name, art_type, value, upgrade_increment, tier_cost, tier FROM pi_arts WHERE user_id='{ctx.author.id}' AND art_code='{args[0]}';")
+            merit_cost = (tier+1)*tier_cost
+
+            msg = await ctx.send(f"<:skill_icon:624779119019950100> Upgrading {art_type} will cost <:merit_badge:620137704662761512>{merit_cost}. Continue?\n> `{art_code}`|**{art_name}** [**`{value} ⇛ {value + upgrade_increment}`**]")
+            await msg.add_reaction("\U00002705")
+            try: await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
+            except asyncio.TimeoutError: return
+
+            if not await self.client._cursor.execute(f"UPDATE personal_info SET merit=merit-{merit_cost} WHERE id='{ctx.author.id}' AND merit>={merit_cost};"):
+                await ctx.send(f"<:osit:544356212846886924> Unsufficient merits!"); return
+
+            if await self.client._cursor.execute(f"UPDATE pi_arts SET value=value+{upgrade_increment} WHERE user_id='{ctx.author.id}' AND art_code='{art_code}';"):
+                await ctx.send(f"<:skill_icon:624779119019950100> {art_type.capitalize()} `{art_code}`|**{art_name}** upgraded!"); return
+            else: await ctx.send(f"<:osit:544356212846886924> Unsufficient merits!"); return
+
+        # LEARN
+        except TypeError: pass
+
+        except IndexError: pass
+
 
 
 

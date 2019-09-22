@@ -120,7 +120,6 @@ class avaDungeon(commands.Cog):
                 try: temp = self.dungeondict[args[1]]
                 except IndexError: await ctx.send("<:osit:544356212846886924> Missing `dungeon_code`!"); return
                 except KeyError: await ctx.send("<:osit:544356212846886924> Unknown `dungeon_code`."); return
-                temp.price = 0
 
                 # Check if user is currently in another session. If is, suggest to make new one
                 try:
