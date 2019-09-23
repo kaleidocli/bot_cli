@@ -30,6 +30,7 @@ class avaDungeon(commands.Cog):
         self.mobdict = await self.mobdictLoad()
         self.dungeondict = await self.dungeondictLoad()
         self.checkpointdict = await self.checkpointdictLoad()
+        self.itemdict = await self.itemdictLoad()
 
         print("|| Dungeon ---- READY!")
 
@@ -152,6 +153,58 @@ class avaDungeon(commands.Cog):
                 await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{temp.price} WHERE id='{ctx.author.id}'; DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
                 await ctx.send(f"<:guild_p:619743808959283201> Your snapshot has been transmitted into `{temp.dungeon_code}`|**{temp.dungeon_name}**! May the Olds look upon you...")
                 return
+            
+            elif args[0] == 'use':
+                # SESSION check/get
+                try:
+                    try: ses = self.dSessionSocket[ctx.author.id]
+                    except KeyError:
+                        # Check db session // Load session if possible
+                        lp, attack, defense, money, merit, dungeon_code, distance, checkpoints, start_point = await self.client.quefe(f"SELECT lp, attack, defense, money, merit, dungeon_code, distance, checkpoints, start_point FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
+                        ses = dSession(self.client, ctx, self.mobdict, self.dungeondict, self.dungeondict[dungeon_code], self.checkpointdict, cp_pack=(lp, attack, defense, money, merit), cp_pack2=(distance,), start_point=start_point)
+                        if checkpoints:
+                            ses.checkpoint = True
+                            ses.checkpoints = deepcopy(checkpoints.split(' || '))
+                        self.dSessionSocket[ctx.author.id] = ses
+                except TypeError: await ctx.send(f"<:osit:544356212846886924> You are not in any dungeon at the moment."); return
+
+                try: item = ses.timeline[-1].player.inventory.pop(0)
+                except IndexError: await ctx.send(f"<:osit:544356212846886924> Empty inventory."); return
+
+                ses.timeline[-1].player.lp += item.di_lp
+                ses.timeline[-1].player.attack = ses.timeline[-1].player.base_attack + item.di_attack
+                ses.timeline[-1].player.defense = ses.timeline[-1].player.base_defense + item.di_defense
+
+                await ctx.send(f"<a:shakin_box:625467655759069184> Used `{item.di_name}`")
+                return
+
+            elif args[0] == 'discard':
+                # SESSION check/get
+                try:
+                    try: ses = self.dSessionSocket[ctx.author.id]
+                    except KeyError:
+                        # Check db session // Load session if possible
+                        lp, attack, defense, money, merit, dungeon_code, distance, checkpoints, start_point = await self.client.quefe(f"SELECT lp, attack, defense, money, merit, dungeon_code, distance, checkpoints, start_point FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
+                        ses = dSession(self.client, ctx, self.mobdict, self.dungeondict, self.dungeondict[dungeon_code], self.checkpointdict, cp_pack=(lp, attack, defense, money, merit), cp_pack2=(distance,), start_point=start_point)
+                        if checkpoints:
+                            ses.checkpoint = True
+                            ses.checkpoints = deepcopy(checkpoints.split(' || '))
+                        self.dSessionSocket[ctx.author.id] = ses
+                except TypeError: await ctx.send(f"<:osit:544356212846886924> You are not in any dungeon at the moment."); return
+
+                # Either discard first item or random item
+                try:
+                    # First
+                    if random.choice([True, False]):
+                        item = ses.timeline[-1].player.inventory.pop(0)
+                    # Random
+                    else:
+                        item = ses.timeline[-1].player.inventory.pop(random.choice(range(len(ses.timeline[-1].player.inventory))))
+                except IndexError: await ctx.send(f"<:osit:544356212846886924> Empty inventory."); return
+
+                await ctx.send(f":outbox_tray: Discarded `{item.di_name}`"); return
+
+
             else: return
         except IndexError: pass
 
@@ -218,19 +271,25 @@ class avaDungeon(commands.Cog):
         if not args:
 
             # Checkpoint check/get
-            if not ses.checkpoint: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
-            cp = self.checkpointdict[ses.checkpoints[-1]]
+            try:
+                cp = self.checkpointdict[ses.checkpoints[-1]]
+            except IndexError: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
 
             await ctx.send(embed=discord.Embed(title=f"Checkpoint#{cp.cp_tier} | **{cp.cp_name}**", description=f"```{cp.cp_description}```").set_thumbnail(url='https://imgur.com/ER8IFx3.gif'))
+            return
 
         # RETURN ===========================
         if args[0] == 'return':
             # Checkpoint check/get
-            if not ses.checkpoint: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
+            try:
+                cp = self.checkpointdict[ses.checkpoints[-1]]
+            except IndexError: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
 
             delta = relativedelta(datetime.now(), ses.start_point)
             new_player = ses.timeline[-1].player
-            msg = await ctx.send(f"<:guild_p:619743808959283201> {ctx.author.mention}, you're currently in `{ses.dungeon.dungeon_code}`|**{ses.dungeon.dungeon_name}**.\n> <:racing:622958702873280537>`{ses.timeline[-1].distance}m`\n> :stopwatch:`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`\n> <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`\n**Return?**")
+            after_money = int(new_player.money/100*cp.cp_tax_money)
+            after_merit = int(new_player.merit/100*cp.cp_tax_merit)
+            msg = await ctx.send(f"<:guild_p:619743808959283201> {ctx.author.mention}, you're currently in `{ses.dungeon.dungeon_code}`|**{ses.dungeon.dungeon_name}**.\n> <:racing:622958702873280537>`{ses.timeline[-1].distance}m`\n> :stopwatch:`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`\n> <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{after_money}` (-{100 - cp.cp_tax_money}%) · <:merit_badge:620137704662761512>`{after_merit}` (-{100 - cp.cp_tax_merit}%)\n**Return?**")
             await msg.add_reaction('\U00002705')
             try: await self.client.wait_for('reaction_add', check=lambda reaction, user: user == ctx.author, timeout=15)
             except asyncio.TimeoutError: await ctx.send("<:guild_p:619743808959283201> Returning request is aborted!"); return
@@ -238,8 +297,115 @@ class avaDungeon(commands.Cog):
             await asyncio.sleep(0.1)
             self.sessionDel(ctx)
             await ctx.send(f"<:guild_p:619743808959283201> Welcome back, {ctx.author.mention}! Money and merit are also rewarded to your profile!")
-            await self.client._cursor.execute(f"UPDATE personal_info SET money=money+{new_player.money}, merit=merit+{int(new_player.merit)} WHERE id='{ctx.author.id}'; DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
+            await self.client._cursor.execute(f"UPDATE personal_info SET money=money+{after_money}, merit=merit+{after_merit} WHERE id='{ctx.author.id}'; DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
             return
+
+        # SHOP ===============================
+        elif args[0] == 'shop':
+            # Checkpoint check/get
+            try:
+                cp = self.checkpointdict[ses.checkpoints[-1]]
+            except IndexError: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
+
+            try: items = cp.cp_shop.split(' || ')
+            except IndexError: await ctx.send(f":x: Shop is unavailable in this checkpoint"); return
+
+
+            def makeembed(top, least, pages, currentpage):
+                line = ''
+
+                for item in items[top:least]:
+                    if self.itemdict[item].di_merit: price = f'<:merit_badge:620137704662761512>{self.itemdict[item].di_merit}'
+                    else: price = f'<:36pxGold:548661444133126185>{self.itemdict[item].di_money}'
+                    line = line + f"""\n> <a:shakin_box:625467655759069184> `{self.itemdict[item].di_code}`|**{self.itemdict[item].di_name}** ||{price}||\n> *"{self.itemdict[item].di_description}"*\n"""
+
+                reembed = discord.Embed(title = f"SHOP ✩ **{cp.cp_name}**", colour = discord.Colour(0x011C3A), description=line)
+                return reembed
+                #else:
+                #    await ctx.send("*Nothing but dust here...*")
+            
+            async def attachreaction(msg):
+                await msg.add_reaction("\U000023ee")    #Top-left
+                await msg.add_reaction("\U00002b05")    #Left
+                await msg.add_reaction("\U000027a1")    #Right
+                await msg.add_reaction("\U000023ed")    #Top-right
+
+            pages = int(len(items)/3)
+            if len(items)%3 != 0: pages += 1
+            currentpage = 1
+            cursor = 0
+
+            emli = []
+            for curp in range(pages):
+                myembed = makeembed(currentpage*3-3, currentpage*3, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
+
+            if pages > 1:
+                msg = await ctx.send(embed=emli[cursor])
+                await attachreaction(msg)
+            else: 
+                msg = await ctx.send(embed=emli[cursor], delete_after=15)
+                return
+
+            def UM_check(reaction, user):
+                return user.id == ctx.author.id and reaction.message.id == msg.id
+
+            while True:
+                try:
+                    reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
+                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                        cursor += 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U00002b05" and cursor > 0:
+                        cursor -= 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ee" and cursor != 0:
+                        cursor = 0
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                        cursor = pages - 1
+                        await msg.edit(embed=emli[cursor])
+                        try: await msg.remove_reaction(reaction.emoji, user)
+                        except discordErrors.Forbidden: pass
+                except asyncio.TimeoutError:
+                    await msg.delete(); return
+
+        # BUY ================================
+        elif args[0] == 'buy':
+            # Checkpoint check/get
+            try:
+                cp = self.checkpointdict[ses.checkpoints[-1]]
+            except IndexError: await ctx.send(f"<:osit:544356212846886924> You are not in a checkpoint area at the moment."); return
+
+            if ses.shop: await ctx.send(f"<:osit:544356212846886924> You've already shopped here!"); return
+            new_player = ses.timeline[-1].player
+            
+            # Money check (and change)   ||   Args check
+            try:
+                if self.itemdict[args[1]].di_money:
+                    if ses.timeline[-1].player.money < self.itemdict[args[1]].di_money: await ctx.send(f"<:osit:544356212846886924> Not enough money!"); return
+                    else: ses.timeline[-1].player.money -= self.itemdict[args[1]].di_money
+                elif self.itemdict[args[1]].di_merit:
+                    if ses.timeline[-1].player.merit < self.itemdict[args[1]].di_merit: await ctx.send(f"<:osit:544356212846886924> Not enough merit!"); return
+                    else: ses.timeline[-1].player.merit -= self.itemdict[args[1]].di_merit
+            # E: No di_code given
+            except IndexError: await ctx.send(f"<:osit:544356212846886924> Please provide the item code."); return
+            # E: Item not found
+            except KeyError: await ctx.send(f"<:osit:544356212846886924> The shop of this checkpoint doesn't have this item."); return
+
+            # Plug into inventory
+            ses.timeline[-1].player.inventory.append(self.itemdict[args[1]])
+
+            # Inform
+            await ctx.send(f":inbox_tray: Here's your `{self.itemdict[args[1]].di_name}`. Thank you for visitting!"); return
+            
 
 
 
@@ -275,7 +441,14 @@ class avaDungeon(commands.Cog):
 
         return checkpointdict
 
+    async def itemdictLoad(self):
+        itemdict = {}
+        packs = await self.client.quefe(f"SELECT di_code, di_name, description, di_lp, di_attack, di_defense, di_money, di_merit, di_line FROM model_dungeonitem;", type='all')
 
+        for pack in packs:
+            itemdict[pack[0]] = dItem(pack)
+
+        return itemdict
 
 
 def setup(client):
@@ -300,6 +473,7 @@ class dSession:
         self.cp_pack2 = cp_pack2
         self.lock = False
         self.checkpoint = False
+        self.shop = False
         self.checkpoints = []       # Visited checkpoints
         self.timeline = []
         if start_point: self.start_point = start_point
@@ -366,9 +540,15 @@ class dSession:
             self.timeline.append(snapshot)
 
             # Inform
-            try: await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||{new_player.user.mention}||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`", delete_after=15)
+            try:
+                if new_player.inventory: inv = f" · <a:shakin_box:625467655759069184>`{new_player.inventory[0].di_code}|{new_player.inventory[0].di_name}`"
+                else: inv = ''
+                await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||{new_player.user.mention}||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`{inv}", delete_after=15)
             # E: Faux-player
-            except AttributeError: await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||**{new_player.user.name}**||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`", delete_after=15)
+            except AttributeError:
+                if new_player.inventory: inv = f" · <a:shakin_box:625467655759069184>`{new_player.inventory[0].di_code}|{new_player.inventory[0].di_name}`"
+                else: inv = ''
+                await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||**{new_player.user.name}**||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`{inv}", delete_after=15)
 
             return False
 
@@ -529,6 +709,11 @@ class dCheckpoint:
         try: self.cp_line = self.cp_line.split(' || ')
         except AttributeError: pass
 
+class dItem:
+
+    def __init__(self, pack):
+        self.di_code, self.di_name, self.di_description, self.di_lp, self.di_attack, self.di_defense, self.di_money, self.di_merit, self.di_line = pack
+
 
 
 
@@ -570,6 +755,7 @@ class dPlayer:
     def fullcopy(self):
         temp = dPlayer(self.user, lp=self.lp, client=self.client, money=self.money, pdb_pack=(self.lp, self.attack, self.defense, self.base_attack, self.base_defense, self.merit))
         temp.effect = deepcopy(self.effect)
+        temp.inventory = deepcopy(self.inventory)
         return temp
 
 

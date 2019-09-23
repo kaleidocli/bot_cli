@@ -850,7 +850,7 @@ class avaGuild(commands.Cog):
             if not await self.client._cursor.execute(f"UPDATE personal_info SET merit=merit-{merit_cost} WHERE id='{ctx.author.id}' AND merit>={merit_cost};"):
                 await ctx.send(f"<:osit:544356212846886924> Unsufficient merits!"); return
 
-            if await self.client._cursor.execute(f"UPDATE pi_arts SET value=value+{upgrade_increment} WHERE user_id='{ctx.author.id}' AND art_code='{art_code}';"):
+            if await self.client._cursor.execute(f"UPDATE pi_arts SET value=value+{upgrade_increment}, tier=tier+1 WHERE user_id='{ctx.author.id}' AND art_code='{art_code}';"):
                 await ctx.send(f"<:skill_icon:624779119019950100> {art_type.capitalize()} `{art_code}`|**{art_name}** upgraded!"); return
             else: await ctx.send(f"<:osit:544356212846886924> Unsufficient merits!"); return
 
