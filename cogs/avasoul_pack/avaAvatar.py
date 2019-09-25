@@ -65,7 +65,9 @@ class avaAvatar(commands.Cog):
         self.font_dict = {'fnt0': 'ERASLGHT.ttf',
                         'fnt1': 'Persona_Non_Grata.ttf',
                         'fnt2': 'Phorssa.ttf',
-                        'fnt3': 'DalekPinpointBold.ttf'}
+                        'fnt3': 'DalekPinpointBold.ttf',
+                        'fnt4': 'the_unseen.ttf',
+                        'fnt5': 'MARSNEVENEKSK_Regular.otf'}
 
 
         self.utils = avaUtils(self.client)

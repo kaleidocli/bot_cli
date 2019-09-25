@@ -148,7 +148,7 @@ class avaDungeon(commands.Cog):
                 try: await self.client.wait_for('reaction_add', timeout=15, check=lambda r, u: u.id == ctx.author.id and r.message.id == msg.id)
                 except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Entry request is cancelled."); return
 
-                self.dSessionSocket[ctx.author.id] = dSession(self.client, ctx, self.mobdict, self.dungeondict, temp, self.checkpointdict, pdb_pack=(lp, strr, 0, 0, 0, 0))
+                self.dSessionSocket[ctx.author.id] = dSession(self.client, ctx, self.mobdict, self.dungeondict, temp, self.checkpointdict, pdb_pack=(lp, strr, strr, 0, 0, 0))
                 # Update user      ||       Purge user's abdundant session (if available)
                 await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{temp.price} WHERE id='{ctx.author.id}'; DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';")
                 await ctx.send(f"<:guild_p:619743808959283201> Your snapshot has been transmitted into `{temp.dungeon_code}`|**{temp.dungeon_name}**! May the Olds look upon you...")
@@ -550,7 +550,7 @@ class dSession:
                 else: inv = ''
                 msg = await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||**{new_player.user.name}**||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`{inv}", delete_after=15)
 
-            await asyncio.sleep(2.5)
+            await asyncio.sleep(0.8)
             await msg.add_reaction('a:arrow_right_ani:626231269105205288')
             
             # Continue

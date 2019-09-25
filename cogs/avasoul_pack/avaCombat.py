@@ -34,7 +34,7 @@ class avaCombat(commands.Cog):
 
     # This function handles the Mob phase
     # Melee PVE     |      Start the mob phase.
-    async def PVE_melee(self, MSG, target_id, raw_move, CE=None):
+    async def PVE_melee(self, MSG, target_id, raw_move, CE=None, CE_ttl=0):
 
         # GET User info=======================
         name, evo, STR, STA, user_id, cur_PLACE, cur_X, cur_Y, charm, combat_HANDLING, right_hand, left_hand = await self.client.quefe(f"SELECT name, evo, STR, STA, id, cur_PLACE, cur_X, cur_Y, charm, combat_HANDLING, right_hand, left_hand FROM personal_info WHERE id='{MSG.author.id}';")
@@ -59,13 +59,17 @@ class avaCombat(commands.Cog):
         # GET Mob info =======================
         try:
             t_name, t_speed, t_str, t_chain, t_lp, t_illulink = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
-        except TypeError: await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
+        # If mob not found (either mistyping or outdated lock), set lock to 'n/a'
+        except TypeError:
+            target_id = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
+            t_name, t_speed, t_str, t_chain, t_lp, t_illulink = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+            CE['lock'] = target_id
+            # await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
 
 
         # Delete user's attack msg
         try: await MSG.delete()
         except discordErrors.Forbidden: pass
-
 
         async def conclusing(dmg):
             # REFRESHING ===========================================
@@ -154,7 +158,7 @@ class avaCombat(commands.Cog):
 
             return branch
 
-        async def dmg_calc(raw_move):
+        async def dmg_calc(raw_move, ttl_plus=0):
             bonus = []
             icon_sequence = ''
 
@@ -163,7 +167,7 @@ class avaCombat(commands.Cog):
             except KeyError: evas = 0
             if await self.utils.percenter(t_speed, total=int(100 + evas)):
                 bonus.append('evade')
-                return 0, 0, 0, bonus, icon_sequence
+                return 0, 0, 0, bonus, icon_sequence, int(ttl_plus)
 
             # Invoke the moves
             count = 0
@@ -171,11 +175,15 @@ class avaCombat(commands.Cog):
             m_quick = 0
             m_art = 0
             for c in raw_move:
-                if c == 'b': m_burst += 1.25 + count
+                if c == 'b':
+                    ttl_plus += 1.8
+                    m_burst += 1.25 + count
                 elif c == 'q':
+                    ttl_plus += 0.2
                     m_burst += 0.25 + count
                     m_quick += 1 + count
                 elif c == 'a':
+                    ttl_plus += 2.5
                     m_burst += 0.75 + count
                     m_art += 2*count*5
                 else: await MSG.channel.send("<:osit:544356212846886924> Invalid move!")
@@ -196,7 +204,7 @@ class avaCombat(commands.Cog):
                 dmg += int(dmg/100*float(CE['aggressive']))
             except (TypeError, KeyError): pass
 
-            return dmg, dmg_q, m_art, bonus, icon_sequence
+            return dmg, dmg_q, m_art, bonus, icon_sequence, int(ttl_plus)
 
         async def t_dmg_calc(t_move, w_defend):
             bonus = []
@@ -246,7 +254,8 @@ class avaCombat(commands.Cog):
             else: await MSG.channel.send(f"<:osit:544356212846886924> {MSG.author.mention}, your STA is not enough for a `{len(raw_move)}`-chain melee move!"); return
 
             # Calc dmg
-            dmg, dmg_q, m_art, bonus, icon_sequence = await dmg_calc(raw_move)
+            ttl_plus = 10
+            dmg, dmg_q, m_art, bonus, icon_sequence, ttl_plus = await dmg_calc(raw_move, ttl_plus=ttl_plus)
 
             # Take effect
             await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{dmg} WHERE mob_id='{target_id}'; ")
@@ -270,7 +279,7 @@ class avaCombat(commands.Cog):
             # If it does-- but not lock on user, return
             elif str(t_lock.decode('utf-8')) != f"lock{str(MSG.author.id)}":
                 # CE - OUT
-                await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=30)
+                await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=CE_ttl+ttl_plus)
                 return
 
             # Generate moves ---> Calc dmg
@@ -281,13 +290,15 @@ class avaCombat(commands.Cog):
             await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{t_dmg}, STA=STA-{t_dmg_q} WHERE id='{user_id}';")
 
             # Inform
-            if 'evade' in bonus: pack_1 = f"\n<:evading:615285957889097738> **{MSG.author.mention}** evaded!"
+            if 'evade' in bonus:
+                tEmbed = discord.Embed(color=0xF15C4A)
+                tEmbed.add_field(name=f"\n<:evading:615285957889097738> **{MSG.author.mention}** evaded!", value=f"⠀")
+                if t_illulink: tEmbed.set_thumbnail(url=t_illulink)
             else:
                 #pack_1 = f"\n:dagger: **「`{target_id}` | {t_name}」** ⋙ *{t_dmg}* ⋙ **{MSG.author.mention}**"
                 tEmbed = discord.Embed(color=0xF15C4A)
                 tEmbed.add_field(name=f":dagger: **「`{target_id}` | {t_name}」**  ⋙**[{t_dmg}]**⋙**{MSG.author.name}**", value=f":dagger: {t_icon_sequence}")
                 if t_illulink: tEmbed.set_thumbnail(url=t_illulink)
-                pack_1 = tEmbed
 
             
             # Conclusing
@@ -297,14 +308,14 @@ class avaCombat(commands.Cog):
             else: False
 
             # CE - OUT
-            await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=30)
+            await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=CE_ttl+ttl_plus)
 
 
 
         await battle()
 
 
-    async def PVP_melee(self, MSG, target, raw_move, bmode='DIRECT', CE=None, tCE=None):
+    async def PVP_melee(self, MSG, target, raw_move, bmode='DIRECT', CE=None, tCE=None, CE_ttl=0):
         # GET User's info ============================
         name,  LP, STR, cur_PLACE, cur_X, cur_Y, combat_HANDLING, right_hand, left_hand, main_weapon = await self.client.quefe(f"SELECT name,  LP, STR, cur_PLACE, cur_X, cur_Y, combat_HANDLING, right_hand, left_hand, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand) FROM personal_info WHERE id='{MSG.author.id}';")
         # Get user's weapon
@@ -758,7 +769,8 @@ class avaCombat(commands.Cog):
         except TypeError: await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
 
         # CE - IN
-        CE = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get')
+        CE, CE_ttl = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get', getttl=True)
+        if not CE: CE = {}; CE_ttl = 0
 
         # INPUT CHECK =========================================
         target = None; target_id = None; raw_move = None
@@ -803,6 +815,7 @@ class avaCombat(commands.Cog):
                         # CE - Processing/lock
                         CE['lock'] = target_id
                     except (discordErrors.NotFound, discordErrors.HTTPException, TypeError): await ctx.send("<:osit:544356212846886924> Invalid user's id!"); return
+                    __mode = 'PVP'
                     __bmode = 'INDIRECT'
                 # MOVES     |      acabcbabbba
                 except ValueError: 
@@ -810,20 +823,34 @@ class avaCombat(commands.Cog):
 
         # In case target is not given, current_enemy is used
         if not target:
-            # Mobs first. If there's no mob in current_enemy, then randomly pick one
             try:
+                # Mobs first. If there's no mob in current_enemy, then randomly pick one
                 if CE['lock'] == 'n/a':
                     target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
                     target_id = target
                     __mode = 'PVE'
                     # CE - Processing/lock
                     CE['lock'] = target_id
+                # Lock - PLAYER             ||          Always DIRECT
+                elif CE['lock'].isdigit():
+                    try:
+                        target = await self.client.get_user(int(CE['lock']))
+                        # Target not found, then switch to random mob
+                        if not target:
+                            raise KeyError
+                        target_id = target.id
+                    # Target not found, then switch to random mob
+                    except (discordErrors.NotFound, discordErrors.HTTPException, TypeError):
+                        raise KeyError
+                    __mode = 'PVP'
+                # Lock - MOB
                 else:
                     target = CE['lock']
                     target_id = target
                     __mode = 'PVE'
             # E: CE not init
-            except KeyError:
+            except (KeyError, TypeError):
+                CE = {}
                 target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
                 target_id = target
                 __mode = 'PVE'
@@ -845,9 +872,9 @@ class avaCombat(commands.Cog):
         # PVP use target, with personal_info =============================
 
         if __mode == 'PVP':
-            await self.PVP_melee(ctx.message, target, raw_move, bmode=__mode, CE=CE)
+            await self.PVP_melee(ctx.message, target, raw_move, bmode=__mode, CE=CE, CE_ttl=CE_ttl)
         elif __mode == 'PVE':
-            await self.PVE_melee(ctx.message, target_id, raw_move, CE=CE)
+            await self.PVE_melee(ctx.message, target_id, raw_move, CE=CE, CE_ttl=CE_ttl)
         else: print("<<<<< Non PVP nor PVE >>>>>>>")
 
     @commands.command(aliases=['rng'])
@@ -1230,33 +1257,38 @@ class avaCombat(commands.Cog):
         except KeyError: pass
 
         # Passive Combat Movement (PCM) =================
-        pcmLimit = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{ctx.author.id}' AND art_type='ability' AND art_code='aa1';")
-        if len(args[0]) > pcmLimit[0]: await ctx.send(f"<:osit:544356212846886924> Your current PCM (PassiveCombatMovement) limit is `{pcmLimit[0]}`, **{ctx.author.name}**!"); return
+        # If no CE
+        if not CE:
+            pcmLimit = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{ctx.author.id}' AND art_type='ability' AND art_code='aa1';")
+            if len(args[0]) > pcmLimit[0]: await ctx.send(f"<:osit:544356212846886924> Your current PCM (PassiveCombatMovement) limit is `{pcmLimit[0]}`, **{ctx.author.name}**!"); return
 
-        async def CE_maker(raw_pcm):
+            async def CE_maker(raw_pcm):
 
-            # If CE not found, init one
-            CE = {
-                "aggressive": 0, "defensive": 0, "evasive": 0, "ultimate": 0, "raw_pcm": '',
-                "lock": 'n/a'
-            }
+                # If CE not found, init one
+                CE = {
+                    "aggressive": 0, "defensive": 0, "evasive": 0, "ultimate": 0, "raw_pcm": '',
+                    "lock": 'n/a'
+                }
 
-            count = 0
-            for c in raw_pcm:
-                if c == 'a': CE['aggressive'] = float(CE['aggressive']) + 1.25 + count
-                elif c == 'd': CE['defensive'] = float(CE['defensive']) + 1.25 + count
-                elif c == 'e': CE['evasive'] = float(CE['evasive']) + 1.25 + count
-                else: await ctx.send("<:osit:544356212846886924> Invalid PCM (PassiveCombatMovement)!"); return
-                count += 0.2
-            CE['raw_pcm'] = raw_pcm
-            return CE
+                count = 0
+                for c in raw_pcm:
+                    if c == 'a': CE['aggressive'] = float(CE['aggressive']) + 1.25 + count
+                    elif c == 'd': CE['defensive'] = float(CE['defensive']) + 1.25 + count
+                    elif c == 'e': CE['evasive'] = float(CE['evasive']) + 1.25 + count
+                    else: await ctx.send("<:osit:544356212846886924> Invalid PCM (PassiveCombatMovement)!"); return
+                    count += 0.2
+                CE['raw_pcm'] = raw_pcm
+                return CE
 
-        CE = await CE_maker(args[0])
+            CE = await CE_maker(args[0])
 
-        # CE - OUT
-        try: await self.tools.redio_map(f"CE{ctx.author.id}", dict=CE, ttl=60)
-        except redisErrors.DataError: return
-        await ctx.invoke(self.pose)
+            # CE - OUT
+            try: await self.tools.redio_map(f"CE{ctx.author.id}", dict=CE, ttl=20)
+            except redisErrors.DataError: return
+            await ctx.invoke(self.pose)
+
+        # If CE
+        else: await ctx.send(f"<:osit:544356212846886924> PCM will expire after :stopwatch:**`{CE_ttl}s`**", delete_after=5); return
 
     @commands.command()
     @checks.check_author()
