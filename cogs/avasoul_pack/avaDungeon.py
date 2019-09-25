@@ -109,7 +109,7 @@ class avaDungeon(commands.Cog):
                 await msg.delete(); return
 
     @commands.command(aliases=['dng'])
-    @commands.cooldown(1, 2, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def dungeon(self, ctx, *args):
 
         # CHOICE ===================================
@@ -493,7 +493,7 @@ class dSession:
         else: result = await self.eventEngine(event, player_in=self.timeline[-1].player)
 
         # Check if dead
-        try: 
+        try:
             if result == 'dead': return 'dead'
         except TypeError: pass
 
@@ -543,14 +543,24 @@ class dSession:
             try:
                 if new_player.inventory: inv = f" · <a:shakin_box:625467655759069184>`{new_player.inventory[0].di_code}|{new_player.inventory[0].di_name}`"
                 else: inv = ''
-                await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||{new_player.user.mention}||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`{inv}", delete_after=15)
+                msg = await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||{new_player.user.mention}||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`{inv}", delete_after=15)
             # E: Faux-player
             except AttributeError:
                 if new_player.inventory: inv = f" · <a:shakin_box:625467655759069184>`{new_player.inventory[0].di_code}|{new_player.inventory[0].di_name}`"
                 else: inv = ''
-                await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||**{new_player.user.name}**||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`{inv}", delete_after=15)
+                msg = await self.ctx.send(f"> <:racing:622958702873280537>`{self.timeline[-1].distance}m` ||**{new_player.user.name}**||╢ <:healing_heart:508220588872171522>`{new_player.lp}` · <:star_sword:622955471854370826>`{new_player.attack}` · <:star_shield:622955471640199198>`{new_player.defense}` · <:36pxGold:548661444133126185>`{new_player.money}` · <:merit_badge:620137704662761512>`{new_player.merit:.1f}`{inv}", delete_after=15)
 
-            return False
+            await asyncio.sleep(2.5)
+            await msg.add_reaction('a:arrow_right_ani:626231269105205288')
+            
+            # Continue
+            try:
+                await self.client.wait_for('reaction_add', check=lambda reaction, user: user == self.ctx.author and str(reaction.emoji) == '<a:arrow_right_ani:626231269105205288>', timeout=11)
+                resu = await self.updateTimeline()
+                return resu
+            # Stop
+            except asyncio.TimeoutError:
+                return False
 
 
 

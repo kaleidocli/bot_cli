@@ -45,6 +45,7 @@ extensions = ['cogs.error_handler',
                 'cogs.guess', 
                 'jishaku', 
                 'cogs.audio', 
+                'cogs.dbl',
                 'cogs.avasoul',
                 'cogs.avasoul_pack.avaHelper', 
                 'cogs.avasoul_pack.avaAdmin', 
@@ -76,6 +77,7 @@ async def get_pref(bot, message):
    return commands.when_mentioned_or('cli ')(bot, message)
 
 client = commands.Bot(command_prefix=get_pref)
+client.myconfig = config
 
 # client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')
@@ -116,10 +118,6 @@ async def statas(ctx, *args):
     temb = discord.Embed(title=f"<a:ramspin:547325170726207499> {bytes2human(mem.used)}/{bytes2human(mem.total)} ({round(mem.used/mem.total*100)}%)", colour = discord.Colour(0xB1F1FA))
 
     await ctx.send(embed=temb)
-
-@client.command()
-async def vote(ctx, *args):
-    await ctx.send(embed=discord.Embed(description=f"**Love me? Love me not?** Heheh I know you love me~ [Thank you for voting me~!](https://discordbots.org/bot/449278811369111553/vote)", colour = discord.Colour(0x36393E)))
 
 @client.command()
 @check_id()

@@ -492,10 +492,11 @@ class avaPersonal(commands.Cog):
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
-    async def rename(self, ctx, *, name):
+    async def rename(self, ctx, *name):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
         
         if not name: await ctx.send("<:osit:544356212846886924> `rename [name]`"); return
+        name = ' '.join(name)
         if len(name) > 21: await ctx.send("<:osit:544356212846886924> Names can only contain 21 characters."); return
 
         name = await self.utils.inj_filter(name)

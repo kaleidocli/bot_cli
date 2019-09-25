@@ -306,7 +306,11 @@ class avaAvatar(commands.Cog):
             if not partner: partner = '---------------------'
             #pylint: enable=unused-variable
             guild_code, rank = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{user_id}';")
-            guild_name = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{guild_code}';"); guild_name = guild_name[0]
+            if guild_code != 'n/a':
+                guild_name = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{guild_code}';"); guild_name = guild_name[0]
+            else:
+                guild_code = 'None'
+                guild_name = 'None'
 
             form_img = self.prote_lib['form'][0]
             """char_img = random.choice(self.prote_lib[char_name])"""

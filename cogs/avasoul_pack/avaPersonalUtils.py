@@ -136,9 +136,11 @@ class avaPersonalUtils(commands.Cog):
     @commands.command(aliases=['tele'])
     @commands.cooldown(1, 5, type=BucketType.user)
     async def teleport(self, ctx, *args):
-        cur_PLACE, cur_X, cur_Y, stats = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y, stats FROM personal_info WHERE id='{ctx.author.id}';")
+        try: cur_PLACE, cur_X, cur_Y, stats = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y, stats FROM personal_info WHERE id='{ctx.author.id}';")
+        except TypeError: return
 
-        if stats == 'DEAD': await self.tools.ava_scan(ctx.message, type='life_check')
+        if stats == 'DEAD':
+            if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         # COORD
         if not args:
