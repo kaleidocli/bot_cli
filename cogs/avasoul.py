@@ -2062,7 +2062,7 @@ class avasoul(commands.Cog):
                         elif int(qk[0]) < mob[1]: mob[1] -= int(qk[0])
                         
                         # Get the <mob> prototype
-                        name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, description, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, description, illulink FROM model_mob WHERE mob_code='{mob[0]}';")
+                        name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, effect, description, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, effect, description, illulink FROM model_mob WHERE mob_code='{mob[0]}';")
                         rewards = rewards.split(' | ')
                         
                         # Mass production
@@ -2088,7 +2088,7 @@ class avasoul(commands.Cog):
                             rewards_query = f"{stata} {' '.join(objecto)}"
 
                             # Insert the mob to DB
-                            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob[0]}', "{name}", "{description}", '{branch}', {lp}, {str}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_DARK}, {au_HOLY}, '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {mob[2]}, {mob[3]}, {mob[4]}, {mob[5]}, 'n/a', "{illulink}");""")
+                            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob[0]}', "{name}", "{description}", '{branch}', {lp}, {str}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {mob[2]}, {mob[3]}, {mob[4]}, {mob[5]}, 'n/a', "{illulink}");""")
                             counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
                             await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
                     
