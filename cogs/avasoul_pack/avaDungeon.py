@@ -405,7 +405,7 @@ class avaDungeon(commands.Cog):
 
             # Inform
             await ctx.send(f":inbox_tray: Here's your `{self.itemdict[args[1]].di_name}`. Thank you for visitting!"); return
-            
+
 
 
 
@@ -813,8 +813,14 @@ class modelEvent:
         p_attack = player.attack - mob.defense
         m_attack = mob.attack - player.defense
 
-        p_hit = player.lp//m_attack
-        m_hit = mob.lp//p_attack
+        try: 
+            p_hit = player.lp//m_attack
+        except ZeroDivisionError:
+            return player, True, mob.mob_name
+        try:
+            m_hit = mob.lp//p_attack
+        except ZeroDivisionError:
+            return player, True, mob.mob_name
 
         print(p_hit, m_hit)
         # PLAYER lose

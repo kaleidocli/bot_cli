@@ -61,10 +61,13 @@ class avaCombat(commands.Cog):
             t_name, t_speed, t_str, t_chain, t_lp, t_illulink = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
         # If mob not found (either mistyping or outdated lock), set lock to 'n/a'
         except TypeError:
-            target_id = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
-            t_name, t_speed, t_str, t_chain, t_lp, t_illulink = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
-            CE['lock'] = target_id
-            # await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
+            try:
+                target_id = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))
+                target_id = target_id[0]
+                t_name, t_speed, t_str, t_chain, t_lp, t_illulink = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+                CE['lock'] = target_id
+            except IndexError:
+                await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
 
 
         # Delete user's attack msg
@@ -119,7 +122,7 @@ class avaCombat(commands.Cog):
 
             # ==================================
             # Get the <mob> prototype
-            name, branch, lp, strr, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, t_evo, description, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, evo, description, illulink FROM model_mob WHERE mob_code='{mob_code}';")
+            name, branch, lp, strr, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, effect, t_evo, description, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, effect, evo, description, illulink FROM model_mob WHERE mob_code='{mob_code}';")
             rewards = rewards.split(' | ')
 
             # Generating rewards
@@ -152,7 +155,7 @@ class avaCombat(commands.Cog):
             await self.client._cursor.execute(f"DELETE FROM environ_mob WHERE mob_id='{target_id}';")
 
             # Insert the mob to DB
-            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_DARK}, {au_HOLY}, '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, 'n/a', "{illulink}");""")
+            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, 'n/a', "{illulink}");""")
             counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
             await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
 

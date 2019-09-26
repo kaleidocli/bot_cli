@@ -563,7 +563,10 @@ class avaCommercial(commands.Cog):
         async def browse():
             items = await self.client.quefe(f"""SELECT item_id, item_code, name, description, tags, weight, quantity, price, aura FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' {lk_query};""", type='all')
 
-            if not items: await ctx.send(f":x: No result..."); return
+            try:
+                items = list(items)
+                items.sort(key=lambda v: v[1])
+            except IndexError: await ctx.send(f":x: No result..."); return
 
             def makeembed(top, least, pages, currentpage):
                 line = f"**╔═══════╡**`Total: {len(items)}`**╞═══════**\n" 
