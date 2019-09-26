@@ -230,8 +230,8 @@ class avaSocial(commands.Cog):
 
         if not emli: await ctx.send("<:sailu:559155210384048129> No child!"); return
         if pages > 1: 
-            await attachreaction(msg)
             msg = await ctx.send(embed=emli[cursor])
+            await attachreaction(msg)
         else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
 
         def UM_check(reaction, user):

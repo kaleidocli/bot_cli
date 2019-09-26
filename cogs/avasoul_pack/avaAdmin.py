@@ -308,7 +308,7 @@ class avaAdmin(commands.Cog):
         codes = await self.client.quefe(f"SELECT DISTINCT mob_code FROM model_mob;", type='all')
 
         for code in codes:
-            await self.client._cursor.execute(f"UPDATE environ_mob e INNER JOIN model_mob m ON m.mob_code='{code[0]}' SET e.name=m.name, e.description=m.description, e.lp=m.lp, e.str=m.str, e.chain=m.chain, e.speed=m.speed, e.au_FLAME=m.au_FLAME, e.au_ICE=m.au_ICE, e.au_HOLY=m.au_HOLY, e.au_DARK=m.au_DARK, e.rewards=m.rewards, e.illulink=m.illulink WHERE e.mob_code='{code[0]}';")
+            await self.client._cursor.execute(f"UPDATE environ_mob e INNER JOIN model_mob m ON m.mob_code='{code[0]}' SET e.name=m.name, e.description=m.description, e.lp=m.lp, e.str=m.str, e.chain=m.chain, e.speed=m.speed, e.au_FLAME=m.au_FLAME, e.au_ICE=m.au_ICE, e.au_HOLY=m.au_HOLY, e.au_DARK=m.au_DARK, e.effect=m.effect, e.rewards=m.rewards, e.illulink=m.illulink WHERE e.mob_code='{code[0]}';")
 
         await ctx.send(":white_check_mark:")
 

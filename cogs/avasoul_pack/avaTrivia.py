@@ -4,6 +4,9 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
 import asyncio
+from functools import partial
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 from .avaTools import avaTools
 from .avaUtils import avaUtils
@@ -22,6 +25,12 @@ class avaTrivia(commands.Cog):
                     'FROST': 'https://imgur.com/rjwiDU4.png',
                     'MOUNTAIN': 'https://imgur.com/cxwSH7m.png',
                     'OCEAN': 'https://imgur.com/fQFO2b4.png'}
+        self.mob_icon = {'mob': '<:mhw_bonewhite:626450002952323072>',
+                        'boss': '<:mhw_bonegold:626450069188640771>'}
+        self.effect_icon = {'poison': '<:mhw_poison:626533532898033664>',
+                            'paralysis': '<:mhw_paralysis:626533532642312193>',
+                            'sleep': '<:mhw_sleep:626533532956622858>',
+                            'stun': '<:mhw_stun:626533532948365322>'}
 
 
     @commands.Cog.listener()
@@ -236,6 +245,117 @@ class avaTrivia(commands.Cog):
     async def pralaeyr(self, ctx):
         await ctx.send("https://media.discordapp.net/attachments/381963689470984203/546796245994307595/map_description.png")
 
+    @commands.command()
+    @commands.cooldown(1, 2, type=BucketType.user)
+    async def mobs(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        mobs = await self.client.quefe(f"SELECT mob_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, illulink, effect FROM model_mob WHERE mob_code IN (SELECT mob_code FROM environ_diversity WHERE environ_code=(SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'));", type='all')
+        try:
+            mobs = list(mobs)
+            mobs.sort(key=lambda v: v[3], reverse=True)
+        except IndexError: await ctx.send(f":x: There's no mob in this region it seems..."); return
+
+        async def makeembed(curp, pages, currentpage):
+            mob = mobs[curp]
+
+            # Visualize effects
+            try:
+                effect = '> '
+                for ep in mob[14].split(' || '):
+                    ep = ep.split(' - ')
+                    effect += f"{self.effect_icon[ep[0]]}`{ep[2]}%` "
+            except (IndexError, KeyError):
+                effect = '----------------------'
+
+            box = discord.Embed(title=f"{self.mob_icon[mob[3]]} `{mob[0]}`|**{mob[1]}**", description=f"```{mob[2]}```", colour = discord.Colour(0x36393F))
+            box.add_field(name=f'>>> **`LP`** · {mob[5]}\n**`STR`** · {mob[6]}\n**`CHAIN`** · {mob[7]}\n**`SPEED`** · {mob[8]}', value=effect)
+            box.add_field(name=f'>>> **`FLAME`** · {mob[9]}\n**`ICE`** · {mob[10]}\n**`HOLY`** · {mob[11]}\n**`DARK`** · {mob[12]}', value=f"> `EVO.{mob[4]}`")
+
+            if mob[12]: box.set_thumbnail(url=mob[13])
+            return box
+        
+        async def attachreaction(msg):
+            await msg.add_reaction("\U000023ee")    #Top-left
+            await msg.add_reaction("\U00002b05")    #Left
+            await msg.add_reaction("\U000027a1")    #Right
+            await msg.add_reaction("\U000023ed")    #Top-right
+
+        pages = len(mobs)
+        currentpage = 1
+        cursor = 0
+
+        emli = []
+        for curp in range(pages):
+            myembed = await makeembed(curp, pages, currentpage)
+            emli.append(myembed)
+            currentpage += 1
+
+        msg = await ctx.send(embed=emli[cursor])
+        if pages > 1: await attachreaction(msg)
+        else: return
+
+        while True:
+            try:
+                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
+                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+                    cursor += 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U00002b05" and cursor > 0:
+                    cursor -= 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ee" and cursor != 0:
+                    cursor = 0
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+                    cursor = pages - 1
+                    await msg.edit(embed=emli[cursor])
+                    try: await msg.remove_reaction(reaction.emoji, user)
+                    except discordErrors.Forbidden: pass
+            except asyncio.TimeoutError: 
+                await msg.delete(); return
+
+    @commands.command(aliases=['noti'])
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def notification(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+        on_cd = []; off_cd = []; interas = []
+
+        # COMMANDs
+        for cmd, cmd_tag in zip(['daily', 'daily quest', 'work', 'trader', 'merge', 'sex'], ['daily', 'dailyquest', 'work', 'trade', 'merge', 'sex']):
+            time = await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.ttl, f"{cmd_tag}{ctx.author.id}"))
+            # On cooldown
+            if not time:
+                off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`{cmd}`**")
+            # Off cooldown
+            else:
+                on_cd.append(f"\n:stopwatch: Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
+
+        # INTERACTIONs
+        tee = await self.client.quefe(f"SELECT target_code, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND flag<>'n/a'", type='all')
+        for t in tee:
+            temp = await self.client.quefe(f"SELECT npc_code, name FROM model_npc WHERE npc_code='{t[0]}';")
+            temp2 = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE limit_flag='{t[1]}';")
+            interas.append(f"\n<:exclamation_cyan:626639669836382218> NPC `{temp[0]}`|**{temp[1]}** is waiting (`{temp2[0]}:{temp2[1]}` - `{temp2[2]}:{temp2[3]}`)")
+
+        # HUNT
+        try:
+            end_point = await self.client.quefe(f"SELECT end_point FROM pi_hunt WHERE user_id='{ctx.author.id}' AND stats='ONGOING';")
+            delta = relativedelta(end_point[0], datetime.now())
+            # Still in progress
+            if datetime.now() < end_point[0]: on_cd.append(f"\n:stopwatch: Command **`hunt`**: `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`")
+            # Done, but not collected
+            else: off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`{cmd}`**: Fisnished")
+        except TypeError:
+            off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`hunt`**: Ready to go")
+
+        await ctx.send(f""">>> {chr(10).join(off_cd)} {' '.join(on_cd)} {' '.join(interas)}""")
 
 
 
