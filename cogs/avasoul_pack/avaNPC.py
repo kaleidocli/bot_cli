@@ -34,7 +34,7 @@ class avaNPC(commands.Cog):
         #if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         if not args:
-            npcs = await self.client.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc;", type='all')
+            npcs = await self.client.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc WHERE npc_code IN (SELECT DISTINCT entity_code FROM environ_interaction WHERE region=(SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'));", type='all')
 
             def makeembed(curp, pages, currentpage):
                 npc = npcs[curp]

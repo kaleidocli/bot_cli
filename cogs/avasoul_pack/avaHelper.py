@@ -235,8 +235,8 @@ Definition? Mechanism? Lore? Yaaa```
 
     async def helperPerface_load(self):
         await asyncio.sleep(3)
-        cats = await self.client.quefe("SELECT DISTINCT category FROM sys_command WHERE category<>'n/a';", type='all')
-        packs = await self.client.quefe("SELECT category, command, short_description FROM sys_command WHERE category<>'n/a';", type='all')
+        cats = await self.client.quefe("SELECT DISTINCT category FROM sys_command WHERE category<>'n/a' ORDER BY category ASC;", type='all')
+        packs = await self.client.quefe("SELECT category, command, short_description FROM sys_command WHERE category<>'n/a' ORDER BY command ASC;", type='all')
         a = []
         for cat in cats:
             d = {}
@@ -281,8 +281,8 @@ Definition? Mechanism? Lore? Yaaa```
 
     async def conceptPerface_load(self):
         await asyncio.sleep(3)
-        cats = await self.client.quefe("SELECT DISTINCT type FROM sys_concept WHERE type<>'n/a';", type='all')
-        packs = await self.client.quefe("SELECT type, concept, short_description FROM sys_concept WHERE type<>'n/a';", type='all')
+        cats = await self.client.quefe("SELECT DISTINCT type FROM sys_concept WHERE type<>'n/a' ORDER BY type ASC;", type='all')
+        packs = await self.client.quefe("SELECT type, concept, short_description FROM sys_concept WHERE type<>'n/a' ORDER BY concept ASC;", type='all')
         a = []
         for cat in cats:
             d = {}

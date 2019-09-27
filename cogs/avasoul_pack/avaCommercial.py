@@ -276,75 +276,96 @@ class avaCommercial(commands.Cog):
 
     @commands.command(aliases=['b'])
     @commands.cooldown(1, 5, type=BucketType.user)
-    async def bank(self, ctx, *args):
+    async def bank(self, ctx, *args):   
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
-        # Status check
-        try: money, cur_X, cur_Y, age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, age, stats FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND stats NOT IN ('ORANGE', 'RED');")
-        except TypeError: await ctx.send(f"<:osit:544356212846886924> You need a **GREEN** or **YELLOW** status to perform this command, **{ctx.message.author.name}**."); return
+        # TARGET ==============================
+        # Partner
+        try:
+            target = ctx.message.mentions[0]
 
-        # Coord check
-        if not await self.tools.area_scan(ctx, cur_X, cur_Y): await ctx.send("<:osit:544356212846886924> Banks are only available within **Peace Belt**!"); return
+            # Info get / Partner check
+            try: money, cur_X, cur_Y, age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, age, stats FROM personal_info WHERE id='{ctx.author.id}' AND partner='{target.id}';")
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> You're not **{target.name}**'s partner!"); return
 
-        # Account getting
-        try: invs, invs_interst, invest_age, tier = await self.client.quefe(f"SELECT investment, interest, invest_age, tier FROM pi_bank WHERE user_id='{str(ctx.message.author.id)}';")
-        # E: User does not have account
-        except TypeError:
-            # Get confirmation
-            def UMCc_check(m):
-                return m.channel == ctx.channel and m.content == 'account confirm' and m.author == ctx.author
+            # Coord check
+            if not await self.tools.area_scan(ctx, cur_X, cur_Y): await ctx.send("<:osit:544356212846886924> Banks are only available within **Peace Belt**!"); return
 
-            await ctx.send(f":bank: Greeting, {ctx.message.author.mention}. It seems that there's no account has your id on it. Perhaps, would you like to open one?\n<a:RingingBell:559282950190006282> *Proceed?* (Key: `account confirm` | Timeout=10s)")
-            try: await self.client.wait_for('message', timeout=10, check=UMCc_check)
-            except asyncio.TimeoutError: await ctx.send(f":bank: Indeed. Why would mongrels need a bank account..."); return
-            
-            # Create account
-            await self.client._cursor.execute(f"INSERT INTO pi_bank VALUES ('{str(ctx.message.author.id)}', 0, 0, 0.01, '1');")
-            await ctx.send(f":white_check_mark: Your account has been successfully created!"); return
+            # Account getting
+            try: invs, invs_interst, invest_age, tier = await self.client.quefe(f"SELECT investment, interest, invest_age, tier FROM pi_bank WHERE user_id='{target.id}';")
+            # E: User does not have account
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> Your partner does not have a bank account!"); return
+        # Player
+        except IndexError:
+            target = ctx.author
 
-        raw = list(args)
+            # Status check
+            try: money, cur_X, cur_Y, age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, age, stats FROM personal_info WHERE id='{ctx.author.id}' AND stats NOT IN ('ORANGE', 'RED');")
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> You need a **GREEN** or **YELLOW** status to perform this command, **{ctx.author.name}**."); return
+
+            # Coord check
+            if not await self.tools.area_scan(ctx, cur_X, cur_Y): await ctx.send("<:osit:544356212846886924> Banks are only available within **Peace Belt**!"); return
+
+            # Account getting
+            try: invs, invs_interst, invest_age, tier = await self.client.quefe(f"SELECT investment, interest, invest_age, tier FROM pi_bank WHERE user_id='{target.id}';")
+            # E: User does not have account
+            except TypeError:
+                # Get confirmation
+                def UMCc_check(m):
+                    return m.channel == ctx.channel and m.content == 'account confirm' and m.author == ctx.author
+
+                await ctx.send(f":bank: Greeting, {ctx.message.author.mention}. It seems that there's no account has your id on it. Perhaps, would you like to open one?\n<a:RingingBell:559282950190006282> *Proceed?* (Key: `account confirm` | Timeout=10s)")
+                try: await self.client.wait_for('message', timeout=10, check=UMCc_check)
+                except asyncio.TimeoutError: await ctx.send(f":bank: Indeed. Why would mongrels need a bank account..."); return
+                
+                # Create account
+                await self.client._cursor.execute(f"INSERT INTO pi_bank VALUES ('{str(ctx.message.author.id)}', 0, 0, 0.01, '1');")
+                await ctx.send(f":white_check_mark: Your account has been successfully created!"); return
+
 
         try:
+            # PARTNER
+            if args[0].startswith('<@'): raise IndexError
+
             # INVEST
-            if raw[0] == 'invest':
+            if args[0] == 'invest':
                 try:
-                    quantity = int(raw[1])
+                    quantity = int(args[1])
                     if quantity >= money: quantity = money
                     elif quantity < 0: await ctx.send("Don't be stupid <:fufu:605255050289348620>"); return
 
                     # Update prev investment, then the investment, then the invest_age
-                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})+{quantity}, invest_age={age} WHERE user_id='{str(ctx.message.author.id)}';")
-                    await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{quantity}, stats=IF(money>=0, 'GREEN', 'YELLOW') WHERE id='{str(ctx.message.author.id)}';")
+                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})+{quantity}, invest_age={age} WHERE user_id='{target.id}';")
+                    await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{quantity}, stats=IF(money>=0, 'GREEN', 'YELLOW') WHERE id='{target.id}';")
 
-                    await ctx.send(f":white_check_mark: Added **<:36pxGold:548661444133126185>{quantity}** to your account!"); return
+                    await ctx.send(f":white_check_mark: Added **<:36pxGold:548661444133126185>{quantity}** to {target.name}'s account!"); return
 
                 # E: Quantity not given
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to invest."); return
 
             # WITHDRAW
-            elif raw[0] == 'withdraw':
+            elif args[0] == 'withdraw':
                 try:
                     if stats == 'YELLOW': await ctx.send("<:osit:544356212846886924> You need a **GREEN** status to withdraw money."); return
 
-                    quantity = int(raw[1])
+                    quantity = int(args[1])
                     if quantity >= invs: quantity = invs
                     elif quantity < 0: await ctx.send("Don't be stupid <:fufu:605255050289348620>"); return
 
                     # Update prev investment, then the investment, then the invest_age
-                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})-{quantity}, invest_age={age} WHERE user_id='{str(ctx.message.author.id)}';")
-                    await self.client._cursor.execute(f"UPDATE personal_info SET money=money+{quantity} WHERE id='{str(ctx.message.author.id)}';")
+                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})-{quantity}, invest_age={age} WHERE user_id='{target.id}'; UPDATE personal_info SET money=money+{quantity} WHERE id='{target.id}';")
 
-                    await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{quantity}** has just been withdrawn from your account!"); return
+                    await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{quantity}** has just been withdrawn from {target.name}'s account!"); return
                 # E: Quantity not given
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to withdraw."); return
-            
+
             # TRANSFER
-            elif raw[0] == 'transfer':
+            elif args[0] == 'transfer':
                 try:
                     if stats == 'YELLOW': await ctx.send("<:osit:544356212846886924> You need a **GREEN** status to transfer money."); return
                     
                     # Get quantity
-                    for i in raw[1:]:
+                    for i in args[1:]:
                         try: quantity = int(i)
                         except ValueError: continue
                         if quantity >= invs: quantity = invs
@@ -403,7 +424,7 @@ class avaCommercial(commands.Cog):
                 await ctx.send(f":white_check_mark: Upgraded to tier `{next_tier}`!"); return
 
             # DOWNGRADE
-            elif raw[0] == 'downgrade':
+            elif args[0] == 'downgrade':
                 tier_dict = {'2': [('elementary', 'international_bussiness'), 0.02], 
                             '3': [('middleschool', 'international_bussiness'), 0.03], 
                             '4': [('highschool', 'international_bussiness'), 0.04], 
@@ -425,8 +446,8 @@ class avaCommercial(commands.Cog):
 
             line = f""":bank: `『TIER』` **· `{tier}`** ⠀⠀ ⠀:bank: `『INTEREST』` **· `{invs_interst}`** \n```$ {invs}```"""
 
-            reembed = discord.Embed(title = f"{ctx.message.author.name.upper()}", colour = discord.Colour(0x011C3A), description=line)
-            reembed.set_thumbnail(url=ctx.message.author.avatar_url)
+            reembed = discord.Embed(title = f"{target.name.upper()}", colour = discord.Colour(0x011C3A), description=line)
+            reembed.set_thumbnail(url=target.avatar_url)
 
             await ctx.send(embed=reembed)
 

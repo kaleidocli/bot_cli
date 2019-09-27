@@ -770,10 +770,14 @@ class avaGuild(commands.Cog):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         allowed_arts = await self.client.quefe(f"SELECT arts FROM model_guild WHERE guild_code=(SELECT guild_code FROM pi_guild WHERE user_id='{ctx.author.id}');")
-        arts = await self.client.quefe(f"""SELECT art_code, art_name, art_type, description, value, tier, tier_cost, upgrade_increment, illulink FROM model_arts WHERE art_code IN ('{"', '".join(allowed_arts[0].split(' - '))}');""", type='all')
+        allowed_arts = allowed_arts[0].split(' || ')
+        aa = [a.split(' - ') for a in allowed_arts]
+        tempaa = [a[0] for a in aa]
+        arts = await self.client.quefe(f"""SELECT art_code, art_name, art_type, description, value, tier, tier_cost, upgrade_increment, illulink FROM model_arts WHERE art_code IN ('{"', '".join(tempaa)}');""", type='all')
         
         async def makeembed(curp, pages, currentpage):
             d = arts[curp]
+            r = aa[curp][1]
 
             if not d[5]: uplus = ''
             else: uplus = f"+{d[5]}"
@@ -781,8 +785,9 @@ class avaGuild(commands.Cog):
             value_in = ''
             if d[3]: value_in = d[3].replace('value_in', str(d[4]))
 
-            reembed = discord.Embed(title = f"{d[2].upper()} <:skill_icon:624779119019950100> `{d[0]}`|**{d[1]}** {uplus}", description = f"""```{value_in}```""", colour = discord.Colour(0x011C3A))
+            reembed = discord.Embed(title = f"<:skill_icon:624779119019950100> {d[2].upper()} · `{d[0]}`|**{d[1]}** {uplus}", description = f"""```{value_in}```""", colour = discord.Colour(0x011C3A))
             reembed.set_footer(text=f">> Require {(float(d[6])*(float(d[5]) + 1)):.0f} for next tier (+{d[7]})")
+            reembed.set_thumbnail(url=self.guild_rank_image[r])
             if d[8]: reembed.set_image(url=random.choice(d[8].split(" || ")))
             return reembed
         
@@ -835,7 +840,6 @@ class avaGuild(commands.Cog):
     @commands.command()
     @commands.cooldown(1, 3, type=BucketType.user)
     async def learn(self, ctx, *args):
-        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         # UPGRADE
         try:
@@ -850,12 +854,26 @@ class avaGuild(commands.Cog):
             if not await self.client._cursor.execute(f"UPDATE personal_info SET merit=merit-{merit_cost} WHERE id='{ctx.author.id}' AND merit>={merit_cost};"):
                 await ctx.send(f"<:osit:544356212846886924> Unsufficient merits!"); return
 
-            if await self.client._cursor.execute(f"UPDATE pi_arts SET value=value+{upgrade_increment}, tier=tier+1 WHERE user_id='{ctx.author.id}' AND art_code='{art_code}';"):
-                await ctx.send(f"<:skill_icon:624779119019950100> {art_type.capitalize()} `{art_code}`|**{art_name}** upgraded!"); return
-            else: await ctx.send(f"<:osit:544356212846886924> Unsufficient merits!"); return
+            await self.client._cursor.execute(f"UPDATE pi_arts SET value=value+{upgrade_increment}, tier=tier+1 WHERE user_id='{ctx.author.id}' AND art_code='{art_code}';")
+            await ctx.send(f"<:skill_icon:624779119019950100> {art_type.capitalize()} `{art_code}`|**{art_name}** upgraded!"); return
 
         # LEARN
-        except TypeError: pass
+        except TypeError: 
+            try: art_code, art_name, art_type, tier_cost, illulink, rank = await self.client.quefe(f"SELECT art_code, art_name, art_type, tier_cost, illulink, (SELECT rank FROM pi_guild WHERE user_id='{ctx.author.id}') FROM model_arts WHERE user_id='{ctx.author.id}' AND art_code='{args[0]}' AND NOT EXISTS (SELECT * FROM pi_arts WHERE art_code='{args[0]}');")
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> Unable to learn such art."); return
+
+            # GUILD check / ACCOUNT check
+            if not rank: await ctx.send(f"<:osit:544356212846886924> Please join a guild, **{ctx.author.name}**."); return
+
+            # Rank check
+            if await self.client._cursor.execute(f"SELECT * FROM model_guild WHERE arts LIKE '%{art_code} - {rank[0]}%';"):
+                await ctx.send(f"<:osit:544356212846886924> Your rank isn't high enough for this art. **{ctx.author.name}**!"); return
+
+            if not await self.client._cursor.execute(f"UPDATE personal_info SET merit=merit-{merit_cost} WHERE id='{ctx.author.id}' AND merit>={merit_cost};"):
+                await ctx.send(f"<:osit:544356212846886924> Unsufficient merits!"); return
+
+            await ctx.send(embed=discord.Embed(title=f"<:skill_icon:624779119019950100> {art_type} · `{art_code}`|**{art_name}**").set_image(url=illulink))
+            await self.client._cursor.execute(f"SELECT func_aa_reward('{ctx.author.id}', '{art_code}', 1);")
 
         except IndexError: pass
 

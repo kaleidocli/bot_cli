@@ -351,7 +351,7 @@ class avaTrivia(commands.Cog):
             # Still in progress
             if datetime.now() < end_point[0]: on_cd.append(f"\n:stopwatch: Command **`hunt`**: `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`")
             # Done, but not collected
-            else: off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`{cmd}`**: Fisnished")
+            else: off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`hunt`**: Fisnished")
         except TypeError:
             off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`hunt`**: Ready to go")
 
