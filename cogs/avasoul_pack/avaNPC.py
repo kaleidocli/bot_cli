@@ -228,7 +228,7 @@ class avaNPC(commands.Cog):
                 try:
                     await self.client.wait_for('reaction_add', check=RUM_check, timeout=dura)
                     emb, dura, checkk = peck
-                    await msg.edit(embed=emb)
+                    await msg.edit(embed=emb, delete_after=30)
 
                 except asyncio.TimeoutError:
                     await msg.delete(); return

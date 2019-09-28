@@ -30,7 +30,8 @@ class avaTrivia(commands.Cog):
         self.effect_icon = {'poison': '<:mhw_poison:626533532898033664>',
                             'paralysis': '<:mhw_paralysis:626533532642312193>',
                             'sleep': '<:mhw_sleep:626533532956622858>',
-                            'stun': '<:mhw_stun:626533532948365322>'}
+                            'stun': '<:mhw_stun:626533532948365322>',
+                            'bleed': '<:mhw_bleeding:626533532696707103>'}
 
 
     @commands.Cog.listener()

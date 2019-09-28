@@ -82,7 +82,7 @@ class avaTools:
             if STA < 0: await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{abs(STA)}, STA=0 WHERE id='{target_id}';")
             if LP <= 0:
                 # Status reset
-                reviq = f"UPDATE personal_info SET stats='DEAD', cur_PLACE='region.0', cur_X=-1, cur_Y=-1, cur_MOB='n/a', cur_USER='n/a', right_hand='ar13', left_hand='ar13', money=0, perks=0, merit=0, deaths=deaths+1 WHERE id='{target_id}';"
+                reviq = f"UPDATE personal_info SET stats='DEAD', cur_PLACE='region.0', cur_X=-1, cur_Y=-1, cur_MOB='n/a', cur_USER='n/a', right_hand='ar13', left_hand='ar13', money=0, merit=IF(merit >= 0, 0, merit), deaths=deaths+1 WHERE id='{target_id}';"
                 # Remove FULL and ONGOING quests
                 reviq = reviq + f" DELETE FROM pi_quests WHERE user_id='{target_id}' AND stats IN ('FULL', 'ONGOING');"
                 # Remove all items but ar13|Fist (Default)

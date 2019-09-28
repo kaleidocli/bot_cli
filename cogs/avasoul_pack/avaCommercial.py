@@ -642,7 +642,7 @@ class avaCommercial(commands.Cog):
                 msg = await ctx.send(embed=emli[cursor])
                 await attachreaction(msg)
             else: 
-                msg = await ctx.send(embed=emli[cursor], delete_after=15)
+                msg = await ctx.send(embed=emli[0], delete_after=15)
                 return
 
             def UM_check(reaction, user):

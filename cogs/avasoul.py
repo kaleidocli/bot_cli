@@ -57,7 +57,9 @@ class avasoul(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        # await asyncio.sleep(10)
         await self.data_plugin()
+        # await asyncio.sleep(10)
         # time.sleep(3)
         # await self.correctResetArt()
         # time.sleep(3)
