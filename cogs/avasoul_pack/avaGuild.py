@@ -34,6 +34,7 @@ class avaGuild(commands.Cog):
                                 'mithryl': 'https://imgur.com/IybhU0l.png'}
 
 
+
     @commands.Cog.listener()
     async def on_ready(self):
         print("|| Guild Systems ---- READY!")
@@ -165,7 +166,7 @@ class avaGuild(commands.Cog):
 
 
                     # End_point calc from duration
-                    if duration != '0':
+                    if duration != 0:
                         end_point = datetime.now() + timedelta(seconds=duration)
                         end_point = f"'{end_point.strftime('%Y-%m-%d %H:%M:%S')}'"
                     else: end_point = 'NULL'
@@ -876,6 +877,9 @@ class avaGuild(commands.Cog):
             await self.client._cursor.execute(f"SELECT func_aa_reward('{ctx.author.id}', '{art_code}', 1);")
 
         except IndexError: pass
+
+
+
 
 
 

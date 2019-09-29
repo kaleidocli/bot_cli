@@ -342,8 +342,9 @@ class avaTrivia(commands.Cog):
         tee = await self.client.quefe(f"SELECT target_code, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND flag<>'n/a'", type='all')
         for t in tee:
             temp = await self.client.quefe(f"SELECT npc_code, name FROM model_npc WHERE npc_code='{t[0]}';")
-            temp2 = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE limit_flag='{t[1]}';")
-            interas.append(f"\n<:exclamation_cyan:626639669836382218> NPC `{temp[0]}`|**{temp[1]}** is waiting (`{temp2[0]}:{temp2[1]}` - `{temp2[2]}:{temp2[3]}`)")
+            temp2all = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE limit_flag='{t[1]}' AND entity_code='{t[0]}';", type='all')
+            for temp2 in temp2all:
+                interas.append(f"\n<:exclamation_cyan:626639669836382218> NPC `{temp[0]}`|**{temp[1]}** at ||`{temp2[0]:.3f}:{temp2[1]:.3f}` ~ `{temp2[2]:.3f}:{temp2[3]:.3f}`||")
 
         # HUNT
         try:

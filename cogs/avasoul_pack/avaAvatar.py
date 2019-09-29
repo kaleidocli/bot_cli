@@ -86,7 +86,7 @@ class avaAvatar(commands.Cog):
         bg_path = random.choice(listdir(path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'bg', self.bg_dict[bg_code])))
         bg_path = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'bg', self.bg_dict[bg_code], bg_path)
         img = Image.open(bg_path).convert('RGBA')
-        img = img.resize((800, 600))
+        img = img.resize((800, 600), resample=Image.LANCZOS)
         img = img.filter(ImageFilter.GaussianBlur(2.6))
         return img
 
@@ -94,7 +94,7 @@ class avaAvatar(commands.Cog):
         char_path = random.choice(listdir(path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'char', self.char_dict[char_code])))
         char_path = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'char', self.char_dict[char_code], char_path)
         img = Image.open(char_path).convert('RGBA')
-        img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height))
+        img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)
         return img
 
     async def prote_plugin(self):
@@ -128,20 +128,20 @@ class avaAvatar(commands.Cog):
         """
         def ImageGen_supporter(char, rawimg):
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/char/{char}/{rawimg}').convert('RGBA')
-            img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height))
+            img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)
             self.prote_lib[prote_codes[char]].append(img)
         """
         """
         def BackgroundGen_supporter(bg_name, rawimg):
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}/{rawimg}').convert('RGBA')
-            img = img.resize((800, 600))
+            img = img.resize((800, 600), resample=Image.LANCZOS)
             img = img.filter(ImageFilter.GaussianBlur(2.6))
             self.prote_lib['bg'][bg_codes[bg_name]].append(img)
         """
 
         def CardGen_supporter(card_code, rawimg):
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/{card_code}/{rawimg}').convert('RGBA')
-            img = img.resize((190, 327))
+            img = img.resize((190, 327), resample=Image.LANCZOS)
             self.prote_lib['card'][card_code].append(img)
 
         def bg_plugin():
@@ -170,7 +170,7 @@ class avaAvatar(commands.Cog):
             # DECK =====================
             """
             img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/board600.png').convert('RGBA')
-            img = img.resize((600, 355))
+            img = img.resize((600, 355), resample=Image.LANCZOS)
             self.prote_lib['bg_deck'].append(img)
             """
             """
@@ -178,7 +178,7 @@ class avaAvatar(commands.Cog):
             particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
             for particle in particles:
                 a = Image.fromarray(particle)
-                a = a.resize((800, 600))
+                a = a.resize((800, 600), resample=Image.LANCZOS)
                 a = a.filter(ImageFilter.GaussianBlur(2.6))
                 particle_after.append(a)
             self.prote_lib['bg_gif'].append(particle_after)
@@ -194,7 +194,7 @@ class avaAvatar(commands.Cog):
             self.prote_lib['badge'] = {}
             for key, dir in ranking_badges.items():
                 badge_img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/badges/{dir}').convert('RGBA')
-                badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)))
+                badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
                 self.prote_lib['badge'][key] = badge_img
 
         def font_plugin():
@@ -317,13 +317,13 @@ class avaAvatar(commands.Cog):
             form_img = self.prote_lib['form'][0]
             """char_img = random.choice(self.prote_lib[char_name])"""
             char_img = await self.char_generator(char_name)
-            #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height))
+            #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height), resample=Image.LANCZOS)
             badge_img = self.prote_lib['badge'][rank.lower()]
-            #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)))
+            #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
             #bg = self.prote_lib['bg'][0]
             """bg = copy.deepcopy(random.choice(self.prote_lib['bg'][bg_code]))"""
             bg = await self.bg_generator(bg_code)
-            #bg = bg.resize((800, 600))
+            #bg = bg.resize((800, 600), resample=Image.LANCZOS)
             #bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
             name_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
             degree_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
@@ -400,11 +400,11 @@ class avaAvatar(commands.Cog):
 
             #img = Image.open('sampleimg.jpg').convert('RGBA')
             form_img = self.prote_lib['form'][0]
-            #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height))
+            #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height), resample=Image.LANCZOS)
             badge_img = self.prote_lib['badge'][rank.lower()]
-            #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)))
+            #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
             bg = copy.deepcopy(in_img)
-            #bg = bg.resize((800, 600))
+            #bg = bg.resize((800, 600), resample=Image.LANCZOS)
             #bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
             name_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
             degree_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
@@ -520,7 +520,7 @@ class avaAvatar(commands.Cog):
                     continue
                 print(f"LOOOPPPPP {obpointer} {offval}")
                 a = Image.fromarray(particle)
-                a = a.resize((800, 600))
+                a = a.resize((800, 600), resample=Image.LANCZOS)
                 a = a.filter(ImageFilter.GaussianBlur(2.6))
  
                 # PROCESS and STITCH

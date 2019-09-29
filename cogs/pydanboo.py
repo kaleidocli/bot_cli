@@ -26,25 +26,25 @@ class dan(commands.Cog):
             #REACTION LOOP
             while True:
                 #Wait for reaction
-                reac = await self.client.wait_for_reaction(message=msg, user=ctx.message.author, timeout=60)
+                reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
                 #Check if reac is not None. If None, check's set to '1', hence quit the REACTION LOOP and return True to the outside loop
                 if not reac: check = '1'; break
                 #Check if reac's string == <Tag_emoji>. If true, send tags, then continue the REACTION LOOP
-                elif reac[0].emoji == '\U0001f4c4':
+                elif str(reac[0].emoji) == '\U0001f4c4':
                     #Send tags
                     tags = f"`{post['tags'].replace(' ', '` `')}`"
                     await self.client.send_message(ctx.message.channel, tags)
-                elif reac[0].emoji == '\U0001f512':
+                elif str(reac[0].emoji) == '\U0001f512':
                     await self.client.remove_reaction(msg, '\U0001f512', msg.author)
                     await self.client.remove_reaction(msg, '\U0001f512', ctx.message.author)
-                    await self.client.add_reaction(msg, '\U0001f513')
-                    a = await self.client.wait_for_reaction(emoji='\U0001f513' ,message=msg, user=ctx.message.author, timeout=420)
+                    await msg.add_reaction('\U0001f513')
+                    a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
                     if not a: break
                     await self.client.remove_reaction(msg, '\U0001f513', msg.author)
                     await self.client.remove_reaction(msg, '\U0001f513', ctx.message.author)
-                    await self.client.add_reaction(msg, '\U0001f512')
+                    await msg.add_reaction('\U0001f512')
                 #Check if reac's string == <Next_emoji>. If true, quit the REACTION LOOP
-                elif reac[0].emoji == '\U000027a1':
+                elif str(reac[0].emoji) == '\U000027a1':
                     break
                 #else: check = '1'; break
 
@@ -85,9 +85,9 @@ class dan(commands.Cog):
         hen_box, post = await generate()
         msg_console = await ctx.channel.send(":keyboard: **CONSOLE**")
         #Add emo to msg_console.
-        await self.client.add_reaction(msg_console, '\U0001f4c4')   #Tag_emoji
-        await self.client.add_reaction(msg_console, '\U000027a1')   #Next_emoji
-        await self.client.add_reaction(msg_console, '\U0001f512')   #Lock_emoji
+        await msg_console.add_reaction('\U0001f4c4')   #Tag_emoji
+        await msg_console.add_reaction('\U000027a1')   #Next_emoji
+        await msg_console.add_reaction('\U0001f512')   #Lock_emoji
         #Send hen_box
         msg = await ctx.channel.send(embed=hen_box)
 
@@ -97,7 +97,7 @@ class dan(commands.Cog):
             if check_out: await self.client.delete_message(msg); break
             #else: await self.client.delete_message(msg)
             hen_box, post = await generate()
-            await self.client.edit_message(msg, embed=hen_box)
+            await msg.edit(embed=hen_box)
 
 
 
@@ -115,25 +115,25 @@ class dan(commands.Cog):
             #REACTION LOOP
             while True:
                 #Wait for reaction
-                reac = await self.client.wait_for_reaction(message=msg, user=ctx.message.author, timeout=60)
+                reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
                 #Check if reac is not None. If None, check's set to '1', hence quit the REACTION LOOP and return True to the outside loop
                 if not reac: check = '1'; break
                 #Check if reac's string == <Tag_emoji>. If true, send tags, then continue the REACTION LOOP
-                elif reac[0].emoji == '\U0001f4c4':
+                elif str(reac[0].emoji) == '\U0001f4c4':
                     #Send tags
                     tags = f"`{posts_list[0]['tag_string_general'].replace(' ', '` `')}`"
                     await self.client.send_message(ctx.message.channel, tags)
-                elif reac[0].emoji == '\U0001f512':
+                elif str(reac[0].emoji) == '\U0001f512':
                     await msg.remove_reaction('\U0001f512', msg.author)
                     await msg.remove_reaction('\U0001f512', ctx.message.author)
                     await msg.add_reaction('\U0001f513')
-                    a = await self.client.wait_for_reaction(emoji='\U0001f513' ,message=msg, user=ctx.message.author, timeout=420)
+                    a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
                     if not a: break
                     await msg.remove_reaction('\U0001f513', msg.author)
                     await msg.remove_reaction('\U0001f513', ctx.message.author)
                     await msg.add_reaction('\U0001f512')
                 #Check if reac's string == <Next_emoji>. If true, quit the REACTION LOOP
-                elif reac[0].emoji == '\U000027a1':
+                elif str(reac[0].emoji) == '\U000027a1':
                     break
                 #else: check = '1'; break
 
@@ -179,7 +179,7 @@ class dan(commands.Cog):
             #Wait for the emo loop. If return True, break, else, continue
             check_out = await a(msg_console, posts_list)
             if check_out: await self.client.delete_message(msg); break
-            await self.client.edit_message(msg, embed=hen_box)
+            await msg.edit(embed=hen_box)
 
             
     @commands.command(pass_context=True)

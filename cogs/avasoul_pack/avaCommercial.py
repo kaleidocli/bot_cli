@@ -276,7 +276,7 @@ class avaCommercial(commands.Cog):
 
     @commands.command(aliases=['b'])
     @commands.cooldown(1, 5, type=BucketType.user)
-    async def bank(self, ctx, *args):   
+    async def bank(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         # TARGET ==============================
@@ -285,7 +285,7 @@ class avaCommercial(commands.Cog):
             target = ctx.message.mentions[0]
 
             # Info get / Partner check
-            try: money, cur_X, cur_Y, age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, age, stats FROM personal_info WHERE id='{ctx.author.id}' AND partner='{target.id}';")
+            try: money, cur_X, cur_Y, age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, (SELECT age FROM personal_info WHERE id='{target.id}'), stats FROM personal_info WHERE id='{ctx.author.id}' AND partner='{target.id}';")
             except TypeError: await ctx.send(f"<:osit:544356212846886924> You're not **{target.name}**'s partner!"); return
 
             # Coord check
@@ -405,7 +405,7 @@ class avaCommercial(commands.Cog):
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to withdraw."); return
 
             # UPGRADE
-            elif raw[0] == 'upgrade':
+            elif args[0] == 'upgrade':
                 tier_dict = {'2': [('elementary', 'international_bussiness'), 0.02], 
                             '3': [('middleschool', 'international_bussiness'), 0.03], 
                             '4': [('highschool', 'international_bussiness'), 0.04], 
