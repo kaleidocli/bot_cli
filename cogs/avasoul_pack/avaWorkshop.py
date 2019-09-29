@@ -152,10 +152,11 @@ class avaWorkshop(commands.Cog):
             except IndexError: W_dmg = 0
             try: W_stealth = round(random.choice(range(int(w_stealth + t_w_stealth))), 1)
             except IndexError: W_stealth = 0
+            W_evo = (int(w_evo) + int(t_w_evo))//2
 
             # Insert
-            await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, defend={W_defend}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, firing_rate={W_firing_rate}, dmg={W_dmg}, stealth={W_stealth} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
-            await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, defend={W_defend}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, firing_rate={W_firing_rate}, dmg={W_dmg}, stealth={W_stealth} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
+            await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, defend={W_defend}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, firing_rate={W_firing_rate}, dmg={W_dmg}, stealth={W_stealth}, evo={W_evo} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
+            await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, defend={W_defend}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, firing_rate={W_firing_rate}, dmg={W_dmg}, stealth={W_stealth}, evo={W_evo} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
 
             # Inform :>
             await ctx.send(f":white_check_mark: Merged `{raw[0]}`|**{w_name}** with `{raw[1]}`|**{t_w_name}**!")

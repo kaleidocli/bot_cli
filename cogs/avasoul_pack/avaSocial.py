@@ -87,7 +87,7 @@ class avaSocial(commands.Cog):
         tar = await self.client.loop.run_in_executor(None, partial(self.client.get_user, int(partner)))
 
         # ================== BIRTH
-        if await self.utils.percenter(charm+t_charm, total=200) and gender != t_gender:
+        if await self.utils.percenter(charm+t_charm, total=200):
             await ctx.send(f"||<a:RingingBell:559282950190006282> Name your child. Timeout=30s||\n<:sailu:559155210384048129> Among these dark of the age, a new life has enlighten...\n⠀⠀⠀⠀**{ctx.author.name}** and {tar.mention}, how will you christen your little?\n⠀⠀⠀⠀⠀⠀⠀⠀Won't you do, keep shut and remain silence.")
 
             def UMCc_check(m):

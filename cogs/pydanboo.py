@@ -122,7 +122,7 @@ class dan(commands.Cog):
                 elif str(reac[0].emoji) == '\U0001f4c4':
                     #Send tags
                     tags = f"`{posts_list[0]['tag_string_general'].replace(' ', '` `')}`"
-                    await self.client.send_message(ctx.message.channel, tags)
+                    await ctx.send(tags)
                 elif str(reac[0].emoji) == '\U0001f512':
                     await msg.remove_reaction('\U0001f512', msg.author)
                     await msg.remove_reaction('\U0001f512', ctx.message.author)

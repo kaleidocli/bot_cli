@@ -20,6 +20,7 @@ from nltk import word_tokenize
 
 from PIL import Image
 import emoji
+import imgurpython
 
 import aiohttp
 import psutil
