@@ -38,3 +38,9 @@ class avaThirdParty:
         #                count += 1
 
 
+    async def mysqlReload(self):
+        await self.client._cursor.close()
+        self.client.conn.close()
+        self.client.conn, self.client._cursor = self.loop.run_until_complete(self.get_CURSOR())
+
+

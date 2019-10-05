@@ -5,9 +5,15 @@ import discord
 from datetime import timedelta
 
 
+
+
 class ErrorHandler(commands.Cog):
     def __init__(self, client):
         self.client = client
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        self.client.realready = True
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):

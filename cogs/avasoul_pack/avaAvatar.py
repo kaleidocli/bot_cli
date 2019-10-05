@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import imageio
+import objgraph
 
 from os import listdir, path
 from pathlib import Path
@@ -10,6 +11,10 @@ from io import BytesIO
 import copy
 import asyncio
 import random
+import gc
+from collections import defaultdict
+import multiprocessing
+from functools import partial
 
 from .avaTools import avaTools
 from .avaUtils import avaUtils
@@ -275,6 +280,20 @@ class avaAvatar(commands.Cog):
 
         await ctx.send(":white_check_mark:")
 
+    @commands.command()
+    @checks.check_author()
+    async def mche(self, ctx):
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+        await self.tools.ava_scan(ctx.message, type='life_check')
+
     @commands.command(aliases=['a'])
     @commands.cooldown(1, 5, type=BucketType.user)
     async def avatar(self, ctx, *args):
@@ -306,19 +325,23 @@ class avaAvatar(commands.Cog):
             #pylint: disable=unused-variable
             age, evo, kill, death, money, name, partner_temp, partner = await self.client.quefe(f"SELECT age, evo, LP, STA, money, name, partner AS prtn, (SELECT name FROM personal_info WHERE id=prtn) FROM personal_info WHERE id='{user_id}';")
             if not partner: partner = '---------------------'
+
             #pylint: enable=unused-variable
             guild_code, rank = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{user_id}';")
+
             if guild_code != 'n/a':
                 guild_name = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{guild_code}';"); guild_name = guild_name[0]
             else:
                 guild_code = 'None'
                 guild_name = 'None'
 
+
             form_img = self.prote_lib['form'][0]
             """char_img = random.choice(self.prote_lib[char_name])"""
             char_img = await self.char_generator(char_name)
             #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height), resample=Image.LANCZOS)
             badge_img = self.prote_lib['badge'][rank.lower()]
+            await asyncio.sleep(0)
             #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
             #bg = self.prote_lib['bg'][0]
             """bg = copy.deepcopy(random.choice(self.prote_lib['bg'][bg_code]))"""
@@ -339,6 +362,7 @@ class avaAvatar(commands.Cog):
             fnt_rank = self.prote_lib['font'][font_id]['rank']            # Rank
             fnt_evo = self.prote_lib['font'][font_id]['evo']              # evo
             fnt_money = self.prote_lib['font'][font_id]['money']          # Money
+            await asyncio.sleep(0)
 
             # Get info
             age = str(age).upper()
@@ -358,6 +382,7 @@ class avaAvatar(commands.Cog):
             nb.text((name_box.width/4, 0), name.upper(), font=fnt_name, fill=co_name)
             dgb.text((name_box.width/2, 0), partner.capitalize(), font=fnt_degree, fill=co_partner)
             mnb.text((0, 0), money, font=fnt_money, fill=co_money)
+            await asyncio.sleep(0)
             hori.text((3, 541), age, font=fnt_age, fill=co_age)
             hori.text((730 - hori.textsize(guild, font=fnt_guild)[0], 540), guild, font=fnt_guild, fill=co_guild)
             hori.text((730 - hori.textsize(rank, font=fnt_rank)[0], 555), rank, font=fnt_rank, fill=co_rank)
@@ -374,6 +399,7 @@ class avaAvatar(commands.Cog):
             if char_midcoordX < 0: char_midcoordX = 0
 
             # Composing
+            await asyncio.sleep(0)
             bg.alpha_composite(badge_img, dest=(800 - (badge_img.width + 5), 5))
             bg.alpha_composite(form_img)
             bg.alpha_composite(char_img, dest=(char_midcoordX, 8))            #Prev=56
@@ -381,10 +407,25 @@ class avaAvatar(commands.Cog):
             bg.alpha_composite(degree_box, dest=(0, 10), source=(45, 0))
             bg.alpha_composite(money_box, dest=(344, 89))
             bg.alpha_composite(horizontal)
+            await asyncio.sleep(0)
 
             output_buffer = BytesIO()
             bg.save(output_buffer, 'png')
             output_buffer.seek(0)
+
+            # Closing???
+            bg.close()
+            char_img.close()
+            name_box.close()
+            degree_box.close()
+            money_box.close()
+            horizontal.close()
+            nb = None
+            dgb = None
+            mnb = None
+            hori = None
+            gc.collect()
+            
         
             #bg.show()
             return output_buffer
@@ -421,6 +462,8 @@ class avaAvatar(commands.Cog):
             fnt_evo = self.prote_lib['font'][font_id]['evo']              # evo
             fnt_money = self.prote_lib['font'][font_id]['money']          # Money
 
+            await asyncio.sleep(0.02)
+
             # Get info
             age = str(age).upper()
             if int(age) < 10: age = '0' + age
@@ -433,6 +476,7 @@ class avaAvatar(commands.Cog):
             # Get text canvas
             nb = ImageDraw.Draw(name_box)
             dgb = ImageDraw.Draw(degree_box)
+            await asyncio.sleep(0.02)
             mnb = ImageDraw.Draw(money_box)
             hori = ImageDraw.Draw(horizontal)
             # Write/Alligning
@@ -441,6 +485,7 @@ class avaAvatar(commands.Cog):
             mnb.text((0, 0), money, font=fnt_money, fill=co_money)
             hori.text((3, 541), age, font=fnt_age, fill=co_age)
             hori.text((730 - hori.textsize(guild, font=fnt_guild)[0], 540), guild, font=fnt_guild, fill=co_guild)
+            await asyncio.sleep(0.02)
             hori.text((730 - hori.textsize(rank, font=fnt_rank)[0], 555), rank, font=fnt_rank, fill=co_rank)
             hori.text((700 - hori.textsize(evo, font=fnt_evo)[0], 420), evo, font=fnt_evo, fill=co_evo)
             hori.text((525 , 384), death, font=fnt_kd, fill=co_death)
@@ -450,6 +495,8 @@ class avaAvatar(commands.Cog):
             degree_box = degree_box.rotate(90)
             money_box = money_box.rotate(90, center=(400, 0))
 
+            await asyncio.sleep(0.02)
+
             # Middle aligning
             char_midcoordX = 50 + int((398 - char_img.width)/2)
             if char_midcoordX < 0: char_midcoordX = 0
@@ -457,8 +504,10 @@ class avaAvatar(commands.Cog):
             # Composing
             bg.alpha_composite(badge_img, dest=(800 - (badge_img.width + 5), 5))
             bg.alpha_composite(form_img)
+            await asyncio.sleep(0.07)
             bg.alpha_composite(char_img, dest=(char_midcoordX, 8 + pos_offset))            #Prev=56
             bg.alpha_composite(name_box, dest=(0, 38), source=(108, 0))
+            await asyncio.sleep(0.07)
             bg.alpha_composite(degree_box, dest=(0, 10), source=(45, 0))
             bg.alpha_composite(money_box, dest=(344, 89))
             bg.alpha_composite(horizontal)
@@ -508,8 +557,6 @@ class avaAvatar(commands.Cog):
             count = divider
             obpointer = -1
             for particle in particles:
-                await asyncio.sleep(0.05)
-
                 if count == divider:
                     count = 1
                     offval = offset_band[obpointer]
@@ -548,6 +595,7 @@ class avaAvatar(commands.Cog):
             await ctx.trigger_typing()
             output_buffer = await magiking(ctx)
             await ctx.send(file=discord.File(fp=output_buffer, filename='profile.png'))
+            output_buffer.close()
         elif __mode == 'gif':
             await ctx.trigger_typing()
             char_img = await self.char_generator(char_name)
@@ -560,6 +608,401 @@ class avaAvatar(commands.Cog):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+    async def mavatar(self, ctx, *args):
+
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+        await self.tools.ava_scan(ctx.message, type='all')
+
+        __mode = 'static'
+
+        # Console
+        try:
+            if args[0] == 'gif': __mode = 'gif'; user_id = ctx.author.id
+            else:
+                try:
+                    user_id = args[0]
+                except IndexError: user_id = ctx.author.id
+                except commands.CommandError: await ctx.send("<:osit:544356212846886924> User not found"); return
+        except IndexError: user_id = ctx.author.id
+
+        # Colour n Character get
+        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id = await self.client.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id, bg_code, font_id FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
+        except TypeError: await ctx.send(f"<:osit:544356212846886924> User has not incarnated! ({user_id})"); return
+        #co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = ('#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')
+
+        if __mode == 'static':
+            await ctx.trigger_typing()
+
+            # objgraph.show_growth(limit=3) # doctest: +RANDOM_OUTPUT
+            output_buffer = await self.magiking(user_id, (co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id))
+            # objgraph.show_growth() # doctest: +RANDOM_OUTPUT
+
+            # objgraph.show_chain(
+            #     objgraph.find_backref_chain(
+            #         objgraph.by_type('list')[-1],
+            #         objgraph.is_proper_module),
+            #     filename='chain.png')
+
+            await ctx.send(file=discord.File(fp=output_buffer, filename='profile.png'))
+            output_buffer = None
+        elif __mode == 'gif':
+            await ctx.trigger_typing()
+            char_img = await self.char_generator(char_name)
+            #output_buffer = await self.cogif(user_id, (co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id))         
+            output_buffer = await self.cogif(user_id, char_img, (co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id))
+            await ctx.send(file=discord.File(fp=output_buffer, filename='profile.gif'))
+
+
+    # STATIC =========
+    async def magiking(self, user_id, pack):
+
+        # co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id = pack
+
+        # Info get
+        #pylint: disable=unused-variable
+        age, evo, kill, death, money, name, partner_temp, partner = await self.client.quefe(f"SELECT age, evo, LP, STA, money, name, partner AS prtn, (SELECT name FROM personal_info WHERE id=prtn) FROM personal_info WHERE id='{user_id}';")
+        if not partner: partner = '---------------------'
+        #pylint: enable=unused-variable
+        guild_code, rank = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{user_id}';")
+        if guild_code != 'n/a':
+            guild_name = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{guild_code}';"); guild_name = guild_name[0]
+        else:
+            guild_code = 'None'
+            guild_name = 'None'
+
+        form_img = self.prote_lib['form'][0]
+        """char_img = random.choice(self.prote_lib[pack[9]])"""
+        char_img = await self.char_generator(pack[9])
+        #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height), resample=Image.LANCZOS)
+        badge_img = self.prote_lib['badge'][rank.lower()]
+        #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
+        #bg = self.prote_lib['bg'][0]
+        """bg = copy.deepcopy(random.choice(self.prote_lib['bg'][pack[10]]))"""
+        bg = await self.bg_generator(pack[10])
+        #bg = bg.resize((800, 600), resample=Image.LANCZOS)
+        #bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
+
+        # # Font Set
+        # fnt_name = self.prote_lib['font'][font_id]['name']            # Name
+        # fnt_degree = self.prote_lib['font'][font_id]['guild']        # Degrees
+        # fnt_age = self.prote_lib['font'][font_id]['age']              # Age
+        # fnt_kd = self.prote_lib['font'][font_id]['k/d']               # K/D
+        # fnt_guild = self.prote_lib['font'][font_id]['guild']          # Guild
+        # fnt_rank = self.prote_lib['font'][font_id]['rank']            # Rank
+        # fnt_evo = self.prote_lib['font'][font_id]['evo']              # evo
+        # fnt_money = self.prote_lib['font'][font_id]['money']          # Money
+
+        # Get info
+        age = str(age).upper()
+        if int(age) < 10: age = '0' + age
+        evo = str(evo).upper()
+        kill = str(kill).upper()
+        death = str(death).upper()
+        money = str(money).upper()
+        guild = f"{guild_code} | {guild_name}"
+        rank = rank.upper()
+    
+        output_buffer = await self.client.loop.run_in_executor(None, partial(self.pillowingAvatar, img=(bg, char_img, form_img, badge_img), pack=pack, pack2=(age, evo, kill, death, money, name, partner_temp, partner, guild_code, rank, guild)))
+
+        # jout = multiprocessing.Queue()
+        # myfunc = partial(pillowingAvatar, img=(bg, char_img, form_img, badge_img), pack=pack, pack2=(age, evo, kill, death, money, name, partner_temp, partner, guild_code, rank, guild), font_dict=self.font_dict, jout=jout)
+        # j = multiprocessing.Process(target=myfunc)
+        # await self.client.loop.run_in_executor(None, j.start)
+        # output_buffer = await self.client.loop.run_in_executor(None, jout.get)
+        # output_buffer = jout.get()
+        # j.kill()
+
+        # jout = None
+        # j = None
+        # myfunc = None
+
+        # #bg.show()
+        # print(f"OOOOOUUUTTT: {output_buffer}")
+        return output_buffer
+        # jout.put(output_buffer)
+
+
+    # GIF ============        
+    async def gafiking(self, user_id, in_img, char_img, pack, pos_offset=0, **kwargs):
+        """pos_offset: Positive value for lower pos, negative for upper pos"""
+
+        co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id = pack
+
+        # Info get
+        age, evo, kill, death, money, name = kwargs['pack_PI']
+        guild_code, rank = kwargs['pack_PG']
+        guild_name = kwargs['pack_PI']; guild_name = guild_name
+
+        #img = Image.open('sampleimg.jpg').convert('RGBA')
+        form_img = self.prote_lib['form'][0]
+        #char_img = char_img.resize((int(form_img.height/char_img.height*char_img.width), form_img.height), resample=Image.LANCZOS)
+        badge_img = self.prote_lib['badge'][rank.lower()]
+        #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
+        bg = copy.deepcopy(in_img)
+        #bg = bg.resize((800, 600), resample=Image.LANCZOS)
+        #bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
+        name_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
+        degree_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
+        money_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
+        horizontal = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
+
+        # Font Set
+        fnt_name = self.prote_lib['font'][font_id]['name']            # Name
+        fnt_degree = self.prote_lib['font'][font_id]['degree']        # Degrees
+        fnt_age = self.prote_lib['font'][font_id]['age']              # Age
+        fnt_kd = self.prote_lib['font'][font_id]['k/d']               # K/D
+        fnt_guild = self.prote_lib['font'][font_id]['guild']          # Guild
+        fnt_rank = self.prote_lib['font'][font_id]['rank']            # Rank
+        fnt_evo = self.prote_lib['font'][font_id]['evo']              # evo
+        fnt_money = self.prote_lib['font'][font_id]['money']          # Money
+
+        # Get info
+        age = str(age).upper()
+        if int(age) < 10: age = '0' + age
+        evo = str(evo).upper()
+        kill = str(kill).upper()
+        death = str(death).upper()
+        money = str(money).upper()
+        guild = f"{guild_code} | {guild_name}"
+        rank = rank.upper()
+        # Get text canvas
+        nb = ImageDraw.Draw(name_box)
+        dgb = ImageDraw.Draw(degree_box)
+        mnb = ImageDraw.Draw(money_box)
+        hori = ImageDraw.Draw(horizontal)
+        # Write/Alligning
+        nb.text((name_box.width/4, 0), name.upper(), font=fnt_name, fill=co_name)
+        dgb.text((name_box.width/2, 0), guild.capitalize(), font=fnt_degree, fill=co_partner)
+        mnb.text((0, 0), money, font=fnt_money, fill=co_money)
+        hori.text((3, 541), age, font=fnt_age, fill=co_age)
+        hori.text((730 - hori.textsize(guild, font=fnt_guild)[0], 540), guild, font=fnt_guild, fill=co_guild)
+        hori.text((730 - hori.textsize(rank, font=fnt_rank)[0], 555), rank, font=fnt_rank, fill=co_rank)
+        hori.text((700 - hori.textsize(evo, font=fnt_evo)[0], 420), evo, font=fnt_evo, fill=co_evo)
+        hori.text((525 , 384), death, font=fnt_kd, fill=co_death)
+        hori.text((547 , 334), kill, font=fnt_kd, fill=co_kill)
+        # Rotating
+        name_box = name_box.rotate(90)
+        degree_box = degree_box.rotate(90)
+        money_box = money_box.rotate(90, center=(400, 0))
+
+        # Middle aligning
+        char_midcoordX = 50 + int((398 - char_img.width)/2)
+        if char_midcoordX < 0: char_midcoordX = 0
+
+        # Composing
+        bg.alpha_composite(badge_img, dest=(800 - (badge_img.width + 5), 5))
+        bg.alpha_composite(form_img)
+        bg.alpha_composite(char_img, dest=(char_midcoordX, 8 + pos_offset))            #Prev=56
+        bg.alpha_composite(name_box, dest=(0, 38), source=(108, 0))
+        bg.alpha_composite(degree_box, dest=(0, 10), source=(45, 0))
+        bg.alpha_composite(money_box, dest=(344, 89))
+        bg.alpha_composite(horizontal)
+
+        output_buffer = BytesIO()
+        bg.save(output_buffer, 'png')
+        output_buffer.seek(0)
+
+        # Closing???
+        char_img.close()
+        name_box.close()
+        degree_box.close()
+        money_box.close()
+        horizontal.close()
+        nb = None
+        dgb = None
+        mnb = None
+        hori = None
+        gc.collect()
+
+        #bg.show()
+        return bg
+
+    async def cogif(self, user_id, char_img, pack):
+
+        # INFO prep =============================
+        pack_PI = await self.client.quefe(f"SELECT age, evo, kills, deaths, money, name FROM personal_info WHERE id='{user_id}';")
+        pack_PG = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{user_id}';")
+        pack_E = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{pack_PG[0]}';"); pack_E = pack_E[0]
+
+        # PARTICLEs prep ========================
+        # particle_after = []
+        outImPart = []
+        particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
+        partilen = len(particles)
+
+        bar = 20                               # Set a maximum particles in ordercli a gif not overload
+        if partilen > bar:
+            divider = int(partilen/bar)
+        else: divider = 1
+        modulair = partilen%bar
+
+        # ANIMATION of char_img prep ================
+        # ODD amount of particles
+        if partilen%2:
+            temp = list(range((partilen-2-modulair)//(divider*2)))
+            temp2 = list(range((partilen-2-modulair)//(divider*2)))
+            temp2.reverse()
+            offset_band = [0] + temp + [temp2[0]+1] + temp2
+        # Non-odd amount of particles
+        else:
+            temp = list(range((partilen-1-modulair)//(divider*2)))
+            temp2 = list(range((partilen-1-modulair)//(divider*2)))
+            temp2.reverse()
+            offset_band = [0] + temp + [temp2[0]] + temp2
+        
+        # GATHERING particles =======================
+        print(offset_band, divider, partilen, modulair)
+        count = divider
+        obpointer = -1
+        for particle in particles:
+            await asyncio.sleep(0.05)
+
+            if count == divider:
+                count = 1
+                offval = offset_band[obpointer]
+                obpointer += 1
+            else:
+                # print(count)
+                count += 1
+                continue
+            print(f"LOOOPPPPP {obpointer} {offval}")
+            a = Image.fromarray(particle)
+            a = a.resize((800, 600), resample=Image.LANCZOS)
+            a = a.filter(ImageFilter.GaussianBlur(2.6))
+
+            # PROCESS and STITCH
+            try:
+                #particle = particles[count]
+                #a = Image.fromarray(particle)  
+
+                #out_img = await self.gafiking(user_id, a, char_img)
+                out_img = await self.gafiking(user_id, a, char_img, pack, pos_offset=offval, pack_PI=pack_PI, pack_PG=pack_PG, pack_E=pack_E)
+                await asyncio.sleep(0.1)
+                #outImPart.append(np.asarray(a))
+                outImPart.append(out_img)
+            except IndexError: break
+        
+        output_buffer = BytesIO()
+        #imageio.mimwrite(output_buffer, outImPart)
+        outImPart[0].save(output_buffer, save_all=True, format='gif', append_images=outImPart, loop=0)
+        output_buffer.seek(0)
+        #return await self.client.loop.run_in_executor(None, self.imgur_client.upload, output_buffer)
+        return output_buffer
+
+
+    def pillowingAvatar(self, img=(), pack=(), pack2=(), jout=None):
+
+        bg, char_img, form_img, badge_img = img
+        co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id = pack
+        age, evo, kill, death, money, name, partner_temp, partner, guild_code, rank, guild = pack2
+        # fnt_name, fnt_degree, fnt_age, fnt_kd, fnt_guild, fnt_rank, fnt_evo, fnt_money = font
+
+        # font_id = font_dict[font_id]
+        # assdir = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'font')
+
+        # fnt_name = ImageFont.truetype(path.join(assdir, font_id), 70)    # Name
+        # fnt_degree = ImageFont.truetype(path.join(assdir, font_id), 14)  # Degrees
+        # fnt_age = ImageFont.truetype(path.join(assdir, font_id), 54)     # Age
+        # fnt_kd = ImageFont.truetype(path.join(assdir, font_id), 59)    # K/D
+        # fnt_evo = ImageFont.truetype(path.join(assdir, font_id), 122)    # Evo
+        # fnt_guild = ImageFont.truetype(path.join(assdir, font_id), 19)   # Guild
+        # # fnt_rank = ImageFont.truetype(path.join(assdir, font_id), 39)    # Rank
+        # fnt_rank = fnt_guild
+        # fnt_money = ImageFont.truetype(path.join(assdir, font_id), 53)   # Money
+
+        fnt_name = self.prote_lib['font'][font_id]['name']            # Name
+        fnt_degree = self.prote_lib['font'][font_id]['guild']        # Degrees
+        fnt_age = self.prote_lib['font'][font_id]['age']              # Age
+        fnt_kd = self.prote_lib['font'][font_id]['k/d']               # K/D
+        fnt_guild = self.prote_lib['font'][font_id]['guild']          # Guild
+        fnt_rank = self.prote_lib['font'][font_id]['rank']            # Rank
+        fnt_evo = self.prote_lib['font'][font_id]['evo']              # evo
+        fnt_money = self.prote_lib['font'][font_id]['money']          # Money
+
+        name_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
+        degree_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
+        money_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
+        horizontal = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
+
+        # Get text canvas
+        nb = ImageDraw.Draw(name_box)
+        dgb = ImageDraw.Draw(degree_box)
+        mnb = ImageDraw.Draw(money_box)
+        hori = ImageDraw.Draw(horizontal)
+        # Write/Alligning
+        nb.text((name_box.width/4, 0), name.upper(), font=fnt_name, fill=co_name)
+        dgb.text((name_box.width/2, 0), partner.capitalize(), font=fnt_degree, fill=co_partner)
+        mnb.text((0, 0), money, font=fnt_money, fill=co_money)
+        hori.text((3, 541), age, font=fnt_age, fill=co_age)
+        hori.text((730 - hori.textsize(guild, font=fnt_guild)[0], 540), guild, font=fnt_guild, fill=co_guild)
+        hori.text((730 - hori.textsize(rank, font=fnt_rank)[0], 555), rank, font=fnt_rank, fill=co_rank)
+        hori.text((700 - hori.textsize(evo, font=fnt_evo)[0], 420), evo, font=fnt_evo, fill=co_evo)
+        hori.text((525 , 384), death, font=fnt_kd, fill=co_death)
+        hori.text((547 , 334), kill, font=fnt_kd, fill=co_kill)
+        # Rotating
+        name_box = name_box.rotate(90)
+        degree_box = degree_box.rotate(90)
+        money_box = money_box.rotate(90, center=(400, 0))
+
+        # Middle aligning
+        char_midcoordX = 50 + int((398 - char_img.width)/2)
+        if char_midcoordX < 0: char_midcoordX = 0
+
+        # Composing
+        bg.alpha_composite(badge_img, dest=(800 - (badge_img.width + 5), 5))
+        bg.alpha_composite(form_img)
+        bg.alpha_composite(char_img, dest=(char_midcoordX, 8))            #Prev=56
+        bg.alpha_composite(name_box, dest=(0, 38), source=(108, 0))
+        bg.alpha_composite(degree_box, dest=(0, 10), source=(45, 0))
+        bg.alpha_composite(money_box, dest=(344, 89))
+        bg.alpha_composite(horizontal)
+
+        output_buffer = BytesIO()
+        bg.save(output_buffer, 'png')
+        output_buffer.seek(0)
+
+        # # Release?
+        # bg = None
+        # badge_img = None
+        # form_img = None
+        # char_img = None
+        # name_box = None
+        # degree_box = None
+        # money_box = None
+        # horizontal = None
+        # nb = None
+        # dgb = None
+        # mnb = None
+        # hori = None
+        # gc.collect()
+
+        # Closing???
+        bg.close()
+        char_img.close()
+        name_box.close()
+        degree_box.close()
+        money_box.close()
+        horizontal.close()
+        nb = None
+        dgb = None
+        mnb = None
+        hori = None
+        gc.collect()
+
+        return output_buffer
+        # jout.put(output_buffer)
 
 
 def setup(client):

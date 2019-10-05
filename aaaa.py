@@ -2,13 +2,11 @@ import discord
 from discord.ext import commands
 import discord.errors as discordErrors
 from discord.ext.commands.cooldowns import BucketType
-#from discord.ext.commands import Bot, BucketType
 
 import os
 from io import BytesIO
 import importlib
 import sys
-# import win32api
 import signal
 import atexit
 import random
@@ -38,8 +36,7 @@ char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U00
 
 #extensions = ['cogs.error_handler', 'cogs.ai', 'cogs.audio', 'cogs.pydanboo', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.avasoul', 'cogs.guess']
 #extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.audio']
-extensions = ['cogs.error_handler',
-                'cogs.pydanboo',
+extensions = [  'cogs.pydanboo',
                 'cogs.tictactoe', 
                 'cogs.custom_speech', 
                 'cogs.hen', 
@@ -60,7 +57,8 @@ extensions = ['cogs.error_handler',
                 'cogs.avasoul_pack.avaWorkshop',
                 'cogs.avasoul_pack.avaPersonal',
                 'cogs.avasoul_pack.avaPersonalUtils',
-                'cogs.avasoul_pack.avaDungeon']
+                'cogs.avasoul_pack.avaDungeon',
+                'cogs.error_handler']   # Always put error_handler at the BOTTOM!
 
 TOKEN = config.TOKEN
 
@@ -77,11 +75,18 @@ TOKEN = config.TOKEN
 async def get_pref(bot, message):
    return commands.when_mentioned_or('cli ')(bot, message)
 
+
+# =========================================================
+
 client = commands.Bot(command_prefix=get_pref)
 client.myconfig = config
+client.realready = False
 
 # client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')
+
+# =========================================================
+
 
 @client.event
 async def on_ready():
@@ -100,6 +105,21 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     await client.get_channel(563592973170769922).send(f":x: **LEFT -->** `{guild.id}` | {guild.name}")
 
+@client.event
+async def on_message(message):
+    # global bulb; global blacklist
+
+    # if message.author.bot: return
+    # if str(message.author.id) in blacklist: return
+    # if str(message.author.id) != '214128381762076672': return
+
+    #if not bulb:
+    #    try:
+    #        if not message.content.startswith(f'{prefixes[message.guild.id]}megaturn'): return
+    #    except KeyError:
+    #        if not message.content.startswith(f'>megaturn'): return
+    if not client.realready: return
+    await client.process_commands(message)
 
 
 
@@ -685,19 +705,9 @@ def help_dict_plugin():
 
 
 
-@client.event
-async def on_message(message):
-    # global bulb; global blacklist
-
-    # if message.author.bot: return
-    # if str(message.author.id) in blacklist: return
-
-    #if not bulb:
-    #    try:
-    #        if not message.content.startswith(f'{prefixes[message.guild.id]}megaturn'): return
-    #    except KeyError:
-    #        if not message.content.startswith(f'>megaturn'): return
-    await client.process_commands(message)
+# @client.event
+# async def on_command(ctx):
+#     if str(ctx.author.id) != '21412838172076672': await ctx.send(f":no_mobile_phones: Currently on maintenance"); return
 
 #Generate random file's name from the path
 async def file_gen_random(path):

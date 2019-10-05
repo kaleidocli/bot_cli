@@ -37,6 +37,9 @@ class avaCombat(commands.Cog):
         print("|| Combat ---- READY!")
 
 
+    # CE [effect_tag, value, percentage, strikes_to_live, time_to_live_addition]
+
+
 
     # This function handles the Mob phase
     # Melee PVE     |      Start the mob phase.
@@ -223,7 +226,7 @@ class avaCombat(commands.Cog):
                 dmg += int(dmg/100*float(CE['aggressive']))
             except (TypeError, KeyError): pass
 
-            # Effect Processing
+            # USER's Effect Processing
             for effect in CE['effect']:
                 # STUN
                 if effect[0] == 'stun':
@@ -238,8 +241,23 @@ class avaCombat(commands.Cog):
                     dmg_q = 0
                     m_art = 0
                     icon_sequence = ''
-                    ttl_plus = int(ttl_plus) + int(effect[1])
+                    ttl_plus = int(ttl_plus) + int(effect[4])
                     return dmg, dmg_q, m_art, bonus, icon_sequence, ttl_plus
+                # BLEED
+                elif effect[0] == 'bleed':
+                    effect[2] = int(effect[2])*m_burst
+                    ttl_plus = int(ttl_plus) + int(effect[4])
+                    return dmg, dmg_q, m_art, bonus, icon_sequence, ttl_plus
+                # SLEEP
+                elif effect[0] == 'sleep':
+                    dmg = 0
+                    dmg_q = 0
+                    m_art = 0
+                    icon_sequence = ''
+                    ttl_plus = int(ttl_plus) + int(effect[4])
+                    CE['ultimate'] = 0
+                    return dmg, dmg_q, m_art, bonus, icon_sequence, ttl_plus
+
 
             return dmg, dmg_q, m_art, bonus, icon_sequence, int(ttl_plus)
 
@@ -276,6 +294,18 @@ class avaCombat(commands.Cog):
                 w_defend += int(w_defend/100*float(CE['defensive']))
             except (TypeError, KeyError): pass
 
+            # USER's Effect Processing
+            for effect in CE['effect']:
+                # BLEED
+                if effect[0] == 'bleed':
+                    m_burst += int(effect[2])
+                    return t_dmg, t_dmg_q, bonus, icon_sequence
+                # POISON
+                elif effect[0] == 'poison':
+                    m_burst += int(effect[2])
+                    m_quick = int(effect[2])*m_quick
+                    return t_dmg, t_dmg_q, bonus, icon_sequence
+
             # Take DEF/user into account
             t_dmg = round(t_dmg / 200 * (200 - w_defend))
             if t_dmg < 1: t_dmg = 1
@@ -283,7 +313,7 @@ class avaCombat(commands.Cog):
             return t_dmg, t_dmg_q, bonus, icon_sequence
 
         async def battle():
-            # ------- MOB EFFECT
+            # ------- USER's EFFECT
             # Turn adjusting (Decrease/End)
             CE['effect'] = [turn_decrease(effect) for effect in CE['effect'] if effect[3] != '0']
 
@@ -1246,7 +1276,7 @@ class avaCombat(commands.Cog):
         # E: Temporary CE ('lockon' only)
         except KeyError: pass
 
-        numerator = random.choice(range(100+w_accu_randomness))
+        numerator = random.choice(range(100+int(w_accu_randomness)))
         if distance > w_accu_range: denominator = 100*(distance/w_accu_range)
         else: denominator = 100*(distance/w_accu_range)
         # Check if numerator > denominator

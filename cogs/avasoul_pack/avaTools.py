@@ -2,7 +2,11 @@ import pymysql.err as mysqlError
 
 import random
 from os import listdir
+import asyncio
+
 from functools import partial
+
+import concurrent
 
 class avaTools:
 
@@ -12,6 +16,8 @@ class avaTools:
 
     async def quefe(self, query, args=None, type='one'):
         """args ---> tuple"""
+
+        await asyncio.sleep(0)
 
         try: await self.client._cursor.execute(query, args=args)
         except RuntimeError: return ''
@@ -24,6 +30,8 @@ class avaTools:
         return resu
 
     async def redio_map(self, key, dict=None, mode='set', ttl=0, getttl=False):
+        await asyncio.sleep(0)
+
         # Set dict into key with expiration ===========
         if mode == 'set':
             await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.hmset, key, dict))
@@ -48,6 +56,7 @@ class avaTools:
         #except discordErrors.NotFound:
         target = MSG.author
         target_id = str(target.id)
+        await asyncio.sleep(0)
 
         # Readjust the incorrect value
         if type == 'normalize':
@@ -72,7 +81,8 @@ class avaTools:
 
         # Time check
         if type == 'all':
-            time_pack = await self.client.loop.run_in_executor(None, self.utils.time_get)
+            time_pack = await self.client.loop.run_in_executor(concurrent.futures.ThreadPoolExecutor(max_workers=2), self.utils.time_get)
+            # time_pack = self.utils.time_get()
 
             await self.client._cursor.execute(f"UPDATE personal_info SET age={time_pack[0] - int(dob.split(' - ')[2])} WHERE id='{target_id}';")
             return True
