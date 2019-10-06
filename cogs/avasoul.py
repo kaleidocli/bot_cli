@@ -1,34 +1,27 @@
+import asyncio
+import random
+import json
+import copy
+import time
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+from io import BytesIO
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
-import asyncio
-import random
-import json
-import math
-import copy
-import tempfile
-import re
-import traceback
-import time
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from io import BytesIO
-from os import listdir
-
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
-import imageio
 from functools import partial
 import numpy as np
-import aiomysql
-import redis
 import pymysql.err as mysqlError
 
 from .avasoul_pack import avaThirdParty
 from .avasoul_pack.avaTools import avaTools
 from .avasoul_pack.avaUtils import avaUtils
-from utils import checks
+
+
 
 class avasoul(commands.Cog):
     def __init__(self, client):
@@ -55,15 +48,27 @@ class avasoul(commands.Cog):
                     'MOUNTAIN': 'https://imgur.com/cxwSH7m.png',
                     'OCEAN': 'https://imgur.com/fQFO2b4.png'}
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        # await asyncio.sleep(10)
-        await self.data_plugin()
-        # await asyncio.sleep(10)
-        # time.sleep(3)
-        # await self.correctResetArt()
-        # time.sleep(3)
+        self.intoLoop(self.data_plugin())
 
+
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     # await asyncio.sleep(10)
+    #     await self.data_plugin()
+    #     # await asyncio.sleep(10)
+    #     # time.sleep(3)
+    #     # await self.correctResetArt()
+    #     # time.sleep(3)
+
+    def intoLoop(self, coro):
+        self.client.loop.create_task(coro)
+
+
+
+# ================== MISC ==================
 
     @commands.command(aliases=['tut'])
     @commands.cooldown(1, 3, type=BucketType.user)
@@ -85,13 +90,7 @@ class avasoul(commands.Cog):
 
 
 
-
-
-    # pylint: enable=unused-variable
-
-
-
-# ================ KINGDOM =================
+# ================== LAND ==================
 
     @commands.command(aliases=['kingdom'])
     @commands.cooldown(1, 7, type=BucketType.user)
@@ -997,7 +996,6 @@ class avasoul(commands.Cog):
 
         await self.client._cursor.execute(f"{reward_query} DELETE FROM pi_order WHERE order_id={args[0]}")
 
-
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
     async def tax(self, ctx, *args):
@@ -1085,7 +1083,6 @@ class avasoul(commands.Cog):
                 except asyncio.TimeoutError:
                     await msg.delete(); return
 
-
     @commands.command(aliases=['cmd'])
     @commands.cooldown(1, 5, type=BucketType.user)
     async def command(self, ctx, *args):
@@ -1155,14 +1152,8 @@ class avasoul(commands.Cog):
         #except ZeroDivisionError: t_hit = 0
 
         
-        
 
-
-
-
-
-
-# ================ HERO CARD =================  
+# ================== HERO ==================
 
     @commands.command(aliases=['wikicard'])
     @commands.cooldown(1, 4, type=BucketType.user)
@@ -1827,77 +1818,7 @@ class avasoul(commands.Cog):
 
 
 
-
-
-
-
-##########################
-
-
-
-##########################
-
-#    @commands.command(aliases=['>cast'])
-#    @commands.cooldown(1, 60, type=BucketType.user)
-#    async def avacast(self, ctx, *args):
-
-##########################
-
-
-
-
-
-
-
-
-# ============= ITEMS =================
-## user_id is inputed seperately
-       
-    def heal(self, type, user_id):
-        # 10%
-        if type == '0': self.ava_dict[user_id]['LP'] += int(self.ava_dict[user_id]['MAX_LP']//100*10)
-        # 25%
-        elif type == '1': self.ava_dict[user_id]['LP'] += int(self.ava_dict[user_id]['MAX_LP']//100*25)
-        # 100%
-        elif type == '2': self.ava_dict[user_id]['LP'] += self.ava_dict[user_id]['MAX_LP']
-
-        # Normalizing
-        if self.ava_dict[user_id]['LP'] > self.ava_dict[user_id]['MAX_LP']: self.ava_dict[user_id]['LP'] = self.ava_dict[user_id]['MAX_LP']
-
-    def recovery(self, type, user_id):
-        # 10%
-        if type == '0': self.ava_dict[user_id]['STA'] += int(self.ava_dict[user_id]['MAX_STA']//100*10)
-        # 25%
-        elif type == '1': self.ava_dict[user_id]['STA'] += int(self.ava_dict[user_id]['MAX_STA']//100*25)
-        # 100%
-        elif type == '2': self.ava_dict[user_id]['STA'] += self.ava_dict[user_id]['MAX_STA']
-
-        # Normalizing
-        if self.ava_dict[user_id]['STA'] > self.ava_dict[user_id]['MAX_STA']: self.ava_dict[user_id]['STA'] = self.ava_dict[user_id]['MAX_STA']        
-
-    def heal_bit(self, amount, user_id):
-        self.ava_dict[user_id]['LP'] += amount
-
-        # Normalizing
-        if self.ava_dict[user_id]['LP'] > self.ava_dict[user_id]['MAX_LP']: self.ava_dict[user_id]['LP'] = self.ava_dict[user_id]['MAX_LP']
-
-    def recovery_bit(self, amount, user_id):
-        self.ava_dict[user_id]['STA'] += int(self.ava_dict[user_id]['MAX_STA']//100*10)
-
-        # Normalizing
-        if self.ava_dict[user_id]['STA'] > self.ava_dict[user_id]['MAX_STA']: self.ava_dict[user_id]['STA'] = self.ava_dict[user_id]['MAX_STA']         
-
-
-
-
-
-# ============= SPELLS =================
-
-
-
-
-
-# ================ TUTORIAL MODULES ======================
+# ================== TUTORIALS ==================
 
     async def engine_roller(self, ctx, tut_code, headers, box='direct'):
         if box == 'direct': box = ctx.author
@@ -1945,13 +1866,7 @@ class avasoul(commands.Cog):
 
 
 
-
-
-
-
-
-# ============= DATA =================
-
+# ================== DATA ==================
 
     async def data_plugin(self):
 
@@ -2014,12 +1929,12 @@ class avasoul(commands.Cog):
 
 
         # QUESTS
-        data_QUESTS = {}
-        with open('data/quests.json') as f:
-            try:
-                data_QUESTS = json.load(f)
-            except IndexError: print("ERROR at <data_plugin(__QUESTS__)>")
-        print('___QUESTS plugin() done')
+        # data_QUESTS = {}
+        # with open('data/quests.json') as f:
+        #     try:
+        #         data_QUESTS = json.load(f)
+        #     except IndexError: print("ERROR at <data_plugin(__QUESTS__)>")
+        # print('___QUESTS plugin() done')
 
 
         # ENTITIES
@@ -2048,6 +1963,7 @@ class avasoul(commands.Cog):
             regions = await self.client.quefe("SELECT environ_code FROM environ", type='all')
 
             for region in regions:
+                await asyncio.sleep(0.2)
                 region = region[0]
                 
                 # ----------- MOB/BOSS/NPC initialize ------------
@@ -2206,24 +2122,9 @@ class avasoul(commands.Cog):
             await self.client._cursor.execute(f"INSERT INTO pi_equipment VALUES (0, '{user[0]}', 'Untitled', 'belt', 'n/a'); INSERT INTO pi_equipment VALUES (0, '{user[0]}', 'Untitled', 'belt', 'n/a');")
     """
 
+
+
 def setup(client):
     client.add_cog(avasoul(client))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

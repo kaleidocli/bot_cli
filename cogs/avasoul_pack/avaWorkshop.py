@@ -1,28 +1,38 @@
+import random
+import asyncio
+from functools import partial
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
-import random
-import asyncio
-from functools import partial
-
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
+
+
 class avaWorkshop(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| Workshop --- READY!")
 
 
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| Workshop --- READY!")
+
+
+
+# ================== WORKSHOP ==================
 
     @commands.command()
     @commands.cooldown(1, 60, type=BucketType.user)
@@ -100,8 +110,8 @@ class avaWorkshop(commands.Cog):
         try:
             # Item's info get
             try:
-                w_name, w_evo, w_weight, w_defend, w_multiplier, w_str, w_intt, w_sta, w_speed, w_acc_randomness, w_acc_range, w_r_min, w_r_max, w_firing_rate, w_dmg, w_stealth = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
-                t_w_name, t_w_evo, t_w_weight, t_w_defend, t_w_multiplier, t_w_str, t_w_intt, t_w_sta, t_w_speed, t_w_acc_randomness, t_w_acc_range, t_w_r_min, t_w_r_max, t_w_firing_rate, t_w_dmg, t_w_stealth = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
+                w_name, w_evo, w_weight, w_defend, w_multiplier, w_str, w_intt, w_sta, w_speed, w_acc_randomness, w_acc_range, w_r_min, w_r_max, w_firing_rate, w_dmg, w_stealth, w_price = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, price FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
+                t_w_name, t_w_evo, t_w_weight, t_w_defend, t_w_multiplier, t_w_str, t_w_intt, t_w_sta, t_w_speed, t_w_acc_randomness, t_w_acc_range, t_w_r_min, t_w_r_max, t_w_firing_rate, t_w_dmg, t_w_stealth, t_w_price = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, price FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
             # E: Item's not found
             except TypeError: await ctx.send("<:osit:544356212846886924> Item's not found!"); return
 
@@ -126,11 +136,11 @@ class avaWorkshop(commands.Cog):
             # MERGE
             try: W_weight = round(random.uniform(0, w_weight + t_w_weight), 1)
             except IndexError: W_weight = 0
-            try: W_multiplier = round(random.uniform(0, w_multiplier + t_w_multiplier), 1)
+            try: W_multiplier = round(random.uniform(0, (w_multiplier + t_w_multiplier)/10*7.5), 1)
             except IndexError: W_multiplier = 0
-            try: W_str = round(random.uniform(0, w_str + t_w_str), 1)
+            try: W_str = round(random.uniform(0, (w_str + t_w_str)/10*7.5), 1)
             except IndexError: W_str = 0
-            try: W_intt = round(random.uniform(0, w_intt + t_w_intt), 1)
+            try: W_intt = round(random.uniform(0, (w_intt + t_w_intt)/10*7.5), 1)
             except IndexError: W_intt = 0
             try: W_sta = round(random.uniform(0, w_sta + t_w_sta), 1)
             except IndexError: W_sta = 0
@@ -144,17 +154,23 @@ class avaWorkshop(commands.Cog):
             except IndexError: W_r_min = 0
             try: W_r_max = round(random.choice(range(int(w_r_max + t_w_r_max))), 1)
             except IndexError: W_r_max = 0
-            try: W_firing_rate = round(random.choice(range(int(w_firing_rate + t_w_firing_rate))), 1)
-            except IndexError: W_firing_rate = 0
             try: W_dmg = round(random.choice(range(int(w_dmg + t_w_dmg))), 1)
             except IndexError: W_dmg = 0
             try: W_stealth = round(random.choice(range(int(w_stealth + t_w_stealth))), 1)
             except IndexError: W_stealth = 0
-            W_evo = (int(w_evo) + int(t_w_evo))//2
+            w_price = int(w_price - w_price//100*35)
+            t_w_price = int(t_w_price - t_w_price//100*35)
+
+            if not int(w_evo): w_evo = 1
+            else: w_evo = int(w_evo)
+            if not int(t_w_evo): t_w_evo = 1
+            else: t_w_evo = int(t_w_evo)
+            
+            W_evo = w_evo + t_w_evo
 
             # Insert
-            await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, firing_rate={W_firing_rate}, dmg={W_dmg}, stealth={W_stealth}, evo={W_evo} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
-            await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, firing_rate={W_firing_rate}, dmg={W_dmg}, stealth={W_stealth}, evo={W_evo} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
+            await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, dmg={W_dmg}, stealth={W_stealth}, evo={W_evo}, price={w_price} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
+            await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, dmg={W_dmg}, stealth={W_stealth}, evo={W_evo}, price={t_w_price} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[1]}';")
 
             # Inform :>
             await ctx.send(f":white_check_mark: Merged `{raw[0]}`|**{w_name}** with `{raw[1]}`|**{t_w_name}**!")
@@ -460,7 +476,6 @@ class avaWorkshop(commands.Cog):
 
 
 
-
-
 def setup(client):
     client.add_cog(avaWorkshop(client))
+    

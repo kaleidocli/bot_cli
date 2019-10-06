@@ -1,8 +1,3 @@
-import discord
-from discord.ext import commands
-from discord.ext.commands.cooldowns import BucketType
-import discord.errors as discordErrors
-
 import asyncio
 import random
 import math
@@ -10,9 +5,16 @@ from copy import deepcopy
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
+import discord
+from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
+import discord.errors as discordErrors
+
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 from utils import checks
+
+
 
 class avaDungeon(commands.Cog):
 
@@ -22,19 +24,37 @@ class avaDungeon(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
+        self.intoLoop(self.prepLoad())
 
+        print("|| Dungeon --- READY!")
 
-    @commands.Cog.listener()
-    async def on_ready(self):
+    async def prepLoad(self):
         await asyncio.sleep(1)
         self.mobdict = await self.mobdictLoad()
         self.dungeondict = await self.dungeondictLoad()
         self.checkpointdict = await self.checkpointdictLoad()
         self.itemdict = await self.itemdictLoad()
 
-        print("|| Dungeon ---- READY!")
+    def intoLoop(self, coro):
+        self.client.loop.create_task(coro)
 
 
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     await asyncio.sleep(1)
+    #     self.mobdict = await self.mobdictLoad()
+    #     self.dungeondict = await self.dungeondictLoad()
+    #     self.checkpointdict = await self.checkpointdictLoad()
+    #     self.itemdict = await self.itemdictLoad()
+
+    #     print("|| Dungeon ---- READY!")
+
+
+
+# ================== DUNGEON ==================
 
     @commands.command()
     @commands.cooldown(1, 2, type=BucketType.user)
@@ -408,6 +428,7 @@ class avaDungeon(commands.Cog):
 
 
 
+# ================== TOOLS ==================
 
     def sessionDel(self, ctx):
         try:
@@ -451,6 +472,9 @@ class avaDungeon(commands.Cog):
         return itemdict
 
 
+
+
+
 def setup(client):
     client.add_cog(avaDungeon(client))
 
@@ -458,6 +482,7 @@ def setup(client):
 
 
 
+# ================== OPERATIONing CLASS ==================
 
 class dSession:
 
@@ -561,10 +586,6 @@ class dSession:
             # Stop
             except asyncio.TimeoutError:
                 return False
-
-
-
-
 
     async def eventEngine(self, event, player_in=None):
         # Prep
@@ -674,8 +695,6 @@ class dSession:
                 await self.client._cursor.execute(f"INSERT INTO pi_dungeoncheckpoint VALUES (0, '{self.ctx.author.id}', '{self.dungeon.dungeon_code}', {self.timeline[-1].distance}, {player_in.lp}, {player_in.attack}, {player_in.defense}, {player_in.money}, {player_in.merit}, '{' || '.join(self.checkpoints)}', '{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}');")
 
             await self.ctx.send(f"<:guild_p:619743808959283201> You've found an active checkpoint! All `checkpoint` commands are now enabled!", delete_after=11); return player_in
-            
-
 
     async def eventGenerator(self, event_code=None):
         """Generate modelEvent object"""
@@ -691,12 +710,6 @@ class dSession:
 
         return modelEvent(code, type, line, node1, node2, vsPlayerEvent, duration, value=value, illulink=illulink)
 
-
-
-
-
-
-
 class dEnvironment:
 
     def __init__(self, player, event, distance=0, cp_pack=None):
@@ -706,6 +719,49 @@ class dEnvironment:
         else: self.distance = cp_pack[0]
         self.direction = 'forward'
 
+class modelEvent:
+
+    def __init__(self, code, type, line, node1, node2, vsPlayerEvent, duration, value='', illulink=''):
+        self.code = code
+        self.type = type
+        self.line = line.split(' || ')
+        try: self.node1 = node1.split(' - ')
+        except AttributeError: self.node1 = None
+        try: self.node2 = node2.split(' - ')
+        except AttributeError: self.node2 = None
+        self.vsPlayerEvent = vsPlayerEvent          # List/Tuple
+        try: self.value = value.split(' || ')
+        except AttributeError: self.value = []
+        self.illulink = illulink
+        self.duration = duration
+
+
+
+    def eventBattle(self, player, mob):
+        p_attack = player.attack - mob.defense
+        m_attack = mob.attack - player.defense
+
+        try: 
+            p_hit = player.lp//m_attack
+        except ZeroDivisionError:
+            return player, True, mob.mob_name
+        try:
+            m_hit = mob.lp//p_attack
+        except ZeroDivisionError:
+            return player, True, mob.mob_name
+
+        print(p_hit, m_hit)
+        # PLAYER lose
+        if m_hit >= p_hit:
+            player.lp -= m_attack*m_hit
+            return player, False, mob.mob_name
+        else:
+            player.lp -= m_attack*m_hit
+            return player, True, mob.mob_name
+
+
+
+# ================== ENTITIES ==================
 
 class dDungeon:
 
@@ -723,10 +779,6 @@ class dItem:
 
     def __init__(self, pack):
         self.di_code, self.di_name, self.di_description, self.di_lp, self.di_attack, self.di_defense, self.di_money, self.di_merit, self.di_line = pack
-
-
-
-
 
 class dPlayer:
 
@@ -787,58 +839,3 @@ class dMob:
     
     def __init__(self, pack):
         self.mob_code, self.mob_name, self.description, self.lp, self.attack, self.defense, self.merit, self.reward = pack
-
-
-
-
-class modelEvent:
-
-    def __init__(self, code, type, line, node1, node2, vsPlayerEvent, duration, value='', illulink=''):
-        self.code = code
-        self.type = type
-        self.line = line.split(' || ')
-        try: self.node1 = node1.split(' - ')
-        except AttributeError: self.node1 = None
-        try: self.node2 = node2.split(' - ')
-        except AttributeError: self.node2 = None
-        self.vsPlayerEvent = vsPlayerEvent          # List/Tuple
-        try: self.value = value.split(' || ')
-        except AttributeError: self.value = []
-        self.illulink = illulink
-        self.duration = duration
-
-
-
-    def eventBattle(self, player, mob):
-        p_attack = player.attack - mob.defense
-        m_attack = mob.attack - player.defense
-
-        try: 
-            p_hit = player.lp//m_attack
-        except ZeroDivisionError:
-            return player, True, mob.mob_name
-        try:
-            m_hit = mob.lp//p_attack
-        except ZeroDivisionError:
-            return player, True, mob.mob_name
-
-        print(p_hit, m_hit)
-        # PLAYER lose
-        if m_hit >= p_hit:
-            player.lp -= m_attack*m_hit
-            return player, False, mob.mob_name
-        else:
-            player.lp -= m_attack*m_hit
-            return player, True, mob.mob_name
-
-
-
-
-
-
-
-
-
-
-
-

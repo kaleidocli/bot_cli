@@ -1,16 +1,22 @@
-import discord
-from discord.ext import commands
-from discord.ext.commands.cooldowns import BucketType
-import pymysql.err as mysqlError
-
 import json
 from functools import partial
 from io import BytesIO
 from datetime import datetime
+import os
+import sys
+
+import discord
+from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
+import discord.errors as discordErrors
+import pymysql.err as mysqlError
+import psutil
 
 from utils import checks
 from .avaTools import avaTools
 from .avaUtils import avaUtils
+
+
 
 class avaAdmin(commands.Cog):
     def __init__(self, client):
@@ -18,19 +24,15 @@ class avaAdmin(commands.Cog):
 
         self.utils = avaUtils(self.client)
 
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| Admin --- Ready!")
 
 
 
-    def data_updating(self, update_kw):
-        if update_kw == 'time_pack':
-            time_pack = (self.client.STONE.year, self.client.STONE.month, self.client.STONE.day, self.client.STONE.hour, self.client.STONE.minute)
-            with open('data/time.json', 'w') as f:
-                json.dump(time_pack, f, indent=4)
+    # ================== EVENTS ==================
 
-
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| Admin --- Ready!")
 
     #@commands.command(pass_context=True)
     #@checks.check_author()
@@ -38,6 +40,10 @@ class avaAdmin(commands.Cog):
     #    self.client.STONE = datetime.now()
     #    self.data_updating()
 
+
+
+    # ================== GAME MANAGER ==================
+    # MEGA
     @commands.command()
     @checks.check_author()
     async def megagive(self, ctx, *args):
@@ -120,12 +126,106 @@ class avaAdmin(commands.Cog):
             await ctx.send(':warning: User has not incarnated'); return
         await ctx.send(f":white_check_mark: Slashed {target_name} into half. Bai ya~")
 
+    # UDA
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    @checks.check_author()
+    async def ituda(self, ctx, *args):
+
+        codes = await self.client.quefe(f"SELECT item_code FROM pi_inventory WHERE item_code LIKE 'it%' OR item_code LIKE 'ar%' OR item_code LIKE 'am%';", type='all')
+
+        for code in codes:
+            await self.client._cursor.execute(f"UPDATE pi_inventory p INNER JOIN model_item m ON m.item_code='{code[0]}' SET p.tags=m.tags, p.weight=m.weight, p.defend=m.defend, p.multiplier=p.multiplier, p.str=m.str, p.intt=m.intt, p.sta=m.sta, p.speed=m.speed, p.round=m.round, p.accuracy_randomness=m.accuracy_randomness, p.accuracy_range=m.accuracy_range, p.range_min=m.range_min, p.range_max=m.range_max, p.firing_rate=m.firing_rate, p.reload_query=m.reload_query, p.effect_query=m.effect_query, p.infuse_query=m.infuse_query, p.passive_query=m.passive_query, p.ultima_query=m.ultima_query, p.price=m.price, p.dmg=m.dmg, p.stealth=m.stealth, p.evo=m.evo, p.aura=m.aura, p.craft_value=m.craft_value, p.illulink=m.illulink WHERE p.item_code='{code[0]}';")
+
+        await ctx.send(":white_check_mark:")
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    @checks.check_author()
+    async def mobuda(self, ctx, *args):
+
+        codes = await self.client.quefe(f"SELECT DISTINCT mob_code FROM model_mob;", type='all')
+
+        for code in codes:
+            await self.client._cursor.execute(f"UPDATE environ_mob e INNER JOIN model_mob m ON m.mob_code='{code[0]}' SET e.name=m.name, e.description=m.description, e.lp=m.lp, e.str=m.str, e.chain=m.chain, e.speed=m.speed, e.au_FLAME=m.au_FLAME, e.au_ICE=m.au_ICE, e.au_HOLY=m.au_HOLY, e.au_DARK=m.au_DARK, e.effect=m.effect, e.illulink=m.illulink WHERE e.mob_code='{code[0]}';")
+
+        await ctx.send(":white_check_mark:")
+
+    # MISC
+    @commands.command()
+    @checks.check_author()
+    async def viewitem(self, ctx, *args):
+
+        item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price FROM model_item WHERE item_code='{args[0]}';""")
+
+        # Pointer
+        if 'magic' in tags: pointer = ':crystal_ball:'
+        else: pointer = '<:gun_pistol:508213644375621632>'
+        # Aura icon
+        aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
+
+        line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n\n```"{description}"```\n"""
+        
+        reembed = discord.Embed(title=f"`{item_code}`|**{' '.join([x for x in name.upper()])}**", colour = discord.Colour(0x011C3A), description=line)
+        reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
+
+        try: acc_per = 10//accuracy_randomness
+        except ZeroDivisionError: acc_per = 0
+        reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**-------------------**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
+
+        reembed.set_thumbnail(url=aui[aura])
+        if illulink != 'n/a': reembed.set_image(url=illulink)
+
+        await ctx.send(embed=reembed); return
+
+
+
+    # ================== SYS MANIP ==================
+
     @commands.command()
     @checks.check_author()
     async def megasql(self, ctx, *, args):
         if str(ctx.author.id) != '214128381762076672': await ctx.send("SHOO SHOO!"); return
         ret = await self.client._cursor.execute(args)
         await ctx.send(ret)
+
+    @commands.command()
+    @checks.check_author()
+    async def megareload(self, ctx, name):
+        self.client.reload_extension(name)
+        await ctx.send(":white_check_mark:")
+
+    @commands.command()
+    @checks.check_author()
+    async def megarestart(self, ctx, *args):
+        await ctx.send(f"<a:dukwalk:589872260651679746> **Okai!**")
+        os.system("python C:/Users/DELL/Desktop/bot_cli/aaaa.py")
+        exit()
+        # await client.logout()
+
+    @commands.command()
+    @checks.check_author()
+    async def leave_guild(self, ctx):
+        await ctx.send("Okay.......")
+        await ctx.guild.leave()
+
+    @commands.command()
+    @checks.check_author()
+    async def shutdown(self, ctx):
+        await ctx.send(f":wave: Bot's successfully shut down by {ctx.message.author}!")
+        exit()
+
+
+
+    # ================= MISC ====================
+    @commands.command()
+    @checks.check_author()
+    async def statas(self, ctx, *args):
+        mem = psutil.virtual_memory()
+
+        temb = discord.Embed(title=f"<a:ramspin:629918889496805376> {self.bytes2human(mem.used)}/{self.bytes2human(mem.total)} ({round(mem.used/mem.total*100)}%)", colour = discord.Colour(0xB1F1FA))
+
+        await ctx.send(embed=temb)
 
     @commands.command(hidden=True)
     @checks.check_author()
@@ -168,7 +268,8 @@ class avaAdmin(commands.Cog):
         else:
             await ctx.send(fmt)
 
-    @commands.command(pass_context=True)
+    @commands.command()
+    @checks.check_author()
     async def get_imgur(self, ctx, *args):
         if args:
             if '.png' not in args[0] or '.jpg' not in args[0] or '.jpeg' not in args[0] or '.gif' not in args[0]:
@@ -183,51 +284,6 @@ class avaAdmin(commands.Cog):
         reembed = discord.Embed(description=f"{resp['link']}", colour = discord.Colour(0x011C3A))
         reembed.set_image(url=resp['link'])
         await ctx.send(embed=reembed)
-
-    @commands.command()
-    @checks.check_author()
-    async def avaava_giveitem(self, ctx, *args):
-        raw = list(args)
-
-        try:
-            storage = raw[0]
-            item_code = raw[1]
-            try: quantity = int(raw[2])
-            except IndexError: quantity = 1
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> Args missing")
-
-        # GET ITEM INFO
-        try:
-            if storage == 'it': 
-                tags = await self.client.quefe(f"""SELECT name, tags, price, quantity FROM model_item WHERE item_code='{item_code}';""")
-                i_tags = tags[0].split(' - ')
-        # E: Item code not found
-        except TypeError: await ctx.send("<:osit:544356212846886924> Item_code/Item_id not found!"); return
-
-        # ITEM
-        if storage == 'it':
-            # CONSUMABLE
-            if 'consumable' in i_tags:
-                # Create item in inventory. Ignore the given quantity please :>
-                await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{str(ctx.message.author.id)}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, quantity, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_item WHERE item_code='{item_code}';")
-                # (MODEL FOR QUERY RECORD-TRANSFERING) ------- await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, {str(ctx.message.author.id)}, item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, quantity, price, dmg, stealth FROM model_item WHERE item_code='{item_code}';")
-
-            # INCONSUMABLE
-            else:
-                # Increase item_code's quantity
-                if await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{str(ctx.message.author.id)}' AND item_code='{item_code}';") == 0:
-                    # E: item_code did not exist. Create one, with given quantity
-                    await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{str(ctx.message.author.id)}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, {quantity}, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_item WHERE item_code='{item_code}';")
-
-        # INGREDIENT
-        elif storage == 'ig':
-            # UN-SERIALIZABLE
-            # Increase item_code's quantity
-            if await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{str(ctx.message.author.id)}' AND item_code='{item_code}';") == 0:
-                # E: item_code did not exist. Create one, with given quantity
-                await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, {str(ctx.message.author.id)}, ingredient_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, quantity, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_ingredient WHERE ingredient_code='{item_code}';")
-
-        await ctx.send(":white_check_mark: Done.")
 
     @commands.command()
     @checks.check_author()
@@ -259,58 +315,65 @@ class avaAdmin(commands.Cog):
 
     @commands.command()
     @checks.check_author()
-    async def viewitem(self, ctx, *args):
-
-        item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price FROM model_item WHERE item_code='{args[0]}';""")
-
-        # Pointer
-        if 'magic' in tags: pointer = ':crystal_ball:'
-        else: pointer = '<:gun_pistol:508213644375621632>'
-        # Aura icon
-        aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
-
-        line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n\n```"{description}"```\n"""
-        
-        reembed = discord.Embed(title=f"`{item_code}`|**{' '.join([x for x in name.upper()])}**", colour = discord.Colour(0x011C3A), description=line)
-        reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
-
-        try: acc_per = 10//accuracy_randomness
-        except ZeroDivisionError: acc_per = 0
-        reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**-------------------**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
-
-        reembed.set_thumbnail(url=aui[aura])
-        if illulink != 'n/a': reembed.set_image(url=illulink)
-
-        await ctx.send(embed=reembed); return
-
-
-
-
-    # UPDATING command ===================================
+    async def delele(self, ctx, *args):
+        """Delete message"""
+        try:
+            msg = await ctx.channel.fetch_message(int(args[0]))
+            await msg.delete()
+        # E: Invalid args
+        except ValueError: await ctx.send(":warning: Invalid **`message id`**"); return
+        # E: Msg not found
+        except discordErrors.NotFound: await ctx.send(":warning: Message not found!"); return
+        # E: No permission
+        except discordErrors.Forbidden: await ctx.send("No you can't <:fufu:508437298808094742>"); return
 
     @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)
     @checks.check_author()
-    async def ituda(self, ctx, *args):
+    @commands.cooldown(1, 5, type=BucketType.guild)
+    async def countline(self, ctx, *args):
+        dir_main = os.path.dirname(os.path.realpath(__file__))
+        dirs = ['C:/Users/DELL/Desktop/bot_cli/cogs', dir_main]
+        length=0
+        for dir_path in dirs:
+            for f in os.listdir(dir_path):
+                if not f.endswith(".py"):
+                    continue
+                else:
+                    with open(dir_path+"/"+f , 'r', encoding="utf8") as b:
+                        lines = b.readlines()
+                        length+=len(lines)
 
-        codes = await self.client.quefe(f"SELECT item_code FROM pi_inventory WHERE item_code LIKE 'it%' OR item_code LIKE 'ar%' OR item_code LIKE 'am%';", type='all')
+        await ctx.send(f"<a:ramspin:629918889496805376> **`{length}` lines**")
 
-        for code in codes:
-            await self.client._cursor.execute(f"UPDATE pi_inventory p INNER JOIN model_item m ON m.item_code='{code[0]}' SET p.tags=m.tags, p.weight=m.weight, p.defend=m.defend, p.multiplier=p.multiplier, p.str=m.str, p.intt=m.intt, p.sta=m.sta, p.speed=m.speed, p.round=m.round, p.accuracy_randomness=m.accuracy_randomness, p.accuracy_range=m.accuracy_range, p.range_min=m.range_min, p.range_max=m.range_max, p.firing_rate=m.firing_rate, p.reload_query=m.reload_query, p.effect_query=m.effect_query, p.infuse_query=m.infuse_query, p.passive_query=m.passive_query, p.ultima_query=m.ultima_query, p.price=m.price, p.dmg=m.dmg, p.stealth=m.stealth, p.evo=m.evo, p.aura=m.aura, p.craft_value=m.craft_value, p.illulink=m.illulink WHERE p.item_code='{code[0]}';")
 
-        await ctx.send(":white_check_mark:")
 
-    @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)
-    @checks.check_author()
-    async def mobuda(self, ctx, *args):
+    # ================== TOOLS ==================
 
-        codes = await self.client.quefe(f"SELECT DISTINCT mob_code FROM model_mob;", type='all')
+    def bytes2human(self, n):
+        # http://code.activestate.com/recipes/578019
+        # >>> bytes2human(10000)
+        # '9.8K'
+        # >>> bytes2human(100001221)
+        # '95.4M'
+        symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
+        prefix = {}
+        for i, s in enumerate(symbols):
+            prefix[s] = 1 << (i + 1) * 10
+        for s in reversed(symbols):
+            if n >= prefix[s]:
+                value = float(n) / prefix[s]
+                return '%.1f%s' % (value, s)
+        return "%sB" % n
 
-        for code in codes:
-            await self.client._cursor.execute(f"UPDATE environ_mob e INNER JOIN model_mob m ON m.mob_code='{code[0]}' SET e.name=m.name, e.description=m.description, e.lp=m.lp, e.str=m.str, e.chain=m.chain, e.speed=m.speed, e.au_FLAME=m.au_FLAME, e.au_ICE=m.au_ICE, e.au_HOLY=m.au_HOLY, e.au_DARK=m.au_DARK, e.effect=m.effect, e.illulink=m.illulink WHERE e.mob_code='{code[0]}';")
+    def data_updating(self, update_kw):
+        if update_kw == 'time_pack':
+            time_pack = (self.client.STONE.year, self.client.STONE.month, self.client.STONE.day, self.client.STONE.hour, self.client.STONE.minute)
+            with open('data/time.json', 'w') as f:
+                json.dump(time_pack, f, indent=4)
 
-        await ctx.send(":white_check_mark:")
+
+
+
 
 
 def setup(client):

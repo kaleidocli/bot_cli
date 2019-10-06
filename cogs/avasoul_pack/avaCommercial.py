@@ -1,28 +1,40 @@
+import random
+import asyncio
+from functools import partial
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
-import random
-import asyncio
-from functools import partial
-
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
+
+
 class avaCommercial(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| Commercial --- READY!")
 
 
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| Commercial --- READY!")
+
+
+
+# ================== COMMERCIAL ==================
+
+    # SYS
     @commands.command(aliases=['s'])
     @commands.cooldown(1, 5, type=BucketType.user)    
     async def shop(self, ctx, *args):
@@ -244,13 +256,14 @@ class avaCommercial(commands.Cog):
         if ig_code not in menu: await ctx.send("<:osit:544356212846886924> The trader does not have this item at the moment. Sorry."); return
 
         # Reconfirm
-        def UMCc_check2(m):
-            return m.channel == ctx.channel and m.content == 'trade confirm' and m.author == ctx.author
-
-        price = int(items[ig_code][2]*random.choice([0.1, 0.2, 0.5, 1, 2, 5, 10]))
-        await ctx.send(f"{ctx.message.author.mention}, the dealer set the price of **<:36pxGold:548661444133126185>{price}** for __each__ item `{ig_code}`|**{items[ig_code][0]}**. \nThat would cost you **<:36pxGold:548661444133126185>{price*quantity}** in total.\n<a:RingingBell:559282950190006282> Proceed? (Key: `trade confirm` | Timeout=10s)")
-        try: await self.client.wait_for('message', check=UMCc_check2, timeout=10)
-        except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request declined!"); return
+        price = int(items[ig_code][2]*random.choice([0.1, 0.2, 0.5, 1, 2, 5, 0.75, 10]))
+        deposit = (price*quantity)//5
+        msgdeal = await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, please react upon accepting the following deal:\n>>> **<:36pxGold:548661444133126185>{price}** per item `{ig_code}`|**{items[ig_code][0]}**, meaning **<:36pxGold:548661444133126185>{price*quantity}** in total.\nDeposit would be <:36pxGold:548661444133126185>**{deposit}**")
+        await msgdeal.add_reaction('\U0001f44c')
+        try: await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f44c' and u == ctx.author, timeout=10)
+        except asyncio.TimeoutError:
+            await self.client._cursor.execute(f"UPDATE personal_info SET money=money-IF(money >= {deposit}, {deposit}, money) WHERE id='{ctx.author.id}';")
+            await ctx.send(f"<:osit:544356212846886924> The request is declined, and you lost a deposit of <:36pxGold:548661444133126185>**{deposit}**."); return
         
         try:
             # Money check
@@ -451,76 +464,8 @@ class avaCommercial(commands.Cog):
 
             await ctx.send(embed=reembed)
 
-    @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)    
-    async def buy(self, ctx, *args):
-        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
-        cur_X, cur_Y, money, cur_PLACE = await self.client.quefe(f"SELECT cur_X, cur_Y, money, cur_PLACE FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
-
-        if not await self.tools.area_scan(ctx, cur_X, cur_Y): await ctx.send("<:osit:544356212846886924> You can only buy stuff within **Peace Belt**!"); return
-        #await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{str(ctx.message.author.id)}', 'working', ex=duration, nx=True))
-
-        raw = list(args); quantity = 1
-
-        try: item_code = raw[0]
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> Please provide item's code, **{ctx.message.author.name}**"); return
-
-        try: 
-            quantity = int(raw[1])
-
-            # SCAM :)
-            if quantity <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return
-
-        # E: Quantity not given, or invalidly given
-        except (IndexError, TypeError, ValueError): pass
-        
-        # Get goods
-        if cur_PLACE.startswith('land.'): goods = await self.client.quefe(f"SELECT goods FROM pi_land WHERE land_code='{cur_PLACE}';")
-        else: goods = await self.client.quefe(f"SELECT goods FROM environ WHERE environ_code='{cur_PLACE}';")
-
-        if not goods: await ctx.send("<:osit:544356212846886924> Nothing to buy here..."); return
-
-        # GET ITEM INFO
-        try:
-            name, tags, i_price, i_quantity = await self.client.quefe(f"""SELECT name, tags, price, quantity FROM model_item WHERE item_code='{item_code}' AND item_code IN ('{goods[0].replace(' - ', "', '")}');""")
-            i_tags = tags.split(' - ')
-        # E: Item code not found
-        except TypeError: await ctx.send("<:osit:544356212846886924> Item_code/Item_id not found!"); return
-
-        # TWO TYPES of obj: Serializable-obj and Unserializable obj
-        # Validation
-        #if isinstance(self.data['item'][item_code], ingredient): await ctx.send(f"<:osit:544356212846886924> You cannot use this command to obtain the given item, {str(ctx.message.author.id)}. Use `-trade` instead"); return
-
-        # Money check
-        if i_price*quantity > money: await ctx.send("<:osit:544356212846886924> Insufficience balance!"); return
-
-        # Deduct money
-        await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{i_price*quantity} WHERE id='{str(ctx.message.author.id)}';")
-
-        # Get the real quantity (according to the model_item's quantity)
-        quantity = quantity*i_quantity
-
-        # Greeting, of course :)
-        await ctx.send(f":white_check_mark: `{quantity}` item **{name}** is successfully added to your inventory! Thank you for shoping!")
-
-        # INCONSUMABLE
-        # pylint: disable=unused-variable
-        if 'inconsumable' in i_tags:
-            # Create item in inventory. Ignore the given quantity please :>
-            #await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{str(ctx.message.author.id)}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, quantity, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_item WHERE item_code='{item_code}';")
-            for i in range(quantity):
-                await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', '{item_code}', 1);")
-            # (MODEL FOR QUERY RECORD-TRANSFERING) ------- await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, {str(ctx.message.author.id)}, item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, quantity, price, dmg, stealth FROM model_item WHERE item_code='{item_code}';")
-        # pylint: enable=unused-variable
-        # CONSUMABLE
-        else:
-            await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', '{item_code}', {quantity});")
-            # Increase item_code's quantity
-            #if await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{str(ctx.message.author.id)}' AND item_code='{item_code}';") == 0:
-            #    # E: item_code did not exist. Create one, with given quantity
-            #    await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{str(ctx.message.author.id)}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, {quantity}, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_item WHERE item_code='{item_code}';")
-
+    # SELF
     @commands.command(aliases=['i'])
     @commands.cooldown(1, 5, type=BucketType.user)
     async def inventory(self, ctx, *args):
@@ -795,6 +740,77 @@ class avaCommercial(commands.Cog):
                     return
 
 
+    # P2P
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)    
+    async def buy(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        cur_X, cur_Y, money, cur_PLACE = await self.client.quefe(f"SELECT cur_X, cur_Y, money, cur_PLACE FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
+
+        if not await self.tools.area_scan(ctx, cur_X, cur_Y): await ctx.send("<:osit:544356212846886924> You can only buy stuff within **Peace Belt**!"); return
+        #await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{str(ctx.message.author.id)}', 'working', ex=duration, nx=True))
+
+        raw = list(args); quantity = 1
+
+        try: item_code = raw[0]
+        except IndexError: await ctx.send(f"<:osit:544356212846886924> Please provide item's code, **{ctx.message.author.name}**"); return
+
+        try: 
+            quantity = int(raw[1])
+
+            # SCAM :)
+            if quantity <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return
+
+        # E: Quantity not given, or invalidly given
+        except (IndexError, TypeError, ValueError): pass
+        
+        # Get goods
+        if cur_PLACE.startswith('land.'): goods = await self.client.quefe(f"SELECT goods FROM pi_land WHERE land_code='{cur_PLACE}';")
+        else: goods = await self.client.quefe(f"SELECT goods FROM environ WHERE environ_code='{cur_PLACE}';")
+
+        if not goods: await ctx.send("<:osit:544356212846886924> Nothing to buy here..."); return
+
+        # GET ITEM INFO
+        try:
+            name, tags, i_price, i_quantity = await self.client.quefe(f"""SELECT name, tags, price, quantity FROM model_item WHERE item_code='{item_code}' AND item_code IN ('{goods[0].replace(' - ', "', '")}');""")
+            i_tags = tags.split(' - ')
+        # E: Item code not found
+        except TypeError: await ctx.send("<:osit:544356212846886924> Item_code/Item_id not found!"); return
+
+        # TWO TYPES of obj: Serializable-obj and Unserializable obj
+        # Validation
+        #if isinstance(self.data['item'][item_code], ingredient): await ctx.send(f"<:osit:544356212846886924> You cannot use this command to obtain the given item, {str(ctx.message.author.id)}. Use `-trade` instead"); return
+
+        # Money check
+        if i_price*quantity > money: await ctx.send("<:osit:544356212846886924> Insufficience balance!"); return
+
+        # Deduct money
+        await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{i_price*quantity} WHERE id='{str(ctx.message.author.id)}';")
+
+        # Get the real quantity (according to the model_item's quantity)
+        quantity = quantity*i_quantity
+
+        # Greeting, of course :)
+        await ctx.send(f":white_check_mark: `{quantity}` item **{name}** is successfully added to your inventory! Thank you for shoping!")
+
+        # INCONSUMABLE
+        # pylint: disable=unused-variable
+        if 'inconsumable' in i_tags:
+            # Create item in inventory. Ignore the given quantity please :>
+            #await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{str(ctx.message.author.id)}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, quantity, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_item WHERE item_code='{item_code}';")
+            for i in range(quantity):
+                await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', '{item_code}', 1);")
+            # (MODEL FOR QUERY RECORD-TRANSFERING) ------- await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, {str(ctx.message.author.id)}, item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, quantity, price, dmg, stealth FROM model_item WHERE item_code='{item_code}';")
+        # pylint: enable=unused-variable
+        # CONSUMABLE
+        else:
+            await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', '{item_code}', {quantity});")
+            # Increase item_code's quantity
+            #if await self.client._cursor.execute(f"UPDATE pi_inventory SET quantity=quantity+{quantity} WHERE user_id='{str(ctx.message.author.id)}' AND item_code='{item_code}';") == 0:
+            #    # E: item_code did not exist. Create one, with given quantity
+            #    await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, '{str(ctx.message.author.id)}', item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, {quantity}, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_item WHERE item_code='{item_code}';")
+
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
     async def sell(self, ctx, *args):
@@ -983,8 +999,6 @@ class avaCommercial(commands.Cog):
         # Transfer
         await self.client._cursor.execute(f"UPDATE personal_info SET money=money+IF(id='{ctx.author.id}', -{package}, {package}) WHERE id IN ('{ctx.author.id}', '{receiver.id}');")
         await ctx.send(f":white_check_mark: You've been given **<:36pxGold:548661444133126185>{raw[0]}**, {receiver.mention}!")
-
-
 
 
 

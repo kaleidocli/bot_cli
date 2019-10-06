@@ -1,31 +1,30 @@
-import discord
-from discord.ext import commands
-import discord.errors as discordErrors
-from discord.ext.commands.cooldowns import BucketType
-
 import os
 from io import BytesIO
-import importlib
 import sys
-import signal
 import atexit
 import random
 import asyncio
 import json
 import time
 from datetime import datetime
+
+import discord
+from discord.ext import commands
+import discord.errors as discordErrors
+from discord.ext.commands.cooldowns import BucketType
+
 from nltk import word_tokenize
-
 from PIL import Image
-import emoji
 import imgurpython
-
 import aiohttp
 import psutil
 
 from cogs.configs import SConfig
 
+
+
 config = SConfig()
+TOKEN = config.TOKEN
 help_dict = {}
 ava_dict = {}
 bulb = True
@@ -34,15 +33,12 @@ minikeylist = []
 char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U0001f1e9', 'e': '\U0001f1ea', 'f': '\U0001f1eb', 'g': '\U0001f1ec', 'h': '\U0001f1ed', 'i': '\U0001f1ee', 'j': '\U0001f1ef', 'k': '\U0001f1f0',
             'l': '\U0001f1f1', 'm': '\U0001f1f2', 'n': '\U0001f1f3', 'o': '\U0001f1f4', 'p': '\U0001f1f5', 'q': '\U0001f1f6', 'r': '\U0001f1f7', 's': '\U0001f1f8', 't': '\U0001f1f9', 'u': '\U0001f1fa', 'v': '\U0001f1fb', 'w': '\U0001f1fc', 'x': '\U0001f1fd', 'y': '\U0001f1fe', 'z': '\U0001f1ff'}
 
-#extensions = ['cogs.error_handler', 'cogs.ai', 'cogs.audio', 'cogs.pydanboo', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.avasoul', 'cogs.guess']
-#extensions = ['cogs.error_handler', 'cogs.tictactoe', 'cogs.custom_speech', 'cogs.hen', 'cogs.guess', 'jishaku', 'cogs.audio']
-extensions = [  'cogs.pydanboo',
+extensions = [  'jishaku',
+                'cogs.pydanboo',
                 'cogs.tictactoe', 
-                'cogs.custom_speech', 
-                'cogs.hen', 
-                'cogs.guess', 
-                'jishaku', 
-                'cogs.audio', 
+                'cogs.hen',
+                'cogs.guess',  
+                'cogs.audio',
                 'cogs.dbl',
                 'cogs.avasoul',
                 'cogs.avasoul_pack.avaHelper', 
@@ -60,8 +56,6 @@ extensions = [  'cogs.pydanboo',
                 'cogs.avasoul_pack.avaDungeon',
                 'cogs.error_handler']   # Always put error_handler at the BOTTOM!
 
-TOKEN = config.TOKEN
-
 #prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
 # async def get_pref(bot, message):
 #    if not message.guild:  # dms
@@ -76,26 +70,30 @@ async def get_pref(bot, message):
    return commands.when_mentioned_or('cli ')(bot, message)
 
 
-# =========================================================
+
+# ================== INITIAL ==================
 
 client = commands.Bot(command_prefix=get_pref)
 client.myconfig = config
-client.realready = False
+client.realready = True
 
 # client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')
 
-# =========================================================
+def check_id():
+    def inner(ctx):
+        return ctx.author.id == 214128381762076672
+    return commands.check(inner)
 
+
+
+# ================== EVENTS ==================
 
 @client.event
 async def on_ready():
-    await client.loop.run_in_executor(None, help_dict_plugin)
-    await client.loop.run_in_executor(None, settings_plugin)
-    await client.change_presence(activity=discord.Game(name='with aknalumos <3'))
+    # await client.loop.run_in_executor(None, settings_plugin)
+    await client.change_presence(activity=discord.Game(name='with aknalumos <3 With prefix: [cli ]'))
     print("|||||   THE BOT IS READY   |||||")
-
-
 
 @client.event
 async def on_guild_join(guild):
@@ -105,77 +103,14 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     await client.get_channel(563592973170769922).send(f":x: **LEFT -->** `{guild.id}` | {guild.name}")
 
-@client.event
-async def on_message(message):
-    # global bulb; global blacklist
-
-    # if message.author.bot: return
-    # if str(message.author.id) in blacklist: return
-    # if str(message.author.id) != '214128381762076672': return
-
-    #if not bulb:
-    #    try:
-    #        if not message.content.startswith(f'{prefixes[message.guild.id]}megaturn'): return
-    #    except KeyError:
-    #        if not message.content.startswith(f'>megaturn'): return
-    if not client.realready: return
-    await client.process_commands(message)
+# @client.event
+# async def on_message(message):
+#     if not client.realready: return
+#     await client.process_commands(message)
 
 
 
-def check_id():
-    def inner(ctx):
-        return ctx.author.id == 214128381762076672
-    return commands.check(inner)
-
-
-
-
-
-@client.command()
-async def statas(ctx, *args):
-    mem = psutil.virtual_memory()
-
-    temb = discord.Embed(title=f"<a:ramspin:547325170726207499> {bytes2human(mem.used)}/{bytes2human(mem.total)} ({round(mem.used/mem.total*100)}%)", colour = discord.Colour(0xB1F1FA))
-
-    await ctx.send(embed=temb)
-
-@client.command()
-@check_id()
-async def megaturn(ctx, *args):
-    global bulb
-    try:
-        if args[0].lower() == 'on':
-            if bulb: await ctx.send(":warning: Already **ON**!"); return
-            bulb = True
-            await ctx.send(":bell: Bot is **ON**!"); return
-        elif args[0].lower() == 'off':
-            if not bulb: await ctx.send(":warning: Already **OFF**!"); return
-            bulb = False
-            await ctx.send(":no_bell: Bot is now **OFF**!"); return           
-    except IndexError: pass
-
-@client.command()
-@check_id()
-async def megarestart(ctx, *args):
-    await ctx.send(f"<a:dukwalk:589872260651679746> **Okai!**")
-    os.system("python C:/Users/DELL/Desktop/bot_cli/aaaa.py")
-    await client.logout()
-
-@client.command()
-async def invite(ctx):
-    #await ctx.send("Hey use this to invite me -> https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=238157120&scope=bot")
-    temb = discord.Embed(description="""[===== Support Server =====](https://discord.gg/wvz6bps)\n◈ Before inviting this bot, you must acknowledge and accept the following:\n· High-ratio shutdown session, with random length and for **no reason**.\n| Any DM-ed complaints relevant to the incident will result in a ban.\nHowever, compensation with evidences will be responsed and should be sent in *support server*.\nTrying to DM twice on the above problem will result in a ban.\nDM abusing will result in a *boop*.
-                                \n· Buggy gameplay, low latency.\n| Any bot-abusing activities will result in a ban.\nHowever, *bot-breaking* is encouraged, and any bugs should be reported in *support server/Bug-report*
-                                \n· Violation in data, balance and activities of the players.\n| This is a testing bot. Have fun testing this <:fufu:508437298808094742>
-                                \n[===== Invite =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=104193344&scope=bot)""")
-    await ctx.send(embed=temb)
-
-@client.command()
-@check_id()
-async def leave_guild(ctx):
-    await ctx.send("Okay.......")
-    await ctx.guild.leave()
+# ================== MISC ==================
 
 @client.command()
 async def ping(ctx, *args):
@@ -188,69 +123,7 @@ async def aknalumos(ctx, *args):
 
 @client.command()
 @check_id()
-async def setting(ctx, *args):
-    raw = list(args)
-
-    if len(raw) <= 2:
-        if raw[0].lower() == 'nsfw':
-            if raw[1] == 'on':
-                if ctx.message.guild.id in list(client.settings.keys()):
-                    client.settings[ctx.message.guild.id]['nsfw_mode'] = True
-                    await client.loop.run_in_executor(None, settings_updating)
-                    await ctx(":unlock: `NSFW` is now **enabled**.")
-                else:
-                    client.settings[ctx.message.guild.id] = await setting_create()
-                    client.settings[ctx.message.guild.id]['nsfw_mode'] = True
-                    await client.loop.run_in_executor(None, settings_updating)
-                    await ctx.say(":unlock: `NSFW` is now **enabled**.")
-            elif raw[1] == 'off':
-                if ctx.message.guild.id in list(client.settings.keys()):
-                    client.settings[ctx.message.guild.id]['nsfw_mode'] = False
-                    await client.loop.run_in_executor(None, settings_updating)
-                    await ctx.say(":lock: `NSFW` is now **disabled**.")
-                else:
-                    client.settings[ctx.message.guild.id] = await setting_create()
-                    client.settings[ctx.message.guild.id]['nsfw_mode'] = False   
-                    await client.loop.run_in_executor(None, settings_updating)
-                    await ctx.say(":lock: `NSFW` is now **disabled**.")                 
-            else:
-                await ctx.say(':no_entry_sign: Please use the right syntax.')
-        else:
-            await ctx.say(':no_entry_sign: Please use the right syntax.')
-    else:
-        await ctx.say(':no_entry_sign: Please use the right syntax.')
-
-@client.command()
-async def settings(ctx):
-    info = ''
-
-    srvr_settings = client.settings[ctx.message.server.id]
-    for key in list(srvr_settings.keys()):
-        info += f"| **{key}**: `{srvr_settings[key]}`"
-    await ctx.send(info)
-
-@client.command()
-@check_id()
-async def shutdown(ctx):
-    await ctx.send(f":wave: Bot's successfully shut down by {ctx.message.author}!")
-    exit()
-
-@client.command()
-@check_id()
-async def delele(ctx, *args):
-    try:
-        msg = await ctx.channel.fetch_message(int(args[0]))
-        await msg.delete()
-    # E: Invalid args
-    except ValueError: await ctx.send(":warning: Invalid **`message id`**"); return
-    # E: Msg not found
-    except discordErrors.NotFound: await ctx.send(":warning: Message not found!"); return
-    # E: No permission
-    except discordErrors.Forbidden: await ctx.send("No you can't <:fufu:508437298808094742>"); return
-
-@client.command()
-@check_id()
-async def takethis(ctx, *args):
+async def braillize(ctx, *args):
     session = aiohttp.ClientSession()
     raw = list(args)
     if raw:
@@ -483,23 +356,6 @@ async def stick(ctx, *args):
         await msg.add_reaction(char_dict[stick.lower()])
         count += 1
 
-@client.command()
-@commands.cooldown(1, 5, type=BucketType.guild)
-async def countline(ctx, *args):
-    dir_main = os.path.dirname(os.path.realpath(__file__))
-    dirs = ['C:/Users/DELL/Desktop/bot_cli/cogs', dir_main]
-    length=0
-    for dir_path in dirs:
-        for f in os.listdir(dir_path):
-            if not f.endswith(".py"):
-                continue
-            else:
-                with open(dir_path+"/"+f , 'r', encoding="utf8") as b:
-                    lines = b.readlines()
-                    length+=len(lines)
-
-    await ctx.send(f"<a:ramspin:547325170726207499> **`{length}` lines**")
-
 @client.command(aliases=['ctd'])
 @check_id()
 async def countdown(ctx, *args):
@@ -549,17 +405,6 @@ async def act(ctx, *,args):
     except KeyError: return
     await ctx.send(embed=temb)
 
-"""@client.command()
-@check_id()
-@commands.cooldown(1, 10, type=BucketType.guild)
-async def block(ctx, *,args):
-    global blacklist
-    try: target = ctx.message.mentions[0]
-    except commands.CommandError: await ctx.send("Invalid `user`"); return
-    except IndexError: await ctx.send("Missing `user`"); return
-    blacklist.append(str(target.id))
-    await ctx.send(':white_check_mark:')"""
-    
 @client.command()
 @commands.cooldown(1, 10, type=BucketType.guild)
 async def minikey(ctx, *args):
@@ -632,14 +477,9 @@ async def minikey(ctx, *args):
 
     minikeylist.remove(ctx.channel.id)
 
-@client.command()
-@check_id()
-async def source(ctx, *args):
-    await ctx.send('https://github.com/kaleidocli/bot_cli')
 
 
-# ==============================================
-
+# ================== TOOLS ==================
 
 async def memorizing(channel_id, df_count):
     global msg_bank
@@ -664,56 +504,16 @@ async def memorizing(channel_id, df_count):
         count += 1
     memo_mode = False
 
-def bytes2human(n):
-    # http://code.activestate.com/recipes/578019
-    # >>> bytes2human(10000)
-    # '9.8K'
-    # >>> bytes2human(100001221)
-    # '95.4M'
-    symbols = ('K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y')
-    prefix = {}
-    for i, s in enumerate(symbols):
-        prefix[s] = 1 << (i + 1) * 10
-    for s in reversed(symbols):
-        if n >= prefix[s]:
-            value = float(n) / prefix[s]
-            return '%.1f%s' % (value, s)
-    return "%sB" % n
-
 async def setting_create():
     #Return a setting dict
     setting = {'nsfw_mode': False}
     return setting
 
-def settings_plugin():
-    with open('config/bot_settings.json') as f:
-        try:
-            client.settings = json.load(f)
-        except IndexError: print("ERROR at <settings_plugin()>")
-
-def settings_updating():
-    with open('config/bot_settings.json', 'w') as f:
-        json.dump(client.settings, f, indent=4)
-
-def help_dict_plugin():
-    global help_dict
-
-    with open('config/help.json') as f:
-        #try:
-        help_dict = json.load(f)
-        #except: print("ERROR at <help_dict_plugin()>")
-
-
-
-# @client.event
-# async def on_command(ctx):
-#     if str(ctx.author.id) != '21412838172076672': await ctx.send(f":no_mobile_phones: Currently on maintenance"); return
-
-#Generate random file's name from the path
-async def file_gen_random(path):
-    file_name = ''
-    file_name = await client.loop.run_in_executor(None, random.choice, await client.loop.run_in_executor(None, os.listdir, path))
-    return file_name
+# def settings_plugin():
+#     with open('config/bot_settings.json') as f:
+#         try:
+#             client.settings = json.load(f)
+#         except IndexError: print("ERROR at <settings_plugin()>")
 
 def prepformain():
     try:
@@ -728,10 +528,10 @@ def prepformain():
         client.load_count += 1
     client.run(TOKEN, bot=True, reconnect=True)
 
-
-
 def exitest():
     print("=========================== EXIT HERE ===================================")
+
+
 
 if __name__ == '__main__':
     atexit.register(exitest)

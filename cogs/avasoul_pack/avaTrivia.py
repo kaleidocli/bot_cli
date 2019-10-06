@@ -1,17 +1,20 @@
-import discord
-from discord.ext import commands
-from discord.ext.commands.cooldowns import BucketType
-import discord.errors as discordErrors
-
 import asyncio
 from functools import partial
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
+import discord
+from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
+import discord.errors as discordErrors
+
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
+
+
 class avaTrivia(commands.Cog):
+
     def __init__(self, client):
         self.client = client
 
@@ -33,12 +36,19 @@ class avaTrivia(commands.Cog):
                             'stun': '<:mhw_stun:626533532948365322>',
                             'bleed': '<:mhw_bleeding:626533532696707103>'}
 
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| Trivia ---- READY!")
 
 
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| Trivia ---- READY!")
+
+
+
+# ================== TRIVIA SYS ==================
 
     @commands.command(aliases=['skt'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -75,69 +85,6 @@ class avaTrivia(commands.Cog):
         reembed.add_field(name=":tools: Formulas and Quests", value=f"· `{formulas[0]}` formulas.\n· `{c_quests[0]}` current quests, with `{quests[0]}` different kind of quests.")
 
         await ctx.send(embed=reembed)
-
-    @commands.command(aliases=['richest'])
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def toprich(self, ctx):
-        ret = await self.client.quefe(f"SELECT name, age, money FROM personal_info ORDER BY money DESC LIMIT 10", type='all')
-
-        line = ''; count = 0
-        for u in ret:
-            count += 1
-            line = line + f"{count} | **{u[0]}** ({u[1]}) with <:36pxGold:548661444133126185> **{u[2]}**\n"
-
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
-
-    @commands.command(aliases=['topmerit', 'honorest'])
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def tophonor(self, ctx):
-        ret = await self.client.quefe(f"SELECT name, age, merit FROM personal_info ORDER BY merit DESC LIMIT 10", type='all')
-
-        line = ''; count = 0
-        for u in ret:
-            count += 1
-            line = line + f"{count} | **{u[0]}** ({u[1]}) with a merit **{u[2]}**\n"
-
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
-
-    @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def topkill(self, ctx):
-        ret = await self.client.quefe(f"SELECT name, EVO, kills FROM personal_info ORDER BY kills DESC LIMIT 10", type='all')
-
-        line = ''; count = 0
-        for u in ret:
-            count += 1
-            line = line + f"{count} | **{u[0]}** (`EVO-{u[1]}`) with **{u[2]}** kills\n"
-
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
-
-    @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def topdeath(self, ctx):
-        ret = await self.client.quefe(f"SELECT name, EVO, deaths FROM personal_info ORDER BY deaths DESC LIMIT 10", type='all')
-
-        line = ''; count = 0
-        for u in ret:
-            count += 1
-            line = line + f"{count} | **{u[0]}** (`EVO-{u[1]}`) with **{u[2]}** deaths\n"
-
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
-
-    @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def topwin(self, ctx):
-        ret = await self.client.quefe(f"SELECT (SELECT name FROM personal_info WHERE id=user_id), duel_win, duel_lost FROM misc_status ORDER BY duel_win DESC LIMIT 10", type='all')
-
-        line = ''; count = 0
-        for u in ret:
-            count += 1
-            line = line + f"{count} | **{u[0]}** have won **{u[1]}** duels and lost **{u[2]}** duels\n"
-
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
-
-
-
 
     @commands.command(aliases=['map'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -322,6 +269,74 @@ class avaTrivia(commands.Cog):
             except asyncio.TimeoutError: 
                 await msg.delete(); return
 
+
+
+# ================== PLAYERS ==================
+
+    @commands.command(aliases=['richest'])
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def toprich(self, ctx):
+        ret = await self.client.quefe(f"SELECT name, age, money FROM personal_info ORDER BY money DESC LIMIT 10", type='all')
+
+        line = ''; count = 0
+        for u in ret:
+            count += 1
+            line = line + f"{count} | **{u[0]}** ({u[1]}) with <:36pxGold:548661444133126185> **{u[2]}**\n"
+
+        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+
+    @commands.command(aliases=['topmerit', 'honorest'])
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def tophonor(self, ctx):
+        ret = await self.client.quefe(f"SELECT name, age, merit FROM personal_info ORDER BY merit DESC LIMIT 10", type='all')
+
+        line = ''; count = 0
+        for u in ret:
+            count += 1
+            line = line + f"{count} | **{u[0]}** ({u[1]}) with a merit **{u[2]}**\n"
+
+        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def topkill(self, ctx):
+        ret = await self.client.quefe(f"SELECT name, EVO, kills FROM personal_info ORDER BY kills DESC LIMIT 10", type='all')
+
+        line = ''; count = 0
+        for u in ret:
+            count += 1
+            line = line + f"{count} | **{u[0]}** (`EVO-{u[1]}`) with **{u[2]}** kills\n"
+
+        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def topdeath(self, ctx):
+        ret = await self.client.quefe(f"SELECT name, EVO, deaths FROM personal_info ORDER BY deaths DESC LIMIT 10", type='all')
+
+        line = ''; count = 0
+        for u in ret:
+            count += 1
+            line = line + f"{count} | **{u[0]}** (`EVO-{u[1]}`) with **{u[2]}** deaths\n"
+
+        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def topwin(self, ctx):
+        ret = await self.client.quefe(f"SELECT (SELECT name FROM personal_info WHERE id=user_id), duel_win, duel_lost FROM misc_status ORDER BY duel_win DESC LIMIT 10", type='all')
+
+        line = ''; count = 0
+        for u in ret:
+            count += 1
+            line = line + f"{count} | **{u[0]}** have won **{u[1]}** duels and lost **{u[2]}** duels\n"
+
+        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+
+
+
+# ================== PERSONAL ==================
+
     @commands.command(aliases=['noti'])
     @commands.cooldown(1, 10, type=BucketType.user)
     async def notification(self, ctx, *args):
@@ -358,6 +373,8 @@ class avaTrivia(commands.Cog):
             off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`hunt`**: Ready to go")
 
         await ctx.send(f""">>> {chr(10).join(off_cd)} {' '.join(on_cd)} {' '.join(interas)}""")
+
+
 
 
 

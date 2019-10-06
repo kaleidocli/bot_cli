@@ -12,20 +12,29 @@ from .avaTools import avaTools
 from .avaUtils import avaUtils
 from utils import checks
 
+
+
 class avaSocial(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| Social ---- READY!")
 
 
-    # ========================= FAMILY ========================
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| Social ---- READY!")
+
+
+
+# ================== MARRIAGE ==================
 
     @commands.command()
     @commands.cooldown(1, 90, type=BucketType.user)
@@ -263,6 +272,10 @@ class avaSocial(commands.Cog):
             except asyncio.TimeoutError:
                 await msg.delete(); return
 
+
+
+# ================== CHILDREN ==================
+
     @commands.command()
     @commands.cooldown(1, 3, type=BucketType.user)
     async def tell(self, ctx, *args):
@@ -299,10 +312,7 @@ class avaSocial(commands.Cog):
 
 
 
-
-
-
-
+# ================== SOCIAL ==================
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -337,13 +347,6 @@ class avaSocial(commands.Cog):
 
         await ctx.send(f"<:argh:544354429302865932> **{ctx.author.name}** has humiliated {target.mention}!")
         await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'dislike', ex=86400, nx=True))
-
-
-
-
-
-
-
 
 
 

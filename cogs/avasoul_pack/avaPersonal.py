@@ -1,9 +1,3 @@
-import discord
-from discord.ext import commands
-from discord.ext.commands.cooldowns import BucketType
-import discord.errors as discordErrors
-import pymysql.err as mysqlError
-
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import asyncio
@@ -11,10 +5,19 @@ import random
 from functools import partial
 import re
 
+import discord
+from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
+import discord.errors as discordErrors
+import pymysql.err as mysqlError
+
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
+
+
 class avaPersonal(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.__cd_check = self.client.thp.cd_check
@@ -31,11 +34,19 @@ class avaPersonal(commands.Cog):
                     'dark': f"UPDATE personal_info SET au_DARK=au_DARK+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
                     'charm': f"UPDATE personal_info SET charm=charm+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;"}
 
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| Personal --- READY!")
 
+
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| Personal --- READY!")
+
+
+
+# ================== INFO/AVATAR ==================
 
     @commands.command()
     async def incarnate(self, ctx, *args):
@@ -490,6 +501,8 @@ class avaPersonal(commands.Cog):
 
 
 
+# ================== FUNC ==================
+
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
     async def rename(self, ctx, *name):
@@ -701,8 +714,6 @@ class avaPersonal(commands.Cog):
 
 
 
-
-    # ============= TACTICAL ==============
 
 
 def setup(client):

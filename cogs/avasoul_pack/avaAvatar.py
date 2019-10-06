@@ -1,10 +1,3 @@
-import discord
-from discord.ext import commands
-from discord.ext.commands.cooldowns import BucketType
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
-import imageio
-import objgraph
-
 from os import listdir, path
 from pathlib import Path
 from io import BytesIO
@@ -12,15 +5,24 @@ import copy
 import asyncio
 import random
 import gc
-from collections import defaultdict
-import multiprocessing
+# import multiprocessing
 from functools import partial
+
+import discord
+from discord.ext import commands
+from discord.ext.commands.cooldowns import BucketType
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import imageio
+import objgraph
 
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 from utils import checks
 
+
+
 class avaAvatar(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.prote_lib = {}
@@ -78,157 +80,29 @@ class avaAvatar(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
+        self.intoLoop(self.prepLoad())
+
+        print("|| Avatar --- READY!")
 
 
-    @commands.Cog.listener()
-    async def on_ready(self):
+
+# ================== EVENTS ==================
+
+    async def prepLoad(self):
         await asyncio.sleep(2)      # Do not remove, or else the data stream would mix with WORLD_BUILDING
         await self.prote_plugin()
 
+    def intoLoop(self, coro):
+        self.client.loop.create_task(coro)
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     await asyncio.sleep(2)      # Do not remove, or else the data stream would mix with WORLD_BUILDING
+    #     await self.prote_plugin()
 
 
-    async def bg_generator(self, bg_code):
-        bg_path = random.choice(listdir(path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'bg', self.bg_dict[bg_code])))
-        bg_path = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'bg', self.bg_dict[bg_code], bg_path)
-        img = Image.open(bg_path).convert('RGBA')
-        img = img.resize((800, 600), resample=Image.LANCZOS)
-        img = img.filter(ImageFilter.GaussianBlur(2.6))
-        return img
 
-    async def char_generator(self, char_code):
-        char_path = random.choice(listdir(path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'char', self.char_dict[char_code])))
-        char_path = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'char', self.char_dict[char_code], char_path)
-        img = Image.open(char_path).convert('RGBA')
-        img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)
-        return img
-
-    async def prote_plugin(self):
-        #def byte_supporter(img, output_buffer, char):
-        #    output_buffer = BytesIO()
-        #    img.save(output_buffer, 'png')
-        #    output_buffer.seek(0)
-        #    self.prote_lib[char].append(output_buffer)
-
-        # Cards get
-        cards = await self.client.quefe("SELECT hero_code FROM model_hero;", type='all')
-        self.prote_lib['card'] = {}
-        card_codes = {}
-        for card in cards:
-            card_codes[card[0]] = card[0]
-
-        # Fonts get
-        self.prote_lib['font'] = {}
-        fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
-        for font in fonts:
-            self.prote_lib['font'][font[0]] = {}
-            self.prote_lib['font'][font[0]]['name'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 70)    # Name
-            self.prote_lib['font'][font[0]]['degree'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 14)  # Degrees
-            self.prote_lib['font'][font[0]]['age'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 54)     # Age
-            self.prote_lib['font'][font[0]]['k/d'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 59)    # K/D
-            self.prote_lib['font'][font[0]]['evo'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 122)    # Evo
-            self.prote_lib['font'][font[0]]['guild'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 19)   # Guild
-            self.prote_lib['font'][font[0]]['rank'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 39)    # Rank
-            self.prote_lib['font'][font[0]]['money'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 53)   # Money
-
-        """
-        def ImageGen_supporter(char, rawimg):
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/char/{char}/{rawimg}').convert('RGBA')
-            img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)
-            self.prote_lib[prote_codes[char]].append(img)
-        """
-        """
-        def BackgroundGen_supporter(bg_name, rawimg):
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}/{rawimg}').convert('RGBA')
-            img = img.resize((800, 600), resample=Image.LANCZOS)
-            img = img.filter(ImageFilter.GaussianBlur(2.6))
-            self.prote_lib['bg'][bg_codes[bg_name]].append(img)
-        """
-
-        def CardGen_supporter(card_code, rawimg):
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/{card_code}/{rawimg}').convert('RGBA')
-            img = img.resize((190, 327), resample=Image.LANCZOS)
-            self.prote_lib['card'][card_code].append(img)
-
-        def bg_plugin():
-            """
-            self.prote_lib['bg'] = {}
-            self.prote_lib['bg_stock'] = []
-            self.prote_lib['stock_bar'] = []
-            """
-            self.prote_lib['bg_gif'] = []
-            self.prote_lib['bg_deck'] = []
-
-            """"
-            for bg_name, bg_id in bg_codes.items():
-                self.prote_lib['bg'][bg_id] = []
-                for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}'):
-                    BackgroundGen_supporter(bg_name, rawimg)
-                    #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
-            """
-            """
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bg_roll.png').convert('RGBA')
-            self.prote_lib['bg_stock'].append(img)
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bar.png').convert('RGBA')
-            self.prote_lib['stock_bar'].append(img)
-            """
-
-            # DECK =====================
-            """
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/board600.png').convert('RGBA')
-            img = img.resize((600, 355), resample=Image.LANCZOS)
-            self.prote_lib['bg_deck'].append(img)
-            """
-            """
-            particle_after = []
-            particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
-            for particle in particles:
-                a = Image.fromarray(particle)
-                a = a.resize((800, 600), resample=Image.LANCZOS)
-                a = a.filter(ImageFilter.GaussianBlur(2.6))
-                particle_after.append(a)
-            self.prote_lib['bg_gif'].append(particle_after)
-            """
-
-        def form_plugin():
-            self.prote_lib['form'] = []
-            img = Image.open('C:/Users/DELL/Desktop/bot_cli/data/profile/form4.png').convert('RGBA')
-            self.prote_lib['form'].append(img)
-        
-        def badge_plugin():
-            ranking_badges = {'iron': 'badge_IRON.png', 'bronze': 'badge_BRONZE.png', 'silver': 'badge_SILVER.png', 'gold': 'badge_GOLD.png', 'adamantite': 'badge_ADAMANTITE.png', 'mithryl': 'badge_MITHRYL.png'}
-            self.prote_lib['badge'] = {}
-            for key, dir in ranking_badges.items():
-                badge_img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/badges/{dir}').convert('RGBA')
-                badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
-                self.prote_lib['badge'][key] = badge_img
-
-        def font_plugin():
-            self.prote_lib['font']['stock_region'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 31)
-            self.prote_lib['font']['stock_region_bar'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 15)
-            self.prote_lib['font']['stock_region_name'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 62)
-
-        #print("HERE")
-        await self.client.loop.run_in_executor(None, bg_plugin)
-        await self.client.loop.run_in_executor(None, form_plugin)
-        await self.client.loop.run_in_executor(None, font_plugin)
-        await self.client.loop.run_in_executor(None, badge_plugin)
-
-        """
-        for char_name, card_code in card_codes.items():
-            self.prote_lib['card'][card_code] = []
-            for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/card/{char_name}'):
-                CardGen_supporter(char_name, rawimg)
-                #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
-        """
-        """
-        for char_name, char_id in prote_codes.items():
-            self.prote_lib[char_id] = []
-            for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/profile/char/{char_name}'):
-                ImageGen_supporter(char_name, rawimg)
-                #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
-        """
-        print("|| Avatar ---- READY!")
-
+# ================== AVATARS ==================
 
     @commands.command()
     @checks.check_author()
@@ -279,20 +153,6 @@ class avaAvatar(commands.Cog):
         await self.client._cursor.execute(master_que)
 
         await ctx.send(":white_check_mark:")
-
-    @commands.command()
-    @checks.check_author()
-    async def mche(self, ctx):
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
-        await self.tools.ava_scan(ctx.message, type='life_check')
 
     @commands.command(aliases=['a'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -513,8 +373,9 @@ class avaAvatar(commands.Cog):
             bg.alpha_composite(horizontal)
 
             output_buffer = BytesIO()
-            bg.save(output_buffer, 'png')
             output_buffer.seek(0)
+            bg.save(output_buffer, 'png')
+            output_buffer.close()
 
             #bg.show()
             return bg
@@ -586,10 +447,14 @@ class avaAvatar(commands.Cog):
             output_buffer = BytesIO()
             #imageio.mimwrite(output_buffer, outImPart)
             outImPart[0].save(output_buffer, save_all=True, format='gif', append_images=outImPart, loop=0)
+            for im in outImPart:
+                im.close()
+
             output_buffer.seek(0)
             #return await self.client.loop.run_in_executor(None, self.imgur_client.upload, output_buffer)
             #return output_buffer
             await ctx.send(file=discord.File(fp=output_buffer, filename='profile.gif'))
+            output_buffer.close()
         
         if __mode == 'static':
             await ctx.trigger_typing()
@@ -608,17 +473,7 @@ class avaAvatar(commands.Cog):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+# ================== TOOLS/BACKUP ==================
 
     async def mavatar(self, ctx, *args):
 
@@ -664,8 +519,6 @@ class avaAvatar(commands.Cog):
             output_buffer = await self.cogif(user_id, char_img, (co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id))
             await ctx.send(file=discord.File(fp=output_buffer, filename='profile.gif'))
 
-
-    # STATIC =========
     async def magiking(self, user_id, pack):
 
         # co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id = pack
@@ -732,9 +585,7 @@ class avaAvatar(commands.Cog):
         # print(f"OOOOOUUUTTT: {output_buffer}")
         return output_buffer
         # jout.put(output_buffer)
-
-
-    # GIF ============        
+     
     async def gafiking(self, user_id, in_img, char_img, pack, pos_offset=0, **kwargs):
         """pos_offset: Positive value for lower pos, negative for upper pos"""
 
@@ -902,6 +753,149 @@ class avaAvatar(commands.Cog):
         return output_buffer
 
 
+    async def bg_generator(self, bg_code):
+        bg_path = random.choice(listdir(path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'bg', self.bg_dict[bg_code])))
+        bg_path = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'bg', self.bg_dict[bg_code], bg_path)
+        img = Image.open(bg_path).convert('RGBA')
+        img = img.resize((800, 600), resample=Image.LANCZOS)
+        img = img.filter(ImageFilter.GaussianBlur(2.6))
+        return img
+
+    async def char_generator(self, char_code):
+        char_path = random.choice(listdir(path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'char', self.char_dict[char_code])))
+        char_path = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'char', self.char_dict[char_code], char_path)
+        img = Image.open(char_path).convert('RGBA')
+        img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)
+        return img
+
+    async def prote_plugin(self):
+        #def byte_supporter(img, output_buffer, char):
+        #    output_buffer = BytesIO()
+        #    img.save(output_buffer, 'png')
+        #    output_buffer.seek(0)
+        #    self.prote_lib[char].append(output_buffer)
+
+        # Cards get
+        cards = await self.client.quefe("SELECT hero_code FROM model_hero;", type='all')
+        self.prote_lib['card'] = {}
+        card_codes = {}
+        for card in cards:
+            card_codes[card[0]] = card[0]
+
+        # Fonts get
+        self.prote_lib['font'] = {}
+        fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
+        for font in fonts:
+            self.prote_lib['font'][font[0]] = {}
+            self.prote_lib['font'][font[0]]['name'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 70)    # Name
+            self.prote_lib['font'][font[0]]['degree'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 14)  # Degrees
+            self.prote_lib['font'][font[0]]['age'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 54)     # Age
+            self.prote_lib['font'][font[0]]['k/d'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 59)    # K/D
+            self.prote_lib['font'][font[0]]['evo'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 122)    # Evo
+            self.prote_lib['font'][font[0]]['guild'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 19)   # Guild
+            self.prote_lib['font'][font[0]]['rank'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 39)    # Rank
+            self.prote_lib['font'][font[0]]['money'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 53)   # Money
+
+        """
+        def ImageGen_supporter(char, rawimg):
+            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/char/{char}/{rawimg}').convert('RGBA')
+            img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)
+            self.prote_lib[prote_codes[char]].append(img)
+        """
+        """
+        def BackgroundGen_supporter(bg_name, rawimg):
+            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}/{rawimg}').convert('RGBA')
+            img = img.resize((800, 600), resample=Image.LANCZOS)
+            img = img.filter(ImageFilter.GaussianBlur(2.6))
+            self.prote_lib['bg'][bg_codes[bg_name]].append(img)
+        """
+
+        """
+        def CardGen_supporter(card_code, rawimg):
+            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/{card_code}/{rawimg}').convert('RGBA')
+            img = img.resize((190, 327), resample=Image.LANCZOS)
+            self.prote_lib['card'][card_code].append(img)
+        """
+
+        def bg_plugin():
+            """
+            self.prote_lib['bg'] = {}
+            self.prote_lib['bg_stock'] = []
+            self.prote_lib['stock_bar'] = []
+            """
+            self.prote_lib['bg_gif'] = []
+            self.prote_lib['bg_deck'] = []
+
+            """"
+            for bg_name, bg_id in bg_codes.items():
+                self.prote_lib['bg'][bg_id] = []
+                for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}'):
+                    BackgroundGen_supporter(bg_name, rawimg)
+                    #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
+            """
+            """
+            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bg_roll.png').convert('RGBA')
+            self.prote_lib['bg_stock'].append(img)
+            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bar.png').convert('RGBA')
+            self.prote_lib['stock_bar'].append(img)
+            """
+
+            # DECK =====================
+            """
+            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/board600.png').convert('RGBA')
+            img = img.resize((600, 355), resample=Image.LANCZOS)
+            self.prote_lib['bg_deck'].append(img)
+            """
+            """
+            particle_after = []
+            particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
+            for particle in particles:
+                a = Image.fromarray(particle)
+                a = a.resize((800, 600), resample=Image.LANCZOS)
+                a = a.filter(ImageFilter.GaussianBlur(2.6))
+                particle_after.append(a)
+            self.prote_lib['bg_gif'].append(particle_after)
+            """
+
+        def form_plugin():
+            self.prote_lib['form'] = []
+            img = Image.open('C:/Users/DELL/Desktop/bot_cli/data/profile/form4.png').convert('RGBA')
+            self.prote_lib['form'].append(img)
+        
+        def badge_plugin():
+            ranking_badges = {'iron': 'badge_IRON.png', 'bronze': 'badge_BRONZE.png', 'silver': 'badge_SILVER.png', 'gold': 'badge_GOLD.png', 'adamantite': 'badge_ADAMANTITE.png', 'mithryl': 'badge_MITHRYL.png'}
+            self.prote_lib['badge'] = {}
+            for key, dir in ranking_badges.items():
+                badge_img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/badges/{dir}').convert('RGBA')
+                badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
+                self.prote_lib['badge'][key] = badge_img
+
+        def font_plugin():
+            self.prote_lib['font']['stock_region'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 31)
+            self.prote_lib['font']['stock_region_bar'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 15)
+            self.prote_lib['font']['stock_region_name'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 62)
+
+        #print("HERE")
+        await self.client.loop.run_in_executor(None, bg_plugin)
+        await self.client.loop.run_in_executor(None, form_plugin)
+        await self.client.loop.run_in_executor(None, font_plugin)
+        await self.client.loop.run_in_executor(None, badge_plugin)
+
+        """
+        for char_name, card_code in card_codes.items():
+            self.prote_lib['card'][card_code] = []
+            for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/card/{char_name}'):
+                CardGen_supporter(char_name, rawimg)
+                #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
+        """
+        """
+        for char_name, char_id in prote_codes.items():
+            self.prote_lib[char_id] = []
+            for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/profile/char/{char_name}'):
+                ImageGen_supporter(char_name, rawimg)
+                #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
+        """
+
     def pillowingAvatar(self, img=(), pack=(), pack2=(), jout=None):
 
         bg, char_img, form_img, badge_img = img
@@ -1003,6 +997,9 @@ class avaAvatar(commands.Cog):
 
         return output_buffer
         # jout.put(output_buffer)
+
+
+
 
 
 def setup(client):

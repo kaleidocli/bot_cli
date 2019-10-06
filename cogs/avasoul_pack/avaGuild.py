@@ -1,18 +1,21 @@
+import random
+import asyncio
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import pymysql.err as mysqlError
 
-import random
-import asyncio
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
+
+
 class avaGuild(commands.Cog):
+
     def __init__(self, client):
         self.client = client
 
@@ -33,13 +36,19 @@ class avaGuild(commands.Cog):
                                 'adamantite': 'https://imgur.com/86OFaqJ.png',
                                 'mithryl': 'https://imgur.com/IybhU0l.png'}
 
-
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| Guild Systems ---- READY!")
 
 
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| Guild Systems ---- READY!")
+
+
+
+# ================== GUILD ==================
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -697,6 +706,9 @@ class avaGuild(commands.Cog):
             await ctx.send(embed=discord.Embed(description=f"{marker[role]} Currently in party `{party_id}` as a {role.lower()}.", colour=0xF4A400)); return
 
 
+
+# ================== FEATURES ==================
+
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
     async def art(self, ctx, *args):
@@ -877,9 +889,6 @@ class avaGuild(commands.Cog):
             await self.client._cursor.execute(f"SELECT func_aa_reward('{ctx.author.id}', '{art_code}', 1);")
 
         except IndexError: pass
-
-
-
 
 
 

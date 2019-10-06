@@ -18,6 +18,7 @@ class avaTools:
         """args ---> tuple"""
 
         await asyncio.sleep(0)
+        if not self.client: return
 
         try: await self.client._cursor.execute(query, args=args)
         except RuntimeError: return ''
@@ -57,6 +58,7 @@ class avaTools:
         target = MSG.author
         target_id = str(target.id)
         await asyncio.sleep(0)
+        if not self.client: return
 
         # Readjust the incorrect value
         if type == 'normalize':

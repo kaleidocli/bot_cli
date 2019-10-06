@@ -1,29 +1,40 @@
+from io import BytesIO
+import asyncio
+from functools import partial
+from datetime import datetime, timedelta
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 from PIL import Image, ImageDraw
 
-from io import BytesIO
-import asyncio
-from functools import partial
-from datetime import datetime, timedelta
-
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
+
+
 class avaPersonalUtils(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| PersonalUtils --- READY!")
 
+
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| PersonalUtils --- READY!")
+
+
+
+# ================== UTILS ==================
 
     @commands.command(aliases=['scan', 'rad'])
     @commands.cooldown(1, 30, type=BucketType.user)
@@ -312,7 +323,6 @@ class avaPersonalUtils(commands.Cog):
             
             await ctx.send(f":white_check_mark: {quest_line.capitalize()} quest `{quest_code}`|**{quest_name}** accepted! Use `quest` to check your progress.")
             await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'dailyquest', ex=duration, nx=True))
-            
 
     @commands.command()
     async def kms(self, ctx, *args):
@@ -347,8 +357,5 @@ class avaPersonalUtils(commands.Cog):
 
 
 
-
-
 def setup(client):
     client.add_cog(avaPersonalUtils(client))
-

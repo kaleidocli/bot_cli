@@ -1,15 +1,18 @@
+import asyncio
+import random
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
-import asyncio
-import random
-
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
+
+
 class avaHelper(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.__cd_check = self.client.thp.cd_check
@@ -19,14 +22,14 @@ class avaHelper(commands.Cog):
         self.helper_title = '**G U I D E**⠀⠀|⠀⠀**R P G  C O M M A N D S**'
         self.helper_description = f"""
                                  ```ini
-⠀| [help <command>] for more info.
-⠀| [tutorial] if you are beginner.```
-                                ╟ **NEW?** Use **`incarnate`** right away!
-                                ╟ Already incarnated? [Join support server!](https://discord.gg/NGtXxXj)
+[help <cmd>] to inspect a command.
+[incarnate] to begin your journey.```
+                                ╟ **Confuse?** Use **`concept`** for conceptual questions!
+                                ╟ **Still confuse?** Join [our support camp!](https://discord.gg/NGtXxXj)
 
                                 ╟ **『LORE』**
-                                ⠀⠀You - a Remnant as many others - woke up in the middle of an unreal world, where reality mixed with fantasy, where space and time were torn apart into *regions*.
-                                ⠀⠀Since the Seraph, human have fought their way to reunite its race and called themselves, **"United Regions of The Pralaeyr"**, later pointed their swords at the pit and the summit of Pralaeyr.
+>>>                               ⠀⠀ You - a *Remnant* as many others - woke up in the middle of an unreal world, where reality mixed with fantasy, where space and time were torn apart into *regions*.
+                                ⠀⠀Since the Seraph, human have fought their way to reunite their race and pointed their swords at the pit and summit of Pralaeyr.
                                 ⠀⠀"To fight the darkness of the fantasy and to free the human race from the Pralaeyr", firsts of the Remnants have sworn.
                                 """
         self.helper_thumbnail = 'https://imgur.com/EQsptpa.png'
@@ -39,32 +42,49 @@ class avaHelper(commands.Cog):
                 ```dsconfig
 Definition? Mechanism? Lore? Yaaa```
                                 **『YOU. ARE. CONFUSED...』**
-                                \tYou walk into our worlds, you are confused. You might have known the commands, but you could have not fully embraced the nature of it.
-                                \tThis may be your guidance to the basis of this world, or may it let you acknowledge the furthest corner of the system.
-                                \tYour choice, to learn more or to stay still. May the Olds look upon you
+                                ⠀⠀We understand that this bot confuse *the hell* out of you.
+                                ⠀⠀Apparently, command `help` only shows you how to use this bot, not to understand the mechanic behind it. 
+                                ⠀⠀So, here it is. Bon apetite.
 
                                 **『.. SO. ARE. WE.』**
-                                We, the devs, might not be able to please your curiosity, since... we sometimes cannot remember all of what the Pralaeyr can do!
-                                May it be a mistake, or may it be not enough, if you don't mind, please come to our support server! https://discord.gg/4wJHCBp
+                                ⠀Even us as Cli's devs, we cannot express everything in this helper.
+                                ⠀So, if you don't mind, please take a visit to [our support server](https://discord.gg/4wJHCBp)!
                                 """
         self.concept_thumbnail = 'https://imgur.com/ZneprKF.gif'
         self.concept_banner = 'https://imgur.com/4ixM0TR.png'
         self.concept_preface = None
         self.concept_prefaceEmbs = None
 
+        self.helper_preface = ''; self.helper_prefaceEmbs = ''; self.concept_preface = ''; self.concept_prefaceEmbs = ''
+        self.intoLoop(self.prepLoad())
 
+        print("|| Helper --- READY!")
 
-
-    @commands.Cog.listener()
-    async def on_ready(self):
+    async def prepLoad(self):
         self.helper_preface = await self.helperPerface_load()
         self.helper_prefaceEmbs = await self.helper_ember()
         self.concept_preface = await self.conceptPerface_load()
         self.concept_prefaceEmbs = await self.concept_ember()
-        print("|| Helper --- READY!")
+
+    def intoLoop(self, coro):
+        self.client.loop.create_task(coro)
 
 
 
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     pass
+    #     self.helper_preface = await self.helperPerface_load()
+    #     self.helper_prefaceEmbs = await self.helper_ember()
+    #     self.concept_preface = await self.conceptPerface_load()
+    #     self.concept_prefaceEmbs = await self.concept_ember()
+    #     print("|| Helper --- READY!")
+
+
+
+# ================== HELPER ==================
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -148,10 +168,6 @@ Definition? Mechanism? Lore? Yaaa```
 
         await ctx.send(embed=temb)
 
-
-
-
-
     @commands.command(aliases=['cc'])
     @commands.cooldown(1, 3, type=BucketType.user)
     async def concept(self, ctx, *args):
@@ -231,7 +247,24 @@ Definition? Mechanism? Lore? Yaaa```
 
 
 
+# ================== MISC ==================
 
+    @commands.command()
+    async def invite(self, ctx):
+        #await ctx.send("Hey use this to invite me -> https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=238157120&scope=bot")
+        temb = discord.Embed(description="""[===== Support Server =====](https://discord.gg/wvz6bps)\n◈ Before inviting this bot, you must acknowledge and accept the following:\n· High-ratio shutdown session, with random length and for **no reason**.\n| Any DM-ed complaints relevant to the incident will result in a ban.\nHowever, compensation with evidences will be responsed and should be sent in *support server*.\nTrying to DM twice on the above problem will result in a ban.\nDM abusing will result in a *boop*.
+                                    \n· Buggy gameplay, low latency.\n| Any bot-abusing activities will result in a ban.\nHowever, *bot-breaking* is encouraged, and any bugs should be reported in *support server/Bug-report*
+                                    \n· Violation in data, balance and activities of the players.\n| This is a testing bot. Have fun testing this <:fufu:508437298808094742>
+                                    \n[===== Invite =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=104193344&scope=bot)""")
+        await ctx.send(embed=temb)
+
+    @commands.command()
+    async def source(self, ctx, *args):
+        await ctx.send('https://github.com/kaleidocli/bot_cli')
+
+
+
+# ================== TOOLS ==================
 
     async def helperPerface_load(self):
         await asyncio.sleep(3)
@@ -329,9 +362,5 @@ Definition? Mechanism? Lore? Yaaa```
 
 
 
-
-
-
 def setup(client):
     client.add_cog(avaHelper(client))
-

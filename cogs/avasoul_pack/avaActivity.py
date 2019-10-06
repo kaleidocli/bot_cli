@@ -13,17 +13,28 @@ from dateutil.relativedelta import relativedelta
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
+
+
 class avaActivity(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| Activity --- Ready!")
-    
+
+
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| Activity --- Ready!")
+
+
+
+# ================== ACTIVITIES ==================
+
     @commands.command(aliases=['job'])
     @commands.cooldown(1, 10, type=BucketType.user)
     async def work(self, ctx, *args):
@@ -358,7 +369,6 @@ class avaActivity(commands.Cog):
         # Cooldown set
         await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{price}** has been deducted from your account.")
         await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'degreeing', ex=duration, nx=True))
-
 
     @commands.command(aliases=['med'])
     @commands.cooldown(1, 5, type=BucketType.user)

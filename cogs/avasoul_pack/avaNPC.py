@@ -1,16 +1,19 @@
+import random
+import asyncio
+
 import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
-import random
-import asyncio
-
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 from .npcTriggers import npcTrigger
 
+
+
 class avaNPC(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.npcTrigger = npcTrigger(self.client)
@@ -21,12 +24,19 @@ class avaNPC(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-
-    @commands.Cog.listener()
-    async def on_ready(self):
         print("|| NPC ---- READY!")
 
 
+
+# ================== EVENTS ==================
+
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print("|| NPC ---- READY!")
+
+
+
+# ================== NPC ==================
 
     @commands.command(aliases=['npcs'])
     @commands.cooldown(1, 5, type=BucketType.user)
