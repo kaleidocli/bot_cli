@@ -73,8 +73,9 @@ async def get_pref(bot, message):
 client = commands.Bot(command_prefix=get_pref)
 client.myconfig = config
 client.realready = True
-client.owner_id = config.owner_id
-client.owner = client.get_user(client.owner_id)
+client.ownerid = config.owner_id
+client.owner = client.get_user(client.ownerid)
+print(client.ownerid, client.owner)
 
 # client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')

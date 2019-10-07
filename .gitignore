@@ -1,2 +1,4 @@
 cogs/configs.py
 te.txt
+cogs/__pycache__/
+__pycache__/
