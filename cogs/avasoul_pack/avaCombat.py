@@ -193,6 +193,7 @@ class avaCombat(commands.Cog):
     @commands.command(aliases=['rng'])
     @commands.cooldown(1, 10, type=BucketType.user)
     async def range(self, ctx, *args):
+
         # >Aim <coord_X> <coord_Y> <shots(optional)>      |      >Aim <@user/mob_name> <shots(optional)>       |          >Aim (defaul - shot=1)
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
@@ -781,8 +782,10 @@ class avaCombat(commands.Cog):
                 count += 0.2
 
             # Damage Calc
-            dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst)
-            dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick)
+            diff_var = 1 - 0.04*abs(STR-w_str)
+            if diff_var < 0: diff_var = 0.001
+            dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst*diff_var)
+            dmg_q = round(((STR+w_str*2)/3)*w_multiplier*m_quick*diff_var)
             # Crit
             try:
                 if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
