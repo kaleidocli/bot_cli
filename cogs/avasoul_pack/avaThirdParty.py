@@ -12,7 +12,7 @@ class avaThirdParty:
     def __init__(self, client=None):
         self.client = client
         self.configs = SConfig()
-        self.redio = redis.Redis('localhost')
+        self.redio = redis.Redis(host=self.configs.Redis_host, port=self.configs.Redis_port)
         self.loop = asyncio.get_event_loop()
         self.client.conn, self.client._cursor = self.loop.run_until_complete(self.get_CURSOR())
         self.client.client_id = self.configs.Imgur_id

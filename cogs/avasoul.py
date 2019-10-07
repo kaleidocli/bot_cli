@@ -24,6 +24,7 @@ from .avasoul_pack.avaUtils import avaUtils
 
 
 class avasoul(commands.Cog):
+
     def __init__(self, client):
         self.client = client
         self.client.thp = avaThirdParty.avaThirdParty(client=self.client)
@@ -31,6 +32,7 @@ class avasoul(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
         self.client.quefe = self.tools.quefe
+        print(self.client.quefe)
 
         self.ava_dict = {}
         self.prote_lib = {}
@@ -1985,6 +1987,7 @@ class avasoul(commands.Cog):
                         
                         # Mass production
                         for count in range(mob[1]):
+                            # await asyncio.sleep(0.01)
                             # Generating rewards
                             status = []; objecto = []; bingo_list = []
                             # Gacha
@@ -2025,6 +2028,7 @@ class avasoul(commands.Cog):
                             
                             # Mass production
                             for count in range(mob[1]):
+                                # await asyncio.sleep(0.01)
                                 # Generating rewards
                                 status = []; objecto = []; bingo_list = []
                                 for reward in rewards:

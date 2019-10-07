@@ -89,7 +89,7 @@ class avaAvatar(commands.Cog):
 # ================== EVENTS ==================
 
     async def prepLoad(self):
-        await asyncio.sleep(2)      # Do not remove, or else the data stream would mix with WORLD_BUILDING
+        await asyncio.sleep(15)      # Do not remove, or else the data stream would mix with WORLD_BUILDING or avaDungeon
         await self.prote_plugin()
 
     def intoLoop(self, coro):
@@ -754,16 +754,16 @@ class avaAvatar(commands.Cog):
 
 
     async def bg_generator(self, bg_code):
-        bg_path = random.choice(listdir(path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'bg', self.bg_dict[bg_code])))
-        bg_path = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'bg', self.bg_dict[bg_code], bg_path)
+        bg_path = random.choice(listdir(path.join('data', 'profile', 'bg', self.bg_dict[bg_code])))
+        bg_path = path.join('data', 'profile', 'bg', self.bg_dict[bg_code], bg_path)
         img = Image.open(bg_path).convert('RGBA')
         img = img.resize((800, 600), resample=Image.LANCZOS)
         img = img.filter(ImageFilter.GaussianBlur(2.6))
         return img
 
     async def char_generator(self, char_code):
-        char_path = random.choice(listdir(path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'char', self.char_dict[char_code])))
-        char_path = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'char', self.char_dict[char_code], char_path)
+        char_path = random.choice(listdir(path.join('data', 'profile', 'char', self.char_dict[char_code])))
+        char_path = path.join('data', 'profile', 'char', self.char_dict[char_code], char_path)
         img = Image.open(char_path).convert('RGBA')
         img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)
         return img
@@ -786,15 +786,18 @@ class avaAvatar(commands.Cog):
         self.prote_lib['font'] = {}
         fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
         for font in fonts:
+            assdir_font = path.join('data', 'profile', 'font', self.font_dict[font[0]])
+            # print(assdir_font)
+            # print(path.abspath('..'))
             self.prote_lib['font'][font[0]] = {}
-            self.prote_lib['font'][font[0]]['name'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 70)    # Name
-            self.prote_lib['font'][font[0]]['degree'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 14)  # Degrees
-            self.prote_lib['font'][font[0]]['age'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 54)     # Age
-            self.prote_lib['font'][font[0]]['k/d'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 59)    # K/D
-            self.prote_lib['font'][font[0]]['evo'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 122)    # Evo
-            self.prote_lib['font'][font[0]]['guild'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 19)   # Guild
-            self.prote_lib['font'][font[0]]['rank'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 39)    # Rank
-            self.prote_lib['font'][font[0]]['money'] = ImageFont.truetype(f"C:/Users/DELL/Desktop/bot_cli/data/profile/font/{self.font_dict[font[0]]}", 53)   # Money
+            self.prote_lib['font'][font[0]]['name'] = ImageFont.truetype(assdir_font, 70)    # Name
+            self.prote_lib['font'][font[0]]['degree'] = ImageFont.truetype(assdir_font, 14)  # Degrees
+            self.prote_lib['font'][font[0]]['age'] = ImageFont.truetype(assdir_font, 54)     # Age
+            self.prote_lib['font'][font[0]]['k/d'] = ImageFont.truetype(assdir_font, 59)    # K/D
+            self.prote_lib['font'][font[0]]['evo'] = ImageFont.truetype(assdir_font, 122)    # Evo
+            self.prote_lib['font'][font[0]]['guild'] = ImageFont.truetype(assdir_font, 19)   # Guild
+            self.prote_lib['font'][font[0]]['rank'] = ImageFont.truetype(assdir_font, 39)    # Rank
+            self.prote_lib['font'][font[0]]['money'] = ImageFont.truetype(assdir_font, 53)   # Money
 
         """
         def ImageGen_supporter(char, rawimg):
@@ -812,7 +815,7 @@ class avaAvatar(commands.Cog):
 
         """
         def CardGen_supporter(card_code, rawimg):
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/{card_code}/{rawimg}').convert('RGBA')
+            img = Image.open(path.join('data', 'card', rawimg)).convert('RGBA')
             img = img.resize((190, 327), resample=Image.LANCZOS)
             self.prote_lib['card'][card_code].append(img)
         """
@@ -834,15 +837,16 @@ class avaAvatar(commands.Cog):
                     #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
             """
             """
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bg_roll.png').convert('RGBA')
+            path.join('data', 'stock graph', 'bg_roll.png')
+            img = Image.open(path.join('data', 'stock graph', 'bg_roll.png')).convert('RGBA')
             self.prote_lib['bg_stock'].append(img)
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/stock graph/bar.png').convert('RGBA')
+            img = Image.open(path.join('data', 'stock graph', 'bar.png')).convert('RGBA')
             self.prote_lib['stock_bar'].append(img)
             """
 
             # DECK =====================
             """
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/card/board600.png').convert('RGBA')
+            img = Image.open(path.join('data', 'card', 'board600.png')).convert('RGBA')
             img = img.resize((600, 355), resample=Image.LANCZOS)
             self.prote_lib['bg_deck'].append(img)
             """
@@ -859,21 +863,21 @@ class avaAvatar(commands.Cog):
 
         def form_plugin():
             self.prote_lib['form'] = []
-            img = Image.open('C:/Users/DELL/Desktop/bot_cli/data/profile/form4.png').convert('RGBA')
+            img = Image.open(path.join('data', 'profile', 'form4.png')).convert('RGBA')
             self.prote_lib['form'].append(img)
         
         def badge_plugin():
             ranking_badges = {'iron': 'badge_IRON.png', 'bronze': 'badge_BRONZE.png', 'silver': 'badge_SILVER.png', 'gold': 'badge_GOLD.png', 'adamantite': 'badge_ADAMANTITE.png', 'mithryl': 'badge_MITHRYL.png'}
             self.prote_lib['badge'] = {}
             for key, dir in ranking_badges.items():
-                badge_img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/badges/{dir}').convert('RGBA')
+                badge_img = Image.open(path.join('data', 'profile', 'badges', dir)).convert('RGBA')
                 badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
                 self.prote_lib['badge'][key] = badge_img
 
         def font_plugin():
-            self.prote_lib['font']['stock_region'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 31)
-            self.prote_lib['font']['stock_region_bar'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 15)
-            self.prote_lib['font']['stock_region_name'] = ImageFont.truetype('C:/Users/DELL/Desktop/bot_cli/data/stock graph/CAROBTN.ttf', 62)
+            self.prote_lib['font']['stock_region'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 31)
+            self.prote_lib['font']['stock_region_bar'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 15)
+            self.prote_lib['font']['stock_region_name'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 62)
 
         #print("HERE")
         await self.client.loop.run_in_executor(None, bg_plugin)
@@ -884,7 +888,7 @@ class avaAvatar(commands.Cog):
         """
         for char_name, card_code in card_codes.items():
             self.prote_lib['card'][card_code] = []
-            for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/card/{char_name}'):
+            for rawimg in listdir(path.join('data', 'card', char_name)):
                 CardGen_supporter(char_name, rawimg)
                 #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
         """
@@ -904,7 +908,7 @@ class avaAvatar(commands.Cog):
         # fnt_name, fnt_degree, fnt_age, fnt_kd, fnt_guild, fnt_rank, fnt_evo, fnt_money = font
 
         # font_id = font_dict[font_id]
-        # assdir = path.join(Path(__file__).parent.parent.parent, 'data', 'profile', 'font')
+        # assdir = path.join('data', 'profile', 'font')
 
         # fnt_name = ImageFont.truetype(path.join(assdir, font_id), 70)    # Name
         # fnt_degree = ImageFont.truetype(path.join(assdir, font_id), 14)  # Degrees

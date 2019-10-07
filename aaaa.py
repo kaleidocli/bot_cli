@@ -17,7 +17,6 @@ from nltk import word_tokenize
 from PIL import Image
 import imgurpython
 import aiohttp
-import psutil
 
 from cogs.configs import SConfig
 
@@ -37,11 +36,10 @@ extensions = [  'jishaku',
                 'cogs.pydanboo',
                 'cogs.tictactoe', 
                 'cogs.hen',
-                'cogs.guess',  
-                'cogs.audio',
+                'cogs.guess',
                 'cogs.dbl',
                 'cogs.avasoul',
-                'cogs.avasoul_pack.avaHelper', 
+                'cogs.avasoul_pack.avaHelper',
                 'cogs.avasoul_pack.avaAdmin', 
                 'cogs.avasoul_pack.avaTrivia', 
                 'cogs.avasoul_pack.avaGuild', 
@@ -53,7 +51,6 @@ extensions = [  'jishaku',
                 'cogs.avasoul_pack.avaWorkshop',
                 'cogs.avasoul_pack.avaPersonal',
                 'cogs.avasoul_pack.avaPersonalUtils',
-                'cogs.avasoul_pack.avaDungeon',
                 'cogs.error_handler']   # Always put error_handler at the BOTTOM!
 
 #prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
@@ -76,6 +73,8 @@ async def get_pref(bot, message):
 client = commands.Bot(command_prefix=get_pref)
 client.myconfig = config
 client.realready = True
+client.owner_id = config.owner_id
+client.owner = client.get_user(client.owner_id)
 
 # client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')
@@ -520,12 +519,13 @@ def prepformain():
         if client.load_count: return
     except AttributeError: client.load_count = 0
     client.extension_count = len(extensions)
-    client.load_extension('cogs.avasoul_pack.avaAvatar')
     for extension in extensions:
         print(client.load_count, extension)
         if client.load_count == client.extension_count: break
         client.load_extension(extension)
         client.load_count += 1
+    client.load_extension('cogs.avasoul_pack.avaAvatar')
+    client.load_extension('cogs.avasoul_pack.avaDungeon')
     client.run(TOKEN, bot=True, reconnect=True)
 
 def exitest():

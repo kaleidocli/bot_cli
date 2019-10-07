@@ -6,17 +6,12 @@ from discord.ext.commands.cooldowns import BucketType
 from imgurpython import ImgurClient
 from imgurpython.helpers.error import ImgurClientError
 from functools import partial
+
 import asyncio
 import aiomysql
 #import concurrent
 
-async def get_CURSOR():
-    conn = await aiomysql.connect(host='localhost', user='root', password='mysql', port=3307, db='mycli', autocommit=True)
-    _cursor = await conn.cursor()
-    return conn, _cursor
-
-loop = asyncio.get_event_loop()    
-conn, _cursor = loop.run_until_complete(get_CURSOR())
+from .configs import SConfig
 
 def check_id():
     def inner(ctx):
@@ -25,13 +20,14 @@ def check_id():
 
 class guess(commands.Cog):
     def __init__(self, client):
+        self.configs = SConfig()
         self.client = client
         self.guess_socket = []          #For guess
         self.guess_dictall = {}         #For guess_all
         # self.guess_socket_plugin()
         # self.guess_socket_pluginall()
-        self.client_id = '594344297452325'
-        self.client_secret = '2e29f3c50797fa6d5aad8b5bef527b214683a3ff'
+        self.client_id = self.configs.Imgur_id
+        self.client_secret = self.configs.Imgur_secret
         self.imgur_client = ImgurClient(self.client_id, self.client_secret)
         #self.client.load_extension('error_handling')
 
@@ -40,7 +36,7 @@ class guess(commands.Cog):
     @commands.command(pass_context=True, aliases=['quiz'])
     @commands.cooldown(1, 10, type=BucketType.user)
     async def guess(self, ctx):
-        id, question, answer, illulink = await self.quefe(f"SELECT id, question, answer, illulink FROM tz_quiz WHERE guild_id='{ctx.guild.id}' ORDER BY rand() LIMIT 1;")
+        id, question, answer, illulink = await self.client.quefe(f"SELECT id, question, answer, illulink FROM tz_quiz WHERE guild_id='{ctx.guild.id}' ORDER BY rand() LIMIT 1;")
 
         msg_box = discord.Embed(
             title = question,
@@ -68,11 +64,11 @@ class guess(commands.Cog):
         try: await self.client.wait_for('message', timeout=15, check=UMCc_check)
         except asyncio.TimeoutError:
             await ctx.send("<:SagiriBleh:457194206000316437> Duh loserrrrr")
-            await _cursor.execute(f"UPDATE tz_quiz SET lose=lose+1 WHERE user_id='{ctx.author.id}';")
+            await self.client._cursor.execute(f"UPDATE tz_quiz SET lose=lose+1 WHERE user_id='{ctx.author.id}';")
             return
 
         await ctx.send("**Congrats!!!**")
-        await _cursor.execute(f"UPDATE tz_quiz SET win=win+1 WHERE user_id='{ctx.author.id}';")
+        await self.client._cursor.execute(f"UPDATE tz_quiz SET win=win+1 WHERE user_id='{ctx.author.id}';")
         return
 
     @commands.command(aliases=['quiz_add'])
@@ -99,7 +95,7 @@ class guess(commands.Cog):
                     #Invalid link
                     await ctx.send(":warning: Invalid link!"); return
             else: illulink = 'n/a'
-            await _cursor.execute(f"""INSERT INTO tz_quiz VALUES (0, "{quiz.content}", "{answer.content}", "{illulink}", 0, 0, '{ctx.author.id}', '{ctx.guild.id}');""")
+            await self.client._cursor.execute(f"""INSERT INTO tz_quiz VALUES (0, "{quiz.content}", "{answer.content}", "{illulink}", 0, 0, '{ctx.author.id}', '{ctx.guild.id}');""")
             await ctx.send(":white_check_mark: Successfully added!"); return
         except asyncio.TimeoutError: await ctx.send(":warning: Request timed out!"); return
 
@@ -507,15 +503,6 @@ class guess(commands.Cog):
             colour = discord.Colour(0x011C3A)
         )
         await self.client.say(embed=box_small)
-
-
-    async def quefe(self, query, args=None, type='one'):
-        """args ---> tuple"""
-
-        await _cursor.execute(query, args=args)
-        if type == 'all': resu = await _cursor.fetchall()
-        else: resu = await _cursor.fetchone()
-        return resu
 
     def updating(self):
         with open('game/q/q.json', 'w') as f:

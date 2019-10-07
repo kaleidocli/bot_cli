@@ -346,11 +346,15 @@ class avaTrivia(commands.Cog):
         # COMMANDs
         for cmd, cmd_tag in zip(['daily', 'daily quest', 'work', 'trader', 'merge', 'sex'], ['daily', 'dailyquest', 'work', 'trade', 'merge', 'sex']):
             time = await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.ttl, f"{cmd_tag}{ctx.author.id}"))
-            # On cooldown
-            if not time:
-                off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`{cmd}`**")
+            try:
+                # On cooldown
+                if time == None or time <= 0:
+                    off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`{cmd}`**")
+                # Off cooldown
+                else:
+                    on_cd.append(f"\n:stopwatch: Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
             # Off cooldown
-            else:
+            except TypeError:
                 on_cd.append(f"\n:stopwatch: Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
 
         # INTERACTIONs

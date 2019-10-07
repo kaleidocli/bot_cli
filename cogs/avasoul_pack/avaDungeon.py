@@ -29,7 +29,7 @@ class avaDungeon(commands.Cog):
         print("|| Dungeon --- READY!")
 
     async def prepLoad(self):
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)              # Do not remove, or else the data stream would mix with avaAvatar or WORLD_BUILDING
         self.mobdict = await self.mobdictLoad()
         self.dungeondict = await self.dungeondictLoad()
         self.checkpointdict = await self.checkpointdictLoad()
