@@ -32,7 +32,7 @@ class avaHelper(commands.Cog):
                                 ⠀⠀Since the Seraph, human have fought their way to reunite their race and pointed their swords at the pit and summit of Pralaeyr.
                                 ⠀⠀"To fight the darkness of the fantasy and to free the human race from the Pralaeyr", firsts of the Remnants have sworn.
                                 """
-        self.helper_thumbnail = 'https://imgur.com/EQsptpa.png'
+        random.choice(self.helper_thumbnail) = ['https://imgur.com/EQsptpa.png', 'https://imgur.com/KBOW82t.png']
         self.helper_banners = ["https://imgur.com/D1Ld5A7.gif", "https://imgur.com/e8cIazx.gif"]
         self.helper_preface = None
         self.helper_prefaceEmbs = None
@@ -164,7 +164,7 @@ Definition? Mechanism? Lore? Yaaa```
         temb.add_field(name='**『Syntax』**', value=f"{syntax}\n⠀", inline=True)
         temb.add_field(name='**『Aliases』**', value=f"{aliases}\n⠀", inline=True)
         temb.add_field(name='**『Description』**', value=f"{description}", inline=False)
-        temb.set_footer(text=f"<{tags.replace(' - ', '> <')}>", icon_url='https://imgur.com/EQsptpa.png')
+        temb.set_footer(text=f"<{tags.replace(' - ', '> <')}>", icon_url=random.choice(self.helper_thumbnail))
 
         await ctx.send(embed=temb)
 
@@ -288,7 +288,7 @@ Definition? Mechanism? Lore? Yaaa```
             colour = discord.Colour(0xB1F1FA)
         )
 
-        temball.set_thumbnail(url=self.helper_thumbnail)
+        temball.set_thumbnail(url=random.choice(self.helper_thumbnail))
         temball.set_image(url=random.choice(self.helper_banners))
         temball.set_footer(text=f"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
         temb_socket.append(temball)
@@ -306,7 +306,7 @@ Definition? Mechanism? Lore? Yaaa```
                 {line}""",
                 colour = discord.Colour(0xB1F1FA)
             )
-            tembeach.set_thumbnail(url=self.helper_thumbnail)
+            tembeach.set_thumbnail(url=random.choice(self.helper_thumbnail))
             tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
             temb_socket.append(tembeach)
 
