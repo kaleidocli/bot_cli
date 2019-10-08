@@ -32,7 +32,7 @@ class avaHelper(commands.Cog):
                                 ⠀⠀Since the Seraph, human have fought their way to reunite their race and pointed their swords at the pit and summit of Pralaeyr.
                                 ⠀⠀"To fight the darkness of the fantasy and to free the human race from the Pralaeyr", firsts of the Remnants have sworn.
                                 """
-        random.choice(self.helper_thumbnail) = ['https://imgur.com/EQsptpa.png', 'https://imgur.com/KBOW82t.png']
+        self.helper_thumbnail = ['https://imgur.com/EQsptpa.png', 'https://imgur.com/KBOW82t.png']
         self.helper_banners = ["https://imgur.com/D1Ld5A7.gif", "https://imgur.com/e8cIazx.gif"]
         self.helper_preface = None
         self.helper_prefaceEmbs = None
