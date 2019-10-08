@@ -34,10 +34,10 @@ class ErrorHandler(commands.Cog):
         elif isinstance(error, asyncio.TimeoutError): pass
         else:
             try:
-                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"```{error.__traceback__}```")
+                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"```{error.__traceback__.format_exc()}```")
             except AttributeError:
                 self.client.owner = self.client.get_user(self.client.owner_id)
-                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"```{error.__traceback__}```")
+                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"```{error.__traceback__.format_exc()}```")
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
