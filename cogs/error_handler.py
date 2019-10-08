@@ -3,6 +3,7 @@ import sys
 from discord.ext import commands
 import discord
 from datetime import timedelta
+import asyncio
 
 
 
@@ -30,10 +31,11 @@ class ErrorHandler(commands.Cog):
             #await ctx.channel.send(f"<:fufu:508437298808094742> Etou... **{ctx.author.name}**? Can you not shut the fuck up for **`{timedelta(seconds=int(error.retry_after))}`**.", delete_after=5)
         elif isinstance(error, commands.errors.BadArgument):
             await ctx.channel.send(f"<a:ghostcat3:531060433927536650> {error}")
+        elif isinstance(error, asyncio.TimeoutError): pass
         else:
             try:
                 await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**", error.__traceback__)
-            except TypeError:
+            except AttributeError:
                 self.client.owner = self.client.get_user(self.client.owner_id)
                 await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**", error.__traceback__)
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
