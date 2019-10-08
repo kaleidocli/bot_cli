@@ -32,7 +32,6 @@ class avasoul(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
         self.client.quefe = self.tools.quefe
-        print(self.client.quefe)
 
         self.ava_dict = {}
         self.prote_lib = {}
