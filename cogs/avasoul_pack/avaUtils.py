@@ -18,9 +18,8 @@ class avaUtils:
         #print(f"DELTA: {delta.days} | {delta.months} | {delta.years}")
 
         if not delta.months: delta.months = 1
-        if not delta.years: delta.years = 1
         # Year
-        year = (delta.days+(delta.months*30))*delta.years
+        year = (delta.days+(delta.months*30))+(360*delta.years)
         # Month
         try: month = int(delta.hours/2)
         except: pass
