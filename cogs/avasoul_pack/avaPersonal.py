@@ -623,11 +623,11 @@ class avaPersonal(commands.Cog):
             """
 
             vemb = discord.Embed(colour=0x011C3A)
-            vemb.add_field(name=f"**Evolution:** <:zapp:524893958115950603>{evo} ▸ <:zapp:524893958115950603>**{evo+evos}**", value=f">>> {left_collumn}", inline=True)
+            vemb.add_field(name=f"<:zapp:524893958115950603> **Evolution:** {evo} ▸ **{evo+evos}**", value=f">>> {left_collumn}", inline=True)
             perk_cost = self.perk_calc(evo, addition=evos)
-            if perks >= perk_cost: temp = f"<:perk:632340885996044298>**{perks}**/<:perk:632340885996044298>**{perk_cost}**"
-            else: temp = f"<:perk:632340885996044298>{perks}/<:perk:632340885996044298>**{perk_cost}**"
-            vemb.add_field(name=f"**Perk cost:** {temp}", value=f">>> {right_collumn}", inline=True)
+            if perks >= perk_cost: temp = f"**{perks}**/**{perk_cost}**"
+            else: temp = f"{perks}/**{perk_cost}**"
+            vemb.add_field(name=f"<:perk:632340885996044298> **Perk cost:** {temp}", value=f">>> {right_collumn}", inline=True)
             # vemb.set_thumbnail(url=ctx.author.avatar_url)
             vemb.set_footer(text="Use <evolve [attribute] {times}> to upgrade an attribute", icon_url=ctx.author.avatar_url)
 
