@@ -598,6 +598,7 @@ class avaPersonal(commands.Cog):
             try:
                 evos = int(raw[0])
                 if not evos: evos = 1
+                elif evos > 50: evos = 50
             except (IndexError, TypeError): evos = 1
 
             p_max_LP = self.compound_calc(evos, self.evo_func['lp'], max_LP)
