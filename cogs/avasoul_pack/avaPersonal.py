@@ -569,6 +569,7 @@ class avaPersonal(commands.Cog):
             try:
                 evos = int(raw[1])
                 if not evos: evos = 1
+                elif evos > 50: evos = 50
             except (IndexError, TypeError): evos = 1
 
             evo_dict = {
