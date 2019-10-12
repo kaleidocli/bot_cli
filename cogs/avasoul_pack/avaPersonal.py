@@ -783,6 +783,7 @@ class avaPersonal(commands.Cog):
             surplus += func(value + surplus)
             i += 1
 
+        if isinstance(surplus, float): surplus = round(surplus, 2)
         return surplus
 
     def perk_calc(self, evo, addition=1):
@@ -799,7 +800,7 @@ class avaPersonal(commands.Cog):
         else: return v
         
     def sta_calc(self, value):
-        v = int(float(value)/100*5)
+        v = int(round(float(value)/100*5))
         if v > 400: return 120
         elif v > 300: return 85
         elif v > 200: return 50
