@@ -24,15 +24,17 @@ class avaPersonal(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-        self.evo_dict = {'lp': f"UPDATE personal_info SET MAX_LP=MAX_LP+ROUND(MAX_LP/100*5), EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
-                    'sta': f"UPDATE personal_info SET MAX_STA=MAX_STA+ROUND(MAX_STA/100*10), EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
-                    'str': f"UPDATE personal_info SET STR=STR+0.25, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
-                    'int': f"UPDATE personal_info SET INTT=INTT+0.1, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
-                    'flame': f"UPDATE personal_info SET au_FLAME=au_FLAME+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
-                    'ice': f"UPDATE personal_info SET au_ICE=au_ICE+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
-                    'holy': f"UPDATE personal_info SET au_HOLY=au_HOLY+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
-                    'dark': f"UPDATE personal_info SET au_DARK=au_DARK+0.05, EVO=EVO+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;",
-                    'charm': f"UPDATE personal_info SET charm=charm+1, perks=perks-1 WHERE id='user_id_here' AND perks>0;"}
+        self.evo_func = {
+            'lp': self.lp_calc,
+            'sta': self.sta_calc,
+            'str': self.str_calc,
+            'int': self.int_calc,
+            'flame': self.flame_calc,
+            'ice': self.ice_calc,
+            'holy': self.holy_calc,
+            'dark': self.dark_calc,
+            'charm': self.charm_calc
+            }
 
         print("|| Personal --- READY!")
 
@@ -84,7 +86,7 @@ class avaPersonal(commands.Cog):
         
         # Data get and paraphrase
         # pylint: disable=unused-variable
-        try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, charm, au_FLAME, au_ICE, au_HOLY, au_DARK = await self.client.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, charm, au_FLAME, au_ICE, au_HOLY, au_DARK FROM personal_info WHERE id='{id}' OR name LIKE '%{id}%';")
+        try: name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, charm, au_FLAME, au_ICE, au_HOLY, au_DARK, perks = await self.client.quefe(f"SELECT name, age, gender, money, merit, right_hand, left_hand, combat_HANDLING, STA, MAX_STA, LP, MAX_LP, STR, INTT, partner, evo, charm, au_FLAME, au_ICE, au_HOLY, au_DARK, perks FROM personal_info WHERE id='{id}' OR name LIKE '%{id}%';")
         except TypeError: await ctx.send("<:osit:544356212846886924> User has not incarnated!"); return
         # pylint: enable=unused-variable
         if str(ctx.message.author.id) not in ['214128381762076672', partner, f'{ctx.author.id}']: await ctx.send("<:osit:544356212846886924> You have to be user's *partner* or *guardians* to view their status!"); return
@@ -159,7 +161,7 @@ class avaPersonal(commands.Cog):
         #line = f"""{LP_line}"""
 
         #box = f"\n░░░░ **{name}** | {lmao[gender].capitalize()}, {age} ░░░░\n╟**`Money`** · <:36pxGold:548661444133126185>{money}\n╟**`Merit`** · {merit}\n╟**`Degrees`** · `{degrees}`\n━━━━━╾ {combat_HANDLING.capitalize()} hand ╼━━━━\n╟**`RIGHT`** · {right_hand}\n╟**`LEFT`** · {left_hand}\n━━━━━╾ **`EVO`** {evo} ╼━━━━━━\n**·** `STA` {STA}/{MAX_STA}\n**·** `LP` {LP}/{MAX_LP}\n**·** `STR` {STR}\n**·** `INT` {INTT}"
-        box = discord.Embed(title = f"{age} {lmao[gender].capitalize()} | **{name}** ||<:merit_badge:620137704662761512>`{merit}`||", colour = discord.Colour(0x36393F))
+        box = discord.Embed(title = f"{age} {lmao[gender].capitalize()} | **{name}** ||<:merit_badge:620137704662761512>`{merit}` <:perk:632340885996044298>`{perks}`||", colour = discord.Colour(0x36393F))
         box.add_field(name=f"`LP` · **{LP}**/{MAX_LP}", value=f"""{LP_line}""", inline=True)
         box.add_field(name=f"`STA` · **{STA}**/{MAX_STA}", value=f"""{STA_line}""", inline=True)
         box.add_field(name=f'>>> **`EVO`** · {evo}\n**`STR`** · {STR}\n**`INT`** · {INTT}\n**`CHARM`** · {charm}', value=f"<:right_hand:521197677346553861>{right_hand}")
@@ -182,15 +184,15 @@ class avaPersonal(commands.Cog):
         try:
             if raw[0] == 'save':
                 # Naming
-                try: pname = raw[1]
+                try: pname = self.utils.inj_filter(' '.join(args[1:]))
                 except IndexError: pname = 'Untitled'
 
                 # Quantity limit check
-                if await self.client._cursor.execute(f"SELECT * FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';") >= 3: await ctx.send(f"<:osit:544356212846886924> You cannot have more than three presets at a time, {str(ctx.message.author.id)}")
+                if await self.client._cursor.execute(f"SELECT COUNT(preset_id) FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats='CURRENT';") >= 3: await ctx.send(f"<:osit:544356212846886924> You cannot have more than three presets at a time, {str(ctx.message.author.id)}"); return
 
-                await self.client._cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT {str(ctx.message.author.id)}, '{pname}', 'PRESET', avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
+                await self.client._cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT {str(ctx.message.author.id)}, '{pname}', 'PRESET', avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{ctx.message.id}' AND stats='CURRENT';")
 
-                await ctx.send(f":white_check_mark: Created preset **{pname}**. Use `-wardrobe presets` to check its *id*."); return
+                await ctx.send(f":white_check_mark: Created preset **{pname}**. Use `wardrobe presets` to check its *id*."); return
 
             elif raw[0] == 'delete':
                 try:
@@ -236,7 +238,7 @@ class avaPersonal(commands.Cog):
                 try:
                     if not re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', raw[1]): await ctx.send("<:osit:544356212846886924> Please use **hexa-decimal** colour code!\n:moyai: You can get them here --> https://htmlcolorcodes.com/"); return
                     
-                    coattri = {'name': 'co_name', 'age': 'co_age', 'money': 'co_money', 'partner': 'co_partner', 'guild': 'co_guild', 'rank': 'co_rank', 'evo': 'co_evo', 'kills': 'co_kill', 'deaths': 'co_death'}
+                    coattri = {'name': 'co_name', 'age': 'co_age', 'money': 'co_money', 'partner': 'co_partner', 'guild': 'co_guild', 'rank': 'co_rank', 'evo': 'co_evo', 'lp': 'co_kill', 'sta': 'co_death'}
                     try:
                         await self.client._cursor.execute(f"UPDATE cosmetic_preset SET {coattri[raw[0]]}='{raw[1]}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
                         await ctx.send(f":white_check_mark: Attribute's colour was changed to **`{raw[1]}`**."); return
@@ -521,11 +523,14 @@ class avaPersonal(commands.Cog):
     @commands.cooldown(1, 5, type=BucketType.user)
     async def evolve(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
-        perks, evo, LP = await self.client.quefe(f"SELECT perks, EVO, LP FROM personal_info WHERE id='{ctx.author.id}';")
+        perks, evo, LP, max_LP, max_STA, strr, intt, au_FLAME, au_ICE, au_HOLY, au_DARK, charm = await self.client.quefe(f"SELECT perks, EVO, LP, max_LP, max_STA, STR, INTT, au_FLAME, au_ICE, au_HOLY, au_DARK, charm FROM personal_info WHERE id='{ctx.author.id}';")
 
         raw = list(args)
 
         try:
+            if raw[0].isdigit():
+                raise IndexError
+
             if raw[0] == 'transfuse':
                 if evo < 6: await ctx.send(f"<:osit:544356212846886924> Your evolution has to be more than 6 to proceed transfusion!"); return
                 if perks == 0: await ctx.send(f"<:osit:544356212846886924> You have no perks."); return
@@ -553,27 +558,80 @@ class avaPersonal(commands.Cog):
 
                 await msg.add_reaction("\U00002705")
 
-                def UM_check(reaction, user):
-                    return user.id == ctx.author.id and reaction.message.id == msg.id
-
-                try: await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                try: await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
                 except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request decline!"); return
 
                 LP, MAX_LP, STA, STR, INT = await self.client.quefe(f"SELECT LP, MAX_LP, STA, STR, INT FROM personal_info WHERE id='{ctx.author.id}';")
                 await self.client._cursor.execute(f"UPDATE personal_info SET perks=perks-1, LP={random.randint(0, LP*2)}, MAX_LP={random.randint(0, MAX_LP*2)}, STA={random.randint(0, STA*2)}, STR={random.randint(0, int(STR*2))}, INT={random.randint(0, int(INT*2))} WHERE id='{ctx.author.id}';")
                 await ctx.send("<:osit:544356212846886924> Mutation done! Check your profile immidiately..."); return
 
+            # EVOLVING =================================
+            try:
+                evos = int(raw[1])
+                if not evos: evos = 1
+            except (IndexError, TypeError): evos = 1
 
-            if await self.client._cursor.execute(self.evo_dict[raw[0].lower()].replace('user_id_here', str(ctx.author.id))) == 0:
+            evo_dict = {
+                'lp': ["UPDATE personal_info SET MAX_LP=MAX_LP+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", max_LP],
+                'sta': ["UPDATE personal_info SET MAX_STA=MAX_STA+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", max_STA],
+                'str': ["UPDATE personal_info SET STR=STR+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here';", strr],
+                'int': ["UPDATE personal_info SET INTT=INTT+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", intt],
+                'flame': ["UPDATE personal_info SET au_FLAME=au_FLAME+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_FLAME],
+                'ice': ["UPDATE personal_info SET au_ICE=au_ICE+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_ICE],
+                'holy': ["UPDATE personal_info SET au_HOLY=au_HOLY+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_HOLY],
+                'dark': ["UPDATE personal_info SET au_DARK=au_DARK+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_DARK],
+                'charm': ["UPDATE personal_info SET charm=charm+value_in_here, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", charm]
+                }
+
+            if await self.client._cursor.execute(evo_dict[raw[0].lower()][0].replace('user_id_here', str(ctx.author.id)).replace('value_in_here', str(self.compound_calc(evos, self.evo_func['lp'], evo_dict[raw[0].lower()][1]))).replace('perk_cost_here', str(self.perk_calc(evo, addition=evos)))) == 0:
                 await ctx.send("<:osit:544356212846886924> Not enough perks!"); return
 
+            await ctx.send("<:zapp:524893958115950603> Done. You may use `profile` to check."); return
+
         # E: Attributes not found
-        except KeyError: await ctx.send("<:osit:544356212846886924> Invalid attribute!"); return
+        except KeyError:
+            await ctx.send("<:osit:544356212846886924> Invalid attribute!"); return
 
         # E: Attri not given
-        except IndexError: await ctx.send(f"<:zapp:524893958115950603> Perks can be spent on your attributes:\n________________________\n**|** `LP` · +5% MAX_LP \n**|** `STA` · +10% MAX_STA \n**|** `STR` · +0.25 STR\n**|** `INT` · +0.1 INT\n**|** `FLAME` · +0.05 aura \n**|** `ICE` · +0.05 aura \n**|** `HOLY` · +0.05 aura \n**|** `DARK` · +0.05 aura\n**|** `CHARM` · +0.01 CHARM \n________________________\n**Your perks:** {perks}\n**Your evolution:** {evo}"); return
+        except IndexError:
+            try:
+                evos = int(raw[0])
+                if not evos: evos = 1
+            except (IndexError, TypeError): evos = 1
 
-        await ctx.send("<:zapp:524893958115950603> Done. You may use `profile` to check.")
+            p_max_LP = self.compound_calc(evos, self.evo_func['lp'], max_LP)
+            p_max_STA = self.compound_calc(evos, self.evo_func['sta'], max_STA)
+            p_strr = self.compound_calc(evos, self.evo_func['str'], strr)
+            p_intt = self.compound_calc(evos, self.evo_func['sta'], intt)
+            p_FLAME = self.compound_calc(evos, self.evo_func['flame'], au_FLAME)
+            p_ICE = self.compound_calc(evos, self.evo_func['ice'], au_ICE)
+            p_HOLY = self.compound_calc(evos, self.evo_func['holy'], au_HOLY)
+            p_DARK = self.compound_calc(evos, self.evo_func['dark'], au_DARK)
+            p_charm = self.compound_calc(evos, self.evo_func['charm'], charm)
+
+            left_collumn = f"""**`LP`**⠀⠀⠀{max_LP} ▸ **{max_LP + p_max_LP}** (+{p_max_LP})
+                **`STA`**⠀⠀{max_STA} ▸ **{max_STA + p_max_STA}** (+{p_max_STA})
+                **`STR`**⠀⠀{strr} ▸ **{strr + p_strr}** (+{p_strr})
+                **`INT`**⠀⠀{intt} ▸ **{intt + p_intt}** (+{p_intt})
+            """
+
+            right_collumn = f"""**`FLAME`**⠀{au_FLAME} ▸ **{au_FLAME + p_FLAME}** (+{p_FLAME})
+                **`ICE`**⠀⠀⠀{au_ICE} ▸ **{au_ICE + p_ICE}** (+{p_ICE})
+                **`HOLY`**⠀⠀{au_HOLY} ▸ **{au_HOLY + p_HOLY}** (+{p_HOLY})
+                **`DARK`**⠀⠀{au_DARK} ▸ **{au_DARK + p_DARK}** (+{p_DARK})
+                **`CHARM`**⠀{charm} ▸ **{charm + p_charm}** (+{p_charm})
+            """
+
+            vemb = discord.Embed(colour=0x011C3A)
+            vemb.add_field(name=f"**Evolution:** <:zapp:524893958115950603>{evo} ▸ <:zapp:524893958115950603>**{evo+evos}**", value=f">>> {left_collumn}", inline=True)
+            perk_cost = self.perk_calc(evo, addition=evos)
+            if perks >= perk_cost: temp = f"<:perk:632340885996044298>**{perks}**/<:perk:632340885996044298>**{perk_cost}**"
+            else: temp = f"<:perk:632340885996044298>{perks}/<:perk:632340885996044298>**{perk_cost}**"
+            vemb.add_field(name=f"**Perk cost:** {temp}", value=f">>> {right_collumn}", inline=True)
+            # vemb.set_thumbnail(url=ctx.author.avatar_url)
+            vemb.set_footer(text="Use <evolve [attribute] {times}> to upgrade an attribute", icon_url=ctx.author.avatar_url)
+
+            await ctx.send(embed=vemb, delete_after=30); return
 
     @commands.command()
     @commands.cooldown(1, 3, type=BucketType.user)
@@ -712,6 +770,62 @@ class avaPersonal(commands.Cog):
             line = line + f" `{d[0]} of {d[1]}` **|**"
 
         await ctx.send(line, delete_after=20)
+
+
+
+# ================== TOOLS ==================
+    def compound_calc(self, itertime, func, value):
+        """Func has to return what they're passed"""
+
+        i = 1
+        surplus = 0
+        while i <= itertime:
+            surplus += func(value + surplus)
+            i += 1
+
+        return surplus
+
+    def perk_calc(self, evo, addition=1):
+        """Calculate the NEXT EVO of the given evo"""
+
+        return int(sum(range(evo+1, evo+addition+1))**2.4   )
+
+    def lp_calc(self, value):
+        v = int(round(float(value)/100*2))
+        if v > 400: return 150
+        elif v > 300: return 125
+        elif v > 200: return 100
+        elif v > 100: return 50
+        else: return v
+        
+    def sta_calc(self, value):
+        v = int(float(value)/100*5)
+        if v > 400: return 120
+        elif v > 300: return 85
+        elif v > 200: return 50
+        elif v > 100: return 25
+        else: return v
+
+    def str_calc(self, value):
+        return 0.1
+
+    def int_calc(self, value):
+        return 0.1
+
+    def flame_calc(self, value):
+        return 0.1
+
+    def ice_calc(self, value):
+        return 0.1
+
+    def holy_calc(self, value):
+        return 0.1
+
+    def dark_calc(self, value):
+        return 0.1
+
+    def charm_calc(self, value):
+        return 1
 
 
 

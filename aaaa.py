@@ -64,7 +64,7 @@ extensions = [  'jishaku',
 # client = commands.Bot(command_prefix=get_pref)
 
 async def get_pref(bot, message):
-   return commands.when_mentioned_or('cli ')(bot, message)
+   return commands.when_mentioned_or(config.prefix[0])(bot, message)
 
 
 

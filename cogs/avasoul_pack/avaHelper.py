@@ -285,7 +285,7 @@ Definition? Mechanism? Lore? Yaaa```
         temball = discord.Embed(
             title = self.helper_title,
             description = self.helper_description,
-            colour = discord.Colour(0xB1F1FA)
+            colour = discord.Colour(0x527D8F)
         )
 
         temball.set_thumbnail(url=random.choice(self.helper_thumbnail))
@@ -304,7 +304,7 @@ Definition? Mechanism? Lore? Yaaa```
                 description = f"""
                 ```{stuff[0]}```
                 {line}""",
-                colour = discord.Colour(0xB1F1FA)
+                colour = discord.Colour(0x527D8F)
             )
             tembeach.set_thumbnail(url=random.choice(self.helper_thumbnail))
             tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
@@ -332,7 +332,7 @@ Definition? Mechanism? Lore? Yaaa```
         temball = discord.Embed(
             title = self.concept_title,
             description = self.concept_description,
-                            colour = discord.Colour(0xB1F1FA)
+                            colour = discord.Colour(0x527D8F)
         )
         temball.set_thumbnail(url=self.concept_thumbnail)
         temball.set_footer(text=f"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
@@ -350,7 +350,7 @@ Definition? Mechanism? Lore? Yaaa```
                 description = f"""
                 ```{stuff[0]}```
                 {line}""",
-                colour = discord.Colour(0xB1F1FA)
+                colour = discord.Colour(0x527D8F)
             )
             tembeach.set_thumbnail(url=self.concept_thumbnail)
             tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
