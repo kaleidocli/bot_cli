@@ -4,6 +4,7 @@ from discord.ext import commands
 import discord
 from datetime import timedelta
 import asyncio
+import concurrent
 
 
 
@@ -27,21 +28,26 @@ class ErrorHandler(commands.Cog):
         print("============= ERROR ==============")
         if isinstance(error, commands.errors.CheckFailure):
             await ctx.channel.send(":no_entry_sign: You wish :>")
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
         elif isinstance(error, commands.errors.CommandOnCooldown):
             await ctx.channel.send(f"<a:ghostcat3:531060433927536650> Take a breath, **{ctx.author.name}**. Wait `{timedelta(seconds=int(error.retry_after))}`!", delete_after=5)
             #await ctx.channel.send(f"<:fufu:508437298808094742> Etou... **{ctx.author.name}**? Can you not shut the fuck up for **`{timedelta(seconds=int(error.retry_after))}`**.", delete_after=5)
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
         elif isinstance(error, commands.errors.BadArgument):
             await ctx.channel.send(f"<a:ghostcat3:531060433927536650> {error}")
-        elif isinstance(error, asyncio.TimeoutError) or isinstance(error, commands.errors.CommandNotFound):
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
+        elif isinstance(error.original, commands.errors.CommandNotFound):
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
+        elif isinstance(error.original, concurrent.futures._base.TimeoutError):
             return
         else:
             try:
-                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"```{traceback.format_exc()}```")
+                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"""```py
+                                                                                                                            {' '.join(traceback.format_exception(type(error), error, error.__traceback__))}```""")
             except AttributeError:
                 self.client.owner = self.client.get_user(self.client.owner_id)
-                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"```{traceback.format_exc()}```")
-        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-
+                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"""```py
+                                                                                                                            {' '.join(traceback.format_exception(type(error), error, error.__traceback__))}```""")
 
 
 def setup(client):
