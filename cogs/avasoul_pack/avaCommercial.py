@@ -478,10 +478,12 @@ class avaCommercial(commands.Cog):
         raw = list(args)
         try:
             # Get info
-            try: 
+            try:
+                print("FLAGG 1: ", raw)
                 item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, evo, aura, illulink, price = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, evo, aura, illulink, price FROM pi_inventory WHERE existence='GOOD' AND item_id='{raw[0]}';""")
                 if evo != 0: evo_plus = f"+{evo}"
                 else: evo_plus = ''
+                print("FLAGG 1: ", item_code)
 
                 # Pointer
                 if 'magic' in tags: pointer = ':crystal_ball:'
