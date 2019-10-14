@@ -755,7 +755,7 @@ class avaPersonal(commands.Cog):
         else:
             temp = f"AND slot_name LIKE '%{handle}%'"
 
-        if await self.client._cursor.execute(f"UPDATE pi_equipment SET item_id='{item_id}' WHERE user_id='{ctx.author.id}' AND item_id='n/a' {temp};") == 0:
+        if await self.client._cursor.execute(f"UPDATE pi_equipment SET item_id='{item_id}' WHERE user_id='{ctx.author.id}' AND item_id<>'{item_id}' {temp};") == 0:
             await self.client._cursor.execute(f"UPDATE pi_equipment SET item_id='n/a' WHERE user_id='{ctx.author.id}' AND item_id='{item_id}' {temp};")
             await ctx.send(f"<:armor_p:619743809286438929> Item `{item_id}` is put out of pocket `{handle}`"); return
         else: await ctx.send(f"<:armor_p:619743809286438929> Item `{item_id}` is put in pocket `{handle}`"); return

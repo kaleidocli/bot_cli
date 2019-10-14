@@ -36,9 +36,9 @@ class ErrorHandler(commands.Cog):
         elif isinstance(error, commands.errors.BadArgument):
             await ctx.channel.send(f"<a:ghostcat3:531060433927536650> {error}")
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
-        elif isinstance(error.original, commands.errors.CommandNotFound):
+        elif isinstance(error, commands.errors.CommandNotFound):
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
-        elif isinstance(error.original, concurrent.futures._base.TimeoutError):
+        elif isinstance(error, concurrent.futures._base.TimeoutError):
             return
         else:
             try:
