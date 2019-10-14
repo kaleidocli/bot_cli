@@ -721,8 +721,9 @@ class avaCombat(commands.Cog):
                 if await self.utils.percenter(int(stuff[2])):
 
                     # Stats reward
-                    if stuff[0] in ['money']:
+                    if stuff[0] in ['money', 'perks']:
                         if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+                        elif stuff[0] == 'perks': bingo_list.append(f"<:perk:632340885996044298>{stuff[1]}")
 
                         status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
                     # ... other shit
