@@ -546,7 +546,7 @@ class avaCombat(commands.Cog):
         # CE - IN
         CE, CE_ttl = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get', getttl=True)
         try: CE['effect'] = self.CE_effect_encoder(CE['effect'])
-        except TypeError: pass
+        except (TypeError, KeyError): pass
 
         # POSE ==========================================
         try:
