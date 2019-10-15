@@ -695,9 +695,11 @@ class avaCombat(commands.Cog):
             mob_code, rewards, reward_query, region, t_Ax, t_Ay, t_Bx, t_By = await self.client.quefe(f"SELECT mob_code, rewards, reward_query, region, limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_mob WHERE mob_id='{target_id}';")
             try:
                 mems = await self.client.quefe(f"SELECT user_id FROM pi_party WHERE party_id=(SELECT party_id FROM pi_party WHERE user_id='{MSG.author.id}');", type='all')
-                if mems:
+                if len(mems) > 1:
                     for mem in mems:
-                        await self.client._cursor.execute(reward_query.replace('user_id_here', mem[0]))
+                        if mem[0] != str(ctx.author.id): reward_query_party = reward_query.replace('perks=perks+', 'perks=perks+0*').replace('merit=merit+', 'merit=merit+0*')
+                        else: reward_query_party = reward_query
+                        await self.client._cursor.execute(reward_query_party.replace('user_id_here', mem[0]))
                     await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you and {len(mems) - 1} other party members received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
                 else:
                     await self.client._cursor.execute(reward_query.replace('user_id_here', str(MSG.author.id)))

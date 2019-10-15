@@ -75,19 +75,29 @@ class avasoul(commands.Cog):
     @commands.cooldown(1, 3, type=BucketType.user)
     async def tutorial(self, ctx, *args):
 
-        #if args: await self.tut_basic_status(ctx, box=args[0])
-        #else: await self.tut_basic_status(ctx)
-
         try:
             bundle = await self.client.quefe(f"SELECT line, timeout, trg, illulink FROM sys_tutorial WHERE tutorial_code='{args[0]}' ORDER BY ordera ASC;", type='all')
             if not bundle: await ctx.send(":x: Tutorial's id not found"); return
         except IndexError:
-            await ctx.send("<:9_:544354429055533068> Please use `tutorial 1` or `tutorial 2`"); return
-        #await ctx.send(f"{ctx.author.mention}, let's move to a more silent place like in DM!")
+            await ctx.send("<:9_:544354429055533068> Please use `tutorial intro` or `tutorial 2`"); return
+
+        # INTRO =======
+        if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me!\n· You can react :white_check_mark: to turn page.\n· Do you want me to *direct message* you? (If not we can just do it right here <a:wiink:590460293705105418>)", t=60, DM=True):
+            await ctx.send(f"{ctx.author.mention}, we're moving to DM in 3 secs...")
+            await asyncio.sleep(4)
+            DM = True
+        else:
+            await asyncio.sleep(1)
+            DM = False
+
+        # START =======
         for pack in bundle:
             try: trg = pack[2].split(' || ')
             except AttributeError: trg = []
-            await self.engine_waitor(ctx, pack[0], t=pack[1], keylist=trg, DM=True, illulink=pack[3])
+            if not await self.engine_waitor(ctx, pack[0], t=pack[1], keylist=trg, DM=DM, illulink=pack[3]): break
+
+        # END =========
+        await ctx.send(f"· Again, **thank you very much for your time!** I advise you to use `help [command]` for further info on commands mentioned in this tutorial.\nOr better, it'd be easier to get direct guide from our support server! ({self.client.support_server_invite})")
 
 
 
@@ -1846,23 +1856,16 @@ class avasoul(commands.Cog):
             try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=60)
             except asyncio.TimeoutError: await box.send("<:osit:544356212846886924> Request timeout!"); return False
 
-
-    async def tut_basic_status(self, ctx, box='indirect'):
-        """Talking about status"""
-
-        await self.engine_roller(ctx, 'basic_status', ['intro_1', 'lp', 'sta', 'degree', 'evo'], box=box)
-
-
     async def engine_waitor(self, ctx, line, t=20, keylist=[], DM=False, illulink=None):
 
-        if DM: await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
-        else: await ctx.send(embed=discord.Embed(description=line).set_image(url=illulink))
+        if DM: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
+        else: msg = await ctx.send(embed=discord.Embed(description=line).set_image(url=illulink))
+        
+        if t < 60: t = 60
 
-        def UMCc_check(m):
-            if keylist: return m.author == ctx.author and m.content in keylist
-            return m.author == ctx.author
+        await msg.add_reaction("\U00002705")
 
-        try: await self.client.wait_for('message', check=UMCc_check, timeout=t); return True
+        try: await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U00002705' and u == ctx.author, timeout=t); return True
         except asyncio.TimeoutError: return False
 
 

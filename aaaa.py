@@ -75,6 +75,7 @@ client.myconfig = config
 client.realready = True
 client.owner_id = config.owner_id
 client.owner = client.get_user(client.owner_id)
+client.support_server_invite = config.support_server_invite
 
 # client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')

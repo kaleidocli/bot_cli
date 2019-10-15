@@ -38,7 +38,7 @@ class ErrorHandler(commands.Cog):
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
         elif isinstance(error, commands.errors.CommandNotFound):
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
-        elif isinstance(error, concurrent.futures._base.TimeoutError) or isinstance(error, concurrent.futures.TimeoutError):
+        elif isinstance(error, asyncio.TimeoutError):
             return
         else:
             try:
