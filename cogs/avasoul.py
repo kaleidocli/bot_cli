@@ -82,7 +82,7 @@ class avasoul(commands.Cog):
             await ctx.send("<:9_:544354429055533068> Please use `tutorial intro` or `tutorial 2`"); return
 
         # INTRO =======
-        if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me!\n· You can react :white_check_mark: to turn page.\n· Do you want me to *direct message* you? (If not we can just do it right here <a:wiink:590460293705105418>)", t=60, DM=True):
+        if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me!\n· You can react \:white_check_mark: to turn page.\n· Do you want me to *DM* you? <a:wiink:590460293705105418>", t=15):
             await ctx.send(f"{ctx.author.mention}, we're moving to DM in 3 secs...")
             await asyncio.sleep(4)
             DM = True
@@ -94,11 +94,16 @@ class avasoul(commands.Cog):
         for pack in bundle:
             try: trg = pack[2].split(' || ')
             except AttributeError: trg = []
+            if pack[1] < 60: pack[1] = 60
             if not await self.engine_waitor(ctx, pack[0], t=pack[1], keylist=trg, DM=DM, illulink=pack[3]): break
 
         # END =========
-        if DM: await ctx.author.send(f"Again, **thank you very much for your time**, {ctx.author.mention}!\nI advise you to use `help [command]` for further info on commands mentioned in this tutorial.\nOr, you can receive direct help from our support server! ({self.client.support_server_invite})")
-        else: await ctx.send(f"Again, **thank you very much for your time**, {ctx.author.mention}!\nI advise you to use `help [command]` for further info on commands mentioned in this tutorial.\nOr, you can receive direct help from our support server! ({self.client.support_server_invite})")
+        if DM:
+            await ctx.author.send(f"**Thank you for your time,** {ctx.author.mention}**!**\nIf you want, you can always receive more intuitive helps from our support server!")
+            await ctx.author.send(self.client.support_server_invite)
+        else:
+            await ctx.send(f"**Thank you for your time,** {ctx.author.mention}**!**\nIf you want, you can always receive more intuitive helps from our support server!")
+            await ctx.send(self.client.support_server_invite)
 
 
 
