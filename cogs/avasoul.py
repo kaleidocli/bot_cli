@@ -1869,10 +1869,8 @@ class avasoul(commands.Cog):
             if illulink: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
             else: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F))
         else:
-            if illulink: msg = await ctx.send(embed=discord.Embed(description=line).set_image(url=illulink))
-            else: msg = await ctx.send(embed=discord.Embed(description=line))
-        
-        if t < 60: t = 60
+            if illulink: msg = await ctx.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
+            else: msg = await ctx.send(embed=discord.Embed(description=line, colour=0x527D8F))
 
         await msg.add_reaction("\U00002705")
 

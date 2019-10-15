@@ -96,9 +96,9 @@ class allhen(commands.Cog):
                     try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=60)
                     except asyncio.TimeoutError: break
             except:
-                await self.client.say(f":interrobang: Tag `{raw[0]}`` not found!")
+                await ctx.send(f":interrobang: Tag `{raw[0]}`` not found!")
         else:
-            await self.client.say(":warning: Please give a correct tag.")
+            await ctx.send(":warning: Please give a correct tag.")
 
 
 

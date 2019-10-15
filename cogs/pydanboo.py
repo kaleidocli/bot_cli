@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 from pybooru import Danbooru
 from pybooru import Moebooru
+
+import asyncio
 import functools
 import random
 
@@ -26,7 +28,8 @@ class dan(commands.Cog):
             #REACTION LOOP
             while True:
                 #Wait for reaction
-                reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
+                try: a = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
+                except asyncio.TimeoutError: check = '1'; break
                 #Check if reac is not None. If None, check's set to '1', hence quit the REACTION LOOP and return True to the outside loop
                 if not reac: check = '1'; break
                 #Check if reac's string == <Tag_emoji>. If true, send tags, then continue the REACTION LOOP
@@ -38,7 +41,8 @@ class dan(commands.Cog):
                     await self.client.remove_reaction(msg, '\U0001f512', msg.author)
                     await self.client.remove_reaction(msg, '\U0001f512', ctx.message.author)
                     await msg.add_reaction('\U0001f513')
-                    a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
+                    try: a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
+                    except asyncio.TimeoutError: check = '1'; break
                     if not a: break
                     await self.client.remove_reaction(msg, '\U0001f513', msg.author)
                     await self.client.remove_reaction(msg, '\U0001f513', ctx.message.author)
@@ -115,7 +119,8 @@ class dan(commands.Cog):
             #REACTION LOOP
             while True:
                 #Wait for reaction
-                reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
+                try: reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
+                except asyncio.TimeoutError: check = '1'; break
                 #Check if reac is not None. If None, check's set to '1', hence quit the REACTION LOOP and return True to the outside loop
                 if not reac: check = '1'; break
                 #Check if reac's string == <Tag_emoji>. If true, send tags, then continue the REACTION LOOP
@@ -127,7 +132,8 @@ class dan(commands.Cog):
                     await msg.remove_reaction('\U0001f512', msg.author)
                     await msg.remove_reaction('\U0001f512', ctx.message.author)
                     await msg.add_reaction('\U0001f513')
-                    a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
+                    try: a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
+                    except asyncio.TimeoutError: check = '1'; break
                     if not a: break
                     await msg.remove_reaction('\U0001f513', msg.author)
                     await msg.remove_reaction('\U0001f513', ctx.message.author)
