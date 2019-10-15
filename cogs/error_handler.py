@@ -42,11 +42,11 @@ class ErrorHandler(commands.Cog):
             return
         else:
             try:
-                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"""```py
+                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.channel.id}` of `{ctx.guild.id}`|**{ctx.guild.name}**" + f"""```py
                                                                                                                             {' '.join(traceback.format_exception(type(error), error, error.__traceback__))}```""")
             except AttributeError:
                 self.client.owner = self.client.get_user(self.client.owner_id)
-                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.guild.id}`|**{ctx.guild.name}**" + f"""```py
+                await self.client.owner.send(f"User `{ctx.author.id}`|**{ctx.author.name}** from `{ctx.channel.id}` of `{ctx.guild.id}`|**{ctx.guild.name}**" + f"""```py
                                                                                                                             {' '.join(traceback.format_exception(type(error), error, error.__traceback__))}```""")
 
 
