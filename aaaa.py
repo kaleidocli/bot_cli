@@ -384,7 +384,7 @@ async def typestuff(ctx, *args):
 
 @client.command()
 @commands.cooldown(1, 2, type=BucketType.user)
-async def act(ctx, *,args):
+async def act(ctx, *, args):
     acts = {'yay': 'https://imgur.com/dvKPLJH.gif',
             'mumu': 'https://imgur.com/UEA7ME0.gif',
             'yaya': 'https://imgur.com/BsHjshO.gif',
@@ -398,7 +398,7 @@ async def act(ctx, *,args):
             'snack': 'https://imgur.com/eCfbVBK.gif',
             'zzz': 'https://imgur.com/N1Sv2hC.gif'}
 
-    if args == 'all': await ctx.send(f"`{'` `'.join(acts.keys())}`"); return
+    if args == 'all' or not args: await ctx.send(f"`{'` `'.join(acts.keys())}`"); return
 
     temb = discord.Embed(colour=0x36393E)
     try: temb.set_image(url=acts[args])

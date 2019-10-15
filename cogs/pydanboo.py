@@ -180,7 +180,8 @@ class dan(commands.Cog):
             print(posts_list[0])                
             return hen_box, posts_list
 
-        hen_box, posts_list = await generate()
+        try: hen_box, posts_list = await generate()
+        except TypeError: await ctx.channel.send(f":warning: {ctx.message.author.mention}, tags `{tag_string}` not found!"); return
         msg_console = await ctx.channel.send(":keyboard: **CONSOLE**")
         #Add emo to msg_console.
         await msg_console.add_reaction('\U0001f4c4')   #Tag_emoji
