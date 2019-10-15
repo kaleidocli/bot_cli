@@ -82,7 +82,7 @@ class avasoul(commands.Cog):
             await ctx.send("<:9_:544354429055533068> Please use `tutorial intro` or `tutorial 2`"); return
 
         # INTRO =======
-        if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me!\n· You can react \:white_check_mark: to turn page.\n· Do you want me to *DM* you? <a:wiink:590460293705105418>", t=15):
+        if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me!\n· You can react :white_check_mark: to turn page.\n· Do you want me to *DM* you? <a:wiink:590460293705105418>", t=15):
             await ctx.send(f"{ctx.author.mention}, we're moving to DM in 3 secs...")
             await asyncio.sleep(4)
             DM = True
@@ -94,8 +94,9 @@ class avasoul(commands.Cog):
         for pack in bundle:
             try: trg = pack[2].split(' || ')
             except AttributeError: trg = []
-            if pack[1] < 60: pack[1] = 60
-            if not await self.engine_waitor(ctx, pack[0], t=pack[1], keylist=trg, DM=DM, illulink=pack[3]): break
+            if pack[1] < 60: t = 60
+            else: t = pack[1]
+            if not await self.engine_waitor(ctx, pack[0], t=t, keylist=trg, DM=DM, illulink=pack[3]): break
 
         # END =========
         if DM:
