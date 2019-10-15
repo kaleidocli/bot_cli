@@ -98,7 +98,7 @@ class dan(commands.Cog):
         while True:
             #Wait for the emo loop. If return True, break, else, continue
             check_out = await a(msg_console, post)
-            if check_out: await self.client.delete_message(msg); break
+            # if check_out: await self.client.delete_message(msg); break
             #else: await self.client.delete_message(msg)
             hen_box, post = await generate()
             await msg.edit(embed=hen_box)
@@ -184,7 +184,7 @@ class dan(commands.Cog):
             hen_box, posts_list = await generate()
             #Wait for the emo loop. If return True, break, else, continue
             check_out = await a(msg_console, posts_list)
-            if check_out: await self.client.delete_message(msg); break
+            # if check_out: await self.client.delete_message(msg); break
             await msg.edit(embed=hen_box)
 
             
