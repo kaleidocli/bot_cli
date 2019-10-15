@@ -97,7 +97,8 @@ class avasoul(commands.Cog):
             if not await self.engine_waitor(ctx, pack[0], t=pack[1], keylist=trg, DM=DM, illulink=pack[3]): break
 
         # END =========
-        await ctx.send(f"· Again, **thank you very much for your time!** I advise you to use `help [command]` for further info on commands mentioned in this tutorial.\nOr better, it'd be easier to get direct guide from our support server! ({self.client.support_server_invite})")
+        if DM: await ctx.author.send(f"Again, **thank you very much for your time**, {ctx.author.mention}!\nI advise you to use `help [command]` for further info on commands mentioned in this tutorial.\nOr, you can receive direct help from our support server! ({self.client.support_server_invite})")
+        else: await ctx.send(f"Again, **thank you very much for your time**, {ctx.author.mention}!\nI advise you to use `help [command]` for further info on commands mentioned in this tutorial.\nOr, you can receive direct help from our support server! ({self.client.support_server_invite})")
 
 
 
