@@ -1858,8 +1858,12 @@ class avasoul(commands.Cog):
 
     async def engine_waitor(self, ctx, line, t=20, keylist=[], DM=False, illulink=None):
 
-        if DM: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
-        else: msg = await ctx.send(embed=discord.Embed(description=line).set_image(url=illulink))
+        if DM:
+            if illulink: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
+            else: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F))
+        else:
+            if illulink: msg = await ctx.send(embed=discord.Embed(description=line).set_image(url=illulink))
+            else: msg = await ctx.send(embed=discord.Embed(description=line))
         
         if t < 60: t = 60
 
