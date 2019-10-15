@@ -23,12 +23,17 @@ class dan(commands.Cog):
             return
         """
 
+        # NSFW channel check
+        if not ctx.channel.is_nsfw():
+            await ctx.send(":no_entry_sign: NSFW channel only!")
+            return
+
         async def a(msg, post):
             check = '0'
             #REACTION LOOP
             while True:
                 #Wait for reaction
-                try: a = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
+                try: reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
                 except asyncio.TimeoutError: check = '1'; break
                 #Check if reac is not None. If None, check's set to '1', hence quit the REACTION LOOP and return True to the outside loop
                 if not reac: check = '1'; break
@@ -104,7 +109,6 @@ class dan(commands.Cog):
             await msg.edit(embed=hen_box)
 
 
-
     @commands.command(pass_context=True)
     async def dhen(self, ctx, *args):
         #Checking the nsfw_mode value
@@ -113,6 +117,11 @@ class dan(commands.Cog):
             await ctx.channel.send(":no_entry_sign: Please check if the `NSFW` mode is **enabled**.")
             return
         """
+
+        # NSFW channel check
+        if not ctx.channel.is_nsfw():
+            await ctx.send(":no_entry_sign: NSFW channel only!")
+            return
 
         async def a(msg, posts_list):
             check = '0'

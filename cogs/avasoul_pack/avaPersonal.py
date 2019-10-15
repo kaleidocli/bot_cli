@@ -184,7 +184,7 @@ class avaPersonal(commands.Cog):
         try:
             if raw[0] == 'save':
                 # Naming
-                try: pname = self.utils.inj_filter(' '.join(args[1:]))
+                try: pname = await self.utils.inj_filter(' '.join(args[1:]))
                 except IndexError: pname = 'Untitled'
 
                 # Quantity limit check
