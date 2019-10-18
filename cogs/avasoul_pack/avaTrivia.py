@@ -21,6 +21,13 @@ class avaTrivia(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
+        self.topCommands = {'rich': self.toprich,
+                            'pvp': self.toppvp,
+                            'death': self.topdeath,
+                            'merit': self.tophonor,
+                            'duel': self.topduel,
+                            'slayer': self.topslayer}
+
         self.biome = {'SAVANNA': 'https://imgur.com/qc1NNIu.png',
                     'JUNGLE': 'https://imgur.com/3j786qW.png',
                     'DESERT': 'https://imgur.com/U0wtRU7.png',
@@ -273,8 +280,17 @@ class avaTrivia(commands.Cog):
 
 # ================== PLAYERS ==================
 
-    @commands.command(aliases=['richest'])
+    @commands.command(aliases=['leaderboard'])
     @commands.cooldown(1, 5, type=BucketType.user)
+    async def top(self, ctx, *args):
+
+        if not args:
+            await ctx.send(f":military_medal: Available Leaderboards: `{'` · `'.join(list(self.topCommands.keys()))}`"); return
+
+        try:
+            await self.topCommands[args[0]](ctx)
+        except KeyError: await ctx.send("<:osit:544356212846886924> Leaderboard not found."); return
+
     async def toprich(self, ctx):
         ret = await self.client.quefe(f"SELECT name, age, money FROM personal_info ORDER BY money DESC LIMIT 10", type='all')
 
@@ -285,9 +301,7 @@ class avaTrivia(commands.Cog):
 
         await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
 
-    @commands.command(aliases=['topmerit', 'honorest'])
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def tophonor(self, ctx):
+    async def topmerit(self, ctx):
         ret = await self.client.quefe(f"SELECT name, age, merit FROM personal_info ORDER BY merit DESC LIMIT 10", type='all')
 
         line = ''; count = 0
@@ -297,9 +311,7 @@ class avaTrivia(commands.Cog):
 
         await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
 
-    @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def topkill(self, ctx):
+    async def toppvp(self, ctx):
         ret = await self.client.quefe(f"SELECT name, EVO, kills FROM personal_info ORDER BY kills DESC LIMIT 10", type='all')
 
         line = ''; count = 0
@@ -309,8 +321,6 @@ class avaTrivia(commands.Cog):
 
         await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
 
-    @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)
     async def topdeath(self, ctx):
         ret = await self.client.quefe(f"SELECT name, EVO, deaths FROM personal_info ORDER BY deaths DESC LIMIT 10", type='all')
 
@@ -321,9 +331,7 @@ class avaTrivia(commands.Cog):
 
         await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
 
-    @commands.command()
-    @commands.cooldown(1, 5, type=BucketType.user)
-    async def topwin(self, ctx):
+    async def topduel(self, ctx):
         ret = await self.client.quefe(f"SELECT (SELECT name FROM personal_info WHERE id=user_id), duel_win, duel_lost FROM misc_status ORDER BY duel_win DESC LIMIT 10", type='all')
 
         line = ''; count = 0
@@ -332,6 +340,19 @@ class avaTrivia(commands.Cog):
             line = line + f"{count} | **{u[0]}** have won **{u[1]}** duels and lost **{u[2]}** duels\n"
 
         await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+
+    async def topslayer(self, ctx):
+        ret = await self.client.quefe(f"SELECT (SELECT name FROM personal_info WHERE id=user_id), mob, boss FROM pi_mobs_collection ORDER BY mob, boss DESC LIMIT 10", type='all')
+        curuser = await self.client.quefe(f"SELECT user_id, mob, boss FROM pi_mobs_collection WHERE user_id='{ctx.author.id}';")
+
+        line = ''; count = 0
+        for u in ret:
+            count += 1
+            line = line + f"{count} | **{u[0]}** have slayed **{u[1]}** monsters and raided **{u[2]}** bosses.\n"
+
+        if curuser: line = line + f"⠀\n**{ctx.author.name}**, you've slayed **{curuser[1]}** monsters and raided **{curuser[2]}** bosses!\n"
+
+        await ctx.send(embed=discord.Embed(title="Top 10 slayers of current region.", description=line, colour=0xFFC26F))
 
 
 

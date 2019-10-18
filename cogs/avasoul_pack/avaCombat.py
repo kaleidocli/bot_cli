@@ -131,7 +131,7 @@ class avaCombat(commands.Cog):
                     __mode = 'PVP'
                     __bmode = 'INDIRECT'
                 # MOVES     |      acabcbabbba
-                except ValueError: 
+                except ValueError:
                     raw_move = copo
 
         # In case target is not given, current_enemy is used
@@ -170,6 +170,13 @@ class avaCombat(commands.Cog):
                 # CE - Processing/lock
                 CE['lock'] = target_id
 
+        # tCE - IN
+        tCE, tCE_ttl = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get', getttl=True)
+        if not tCE:
+            tCE = await self.CE_maker('')
+            tCE_ttl = 0
+        tCE['effect'] = self.CE_effect_encoder(tCE['effect'])
+
 
         # TARGET CHECK =========================================
 
@@ -185,7 +192,7 @@ class avaCombat(commands.Cog):
         # PVP use target, with personal_info =============================
 
         if __mode == 'PVP':
-            await self.PVP_melee(ctx.message, target, raw_move, bmode=__mode, CE=CE, CE_ttl=CE_ttl)
+            await self.PVP_melee(ctx.message, target, raw_move, bmode=__mode, CE=CE, CE_ttl=CE_ttl, tCE=tCE, tCE_ttl=tCE_ttl)
         elif __mode == 'PVE':
             await self.PVE_melee(ctx.message, target_id, raw_move, CE=CE, CE_ttl=CE_ttl)
         else: print("<<<<< Non PVP nor PVE >>>>>>>")
@@ -636,13 +643,13 @@ class avaCombat(commands.Cog):
 
         # GET Mob info =======================
         try:
-            t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+            t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_lockon_max = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, lockon_max FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
         # If mob not found (either mistyping or outdated lock), set lock to 'n/a'
         except TypeError:
             try:
                 target_id = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))
                 target_id = target_id[0]
-                t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+                t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_defpy = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, defense_physical FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
                 CE['lock'] = target_id
             except IndexError:
                 await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
@@ -663,6 +670,9 @@ class avaCombat(commands.Cog):
             LP, STA = await self.client.quefe(f"SELECT LP, STA FROM personal_info WHERE id='{MSG.author.id}';")
 
             if not await self.tools.ava_scan(MSG, type='life_check'):
+                # If query effect zero row
+                if await self.client._cursor.execute(f"UPDATE pi_mobs_collection SET {type}={type}-1 WHERE user_id='{user_id}' AND region='{cur_PLACE}';") == 0:
+                    await self.client._cursor.execute(f"INSERT INTO pi_mobs_collection (user_id, region, {type}) VALUES ('{user_id}', '{cur_PLACE}', -1);")
                 return False
             if t_lp <= 0:
                 await MSG.channel.send(f"<:tumbstone:544353849264177172> **{t_name}** is dead.")
@@ -788,7 +798,11 @@ class avaCombat(commands.Cog):
             diff_var = 1 - 0.04*abs(STR-w_str)
             if diff_var < 0: diff_var = 0.001
             dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst*diff_var)
-            dmg_q = round(((STR+w_str*2)/3)*w_multiplier*m_quick*diff_var)
+            dmg_q = round(((STR+w_str*2)/3)*w_multiplier*m_quick*diff_var*(w_weight/100))
+            # Damage Calc 2 (Nerf)
+            counter_def = t_defpy - dmg_q
+            if counter_def > 0: dmg -= counter_def      # Even if (dmg_q > t_defpy), do not stack dmg_q with dmg (dmg is FORBIDEN to increase).
+            if dmg < 0: CE['effect'].append('stun')     # If dmg cannot surpass t_defpy, receives STUN effect.
             # Crit
             try:
                 if not random.choice(range(int(w_weight/10))): dmg = dmg + dmg/10*w_weight
@@ -882,6 +896,7 @@ class avaCombat(commands.Cog):
 
             # Take DEF/user into account
             t_dmg = round(t_dmg / 200 * (200 - w_defend))
+            t_dmg_q = round(t_dmg_q / 200 * (w_defend))
             if t_dmg < 1: t_dmg = 1
 
             return t_dmg, t_dmg_q, bonus, icon_sequence
@@ -926,17 +941,36 @@ class avaCombat(commands.Cog):
 
             # ------------ MOB PHASE    |   Mob deal DMG
             
-            # LOCK-ON of target_id
+            # LOCK - OUT (Target's lock)
             t_lock = await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.get, f'lock{target_id}'))
+            try:
+                # De-serialize
+                t_lock = t_lock.decode('utf-8')[4:].split('|')
+
+                # If user_id is in lock, continue
+                if str(user_id) in t_lock:
+                    pass
+                # If not, try checking if lock is FULL
+                else:
+                    # FULL --> Return
+                    if len(t_lock) >= int(t_lockon_max):
+                        # CE - OUT
+                        CE['effect'] = self.CE_effect_encoder(CE['effect'], mode='encode')          # Encode back to string
+                        await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=CE_ttl+ttl_plus)
+                        return
+                    # NOT FULL --> Take a slot
+                    else:
+                        t_lock.append(str(user_id))
+
+                        # Serialize
+                        t_lock = 'lock' + '|'.join(t_lock)
+                        
+                        # LOCK - IN
+                        await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'lock{target_id}', f'lock{MSG.author.id}', ex=charm))
             # If lock doesn't exist, make one
-            if t_lock == None:
+            except TypeError:
                 await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'lock{target_id}', f'lock{MSG.author.id}', ex=charm))
-            # If it does-- but not lock on user, return
-            elif str(t_lock.decode('utf-8')) != f"lock{str(MSG.author.id)}":
-                # CE - OUT
-                CE['effect'] = self.CE_effect_encoder(CE['effect'], mode='encode')          # Encode back to string
-                await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=CE_ttl+ttl_plus)
-                return
+
 
             # Generate moves ---> Calc dmg
             t_raw_move = random.choices(['b', 'q', 'a'], k=random.choice(range(t_chain)))
@@ -965,13 +999,12 @@ class avaCombat(commands.Cog):
 
             # CE - OUT
             CE['effect'] = self.CE_effect_encoder(CE['effect'], mode='encode')          # Encode back to string
-            print(CE)
             await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=CE_ttl+ttl_plus)
 
         await battle()
 
 
-    async def PVP_melee(self, MSG, target, raw_move, bmode='DIRECT', CE=None, tCE=None, CE_ttl=0):
+    async def PVP_melee(self, MSG, target, raw_move, bmode='DIRECT', CE=None, tCE=None, CE_ttl=0, tCE_ttl=0):
         # GET User's info ============================
         name,  LP, STR, cur_PLACE, cur_X, cur_Y, combat_HANDLING, right_hand, left_hand, main_weapon = await self.client.quefe(f"SELECT name,  LP, STR, cur_PLACE, cur_X, cur_Y, combat_HANDLING, right_hand, left_hand, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand) FROM personal_info WHERE id='{MSG.author.id}';")
         # Get user's weapon
@@ -1011,7 +1044,7 @@ class avaCombat(commands.Cog):
             tw_defend *= 2
 
 
-        async def dmg_calc(raw_move, pack):
+        async def dmg_calc(raw_move, pack, ttl_plus=0):
             bonus = []
             icon_sequence = ''
             tw_defend, w_speed = pack
@@ -1045,11 +1078,14 @@ class avaCombat(commands.Cog):
             m_art = 0
             for c in raw_move:
                 if c == 'b':
+                    ttl_plus += 1.8
                     m_burst += 1.25 + count
                 elif c == 'q':
+                    ttl_plus += 0.2
                     m_burst += 0.25 + count
                     m_quick += 1 + count
                 elif c == 'a':
+                    ttl_plus += 2.5
                     m_burst += 0.75 + count
                     m_art += 2*count*5
                 icon_sequence += self.moveIcon_dict[c]
@@ -1058,21 +1094,23 @@ class avaCombat(commands.Cog):
             # Damage Calc
             if combat_HANDLING == 'both':
                 dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst)
-                dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick)
+                dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick*(w_weight/100))
             elif combat_HANDLING in ['right', 'left']:
                 dmg = round(((STR*2+w_str)/3)*w_multiplier*m_burst)*2
-                dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick)*2
+                dmg_q = round(((STR*2+w_str)/3)*w_multiplier*m_quick*(w_weight/100))*2
   
-            # Get Damage reduction
-            dmgredu = 200 - tw_defend
+            # Get Damage reduction (tw_defend indirectional proportion with tw_defend_q)
+            tw_defend_q = tw_defend
+            tw_defend = 200 - tw_defend
             temp_query = ''
-            # If victim's defend (dmgredu) exceed 200, the attacker's STA takes dmg
-            if dmgredu < 0:
-                temp_query += f"UPDATE personal_info SET STA=STA-{round(dmg / 200 * abs(dmgredu))*tw_multiplier} WHERE id='{MSG.author.id}'; "
-                dmgredu = 0
+            # If victim's defend (tw_defend) exceed 200, the attacker's STA takes dmg
+            if tw_defend < 0:
+                temp_query += f"UPDATE personal_info SET STA=STA-{round(dmg / 200 * abs(tw_defend))*tw_multiplier} WHERE id='{MSG.author.id}'; "
+                tw_defend = 0
 
             # Get dmgdeal (don't combine, for informing :>)
-            dmg = round(dmg / 200 * dmgredu)
+            dmg = round(dmg / 200 * tw_defend)
+            dmg_q = round(dmg_q / 200 * tw_defend_q)
 
             # Crit
             try:
@@ -1085,12 +1123,13 @@ class avaCombat(commands.Cog):
                 dmg += int(dmg/100*float(CE['aggressive']))
             except (TypeError, KeyError): pass
 
-            return dmg, dmg_q, m_art, bonus, icon_sequence, temp_query
+            return dmg, dmg_q, m_art, bonus, icon_sequence, temp_query, int(ttl_plus)
 
 
 
         # DMG Calc ==============================
-        dmg, dmg_q, m_art, bonus, icon_sequence, temp_query = await dmg_calc(raw_move, (tw_defend, w_speed))
+        ttl_plus = 10
+        dmg, dmg_q, m_art, bonus, icon_sequence, temp_query, ttl_plus = await dmg_calc(raw_move, (tw_defend, w_speed), ttl_plus=ttl_plus)
         temp_query += f"UPDATE personal_info SET LP=LP-{dmg}, STA=STA-{dmg_q} WHERE id='{target.id}'; "
 
         # Take effect
@@ -1108,6 +1147,10 @@ class avaCombat(commands.Cog):
         # CE - OUT
         CE['effect'] = self.CE_effect_encoder(CE['effect'], mode='encode')          # Encode back to string
         await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=30)
+
+        # tCE - OUT
+        tCE['effect'] = self.CE_effect_encoder(tCE['effect'], mode='encode')          # Encode back to string
+        await self.tools.redio_map(f"CE{target.id}", dict=tCE, ttl=tCE_ttl+ttl_plus)
 
         await self.tools.ava_scan(MSG, 'life_check')
 
