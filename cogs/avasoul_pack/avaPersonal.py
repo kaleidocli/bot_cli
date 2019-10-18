@@ -188,7 +188,7 @@ class avaPersonal(commands.Cog):
                 except IndexError: pname = 'Untitled'
 
                 # Quantity limit check
-                if await self.client._cursor.execute(f"SELECT COUNT(preset_id) FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats='CURRENT';") >= 3: await ctx.send(f"<:osit:544356212846886924> You cannot have more than three presets at a time, {str(ctx.message.author.id)}"); return
+                if await self.client._cursor.execute(f"SELECT COUNT(preset_id) FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats NOT IN ('CURRENT', 'DEFAULT');") >= 3: await ctx.send(f"<:osit:544356212846886924> You cannot have more than three presets at a time, {str(ctx.message.author.id)}"); return
 
                 await self.client._cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT '{ctx.author.id}', '{pname}', 'PRESET', avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats='CURRENT';")
 
@@ -207,14 +207,14 @@ class avaPersonal(commands.Cog):
                 # GET preset
                 try: 
                     if raw[1] == 'default':
-                        avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.client.quefe(f"SELECT avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='DEFAULT';")
+                        avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.client.quefe(f"SELECT avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='DEFAULT';")
                     else:
-                        avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.client.quefe(f"SELECT avatar_id, bg_code, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND preset_id='{raw[1]}';")
+                        avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.client.quefe(f"SELECT avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND preset_id='{raw[1]}';")
                 # E: Preset's id not found
                 except (IndexError, TypeError): await ctx.send("<:osit:544356212846886924> Preset's id not found!"); return
 
                 # UPDATE current
-                await self.client._cursor.execute(f"UPDATE cosmetic_preset SET user_id='{str(ctx.message.author.id)}', name='current of {ctx.message.author.name}', stats='CURRENT', avatar_id='{avatar_id}', bg_code='{bg_code}', co_name='{co_name}', co_partner='{co_partner}', co_money='{co_money}', co_age='{co_age}', co_guild='{co_guild}', co_rank='{co_rank}', co_evo='{co_evo}', co_kill='{co_kill}', co_death='{co_death}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
+                await self.client._cursor.execute(f"UPDATE cosmetic_preset SET user_id='{str(ctx.message.author.id)}', name='current of {ctx.message.author.name}', stats='CURRENT', avatar_id='{avatar_id}', bg_code='{bg_code}', font_id='{font_id}', co_name='{co_name}', co_partner='{co_partner}', co_money='{co_money}', co_age='{co_age}', co_guild='{co_guild}', co_rank='{co_rank}', co_evo='{co_evo}', co_kill='{co_kill}', co_death='{co_death}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
                 await ctx.send(":white_check_mark: Preset's loaded!"); return
             
             elif raw[0] == 'presets':
