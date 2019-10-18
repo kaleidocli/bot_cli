@@ -198,7 +198,7 @@ class avaTrivia(commands.Cog):
     async def mobs(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
-        mobs = await self.client.quefe(f"SELECT mob_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, illulink, effect FROM model_mob WHERE mob_code IN (SELECT mob_code FROM environ_diversity WHERE environ_code=(SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'));", type='all')
+        mobs = await self.client.quefe(f"SELECT mob_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, illulink, effect, attack_type, defense_physic, defense_magic FROM model_mob WHERE mob_code IN (SELECT mob_code FROM environ_diversity WHERE environ_code=(SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'));", type='all')
         try:
             mobs = list(mobs)
             mobs.sort(key=lambda v: v[3], reverse=True)
@@ -217,8 +217,8 @@ class avaTrivia(commands.Cog):
                 effect = '----------------------'
 
             box = discord.Embed(title=f"{self.mob_icon[mob[3]]} `{mob[0]}`|**{mob[1]}**", description=f"```{mob[2]}```", colour = discord.Colour(0x36393F))
-            box.add_field(name=f'>>> **`LP`** · {mob[5]}\n**`STR`** · {mob[6]}\n**`CHAIN`** · {mob[7]}\n**`SPEED`** · {mob[8]}', value=effect)
-            box.add_field(name=f'>>> **`FLAME`** · {mob[9]}\n**`ICE`** · {mob[10]}\n**`HOLY`** · {mob[11]}\n**`DARK`** · {mob[12]}', value=f"> `EVO.{mob[4]}`")
+            box.add_field(name=f'>>> **`LP`** · {mob[5]}\n**`STR`** · {mob[6]}\n**`CHAIN`** · {mob[7]}\n**`SPEED`** · {mob[8]}\n**`DEFPY`** · {mob[16]}', value=effect)
+            box.add_field(name=f'>>> **`FLAME`** · {mob[9]}\n**`ICE`** · {mob[10]}\n**`HOLY`** · {mob[11]}\n**`DARK`** · {mob[12]}\n**`DEFMA`** · {mob[17]}', value=f"> `EVO.{mob[4]}`")
 
             if mob[12]: box.set_thumbnail(url=mob[13])
             return box

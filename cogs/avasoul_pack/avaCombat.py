@@ -697,7 +697,7 @@ class avaCombat(commands.Cog):
                 mems = await self.client.quefe(f"SELECT user_id FROM pi_party WHERE party_id=(SELECT party_id FROM pi_party WHERE user_id='{MSG.author.id}');", type='all')
                 if len(mems) > 1:
                     for mem in mems:
-                        if mem[0] != str(ctx.author.id): reward_query_party = reward_query.replace('perks=perks+', 'perks=perks+0*').replace('merit=merit+', 'merit=merit+0*')
+                        if mem[0] != str(ctx.author.id): reward_query_party = reward_query.replace('perks=perks+', f'perks=perks+(1/ABS(evo-{evo})+1)*').replace('merit=merit+', f'merit=merit+(1/ABS(evo-{evo})+1)*')
                         else: reward_query_party = reward_query
                         await self.client._cursor.execute(reward_query_party.replace('user_id_here', mem[0]))
                     await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you and {len(mems) - 1} other party members received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
@@ -712,7 +712,7 @@ class avaCombat(commands.Cog):
 
             # ==================================
             # Get the <mob> prototype
-            name, branch, lp, strr, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, effect, t_evo, description, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, effect, evo, description, illulink FROM model_mob WHERE mob_code='{mob_code}';")
+            name, branch, lp, strr, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, t_evo, description, lockon_max, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, evo, description, lockon_max, illulink FROM model_mob WHERE mob_code='{mob_code}';")
             rewards = rewards.split(' | ')
 
             # Generating rewards
@@ -746,7 +746,7 @@ class avaCombat(commands.Cog):
             await self.client._cursor.execute(f"DELETE FROM environ_mob WHERE mob_id='{target_id}';")
 
             # Insert the mob to DB
-            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, 'n/a', "{illulink}");""")
+            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, {attack_type}, {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, '{lockon_max}', "{illulink}", '');""")
             counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
             await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
 
