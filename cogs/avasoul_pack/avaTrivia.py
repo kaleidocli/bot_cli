@@ -342,7 +342,7 @@ class avaTrivia(commands.Cog):
         await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
 
     async def topslayer(self, ctx):
-        ret = await self.client.quefe(f"SELECT (SELECT name FROM personal_info WHERE id=user_id), mob, boss FROM pi_mobs_collection ORDER BY mob, boss DESC LIMIT 10", type='all')
+        ret = await self.client.quefe(f"SELECT (SELECT name FROM personal_info WHERE id=user_id), mob, boss FROM pi_mobs_collection ORDER BY mob DESC, boss DESC LIMIT 10", type='all')
         curuser = await self.client.quefe(f"SELECT user_id, mob, boss FROM pi_mobs_collection WHERE user_id='{ctx.author.id}';")
 
         line = ''; count = 0
