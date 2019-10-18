@@ -2102,7 +2102,7 @@ class avasoul(commands.Cog):
             #fix_list = await self.client.quefe("SELECT id FROM personal_info WHERE cur_MOB != 'n/a' OR cur_USER != 'n/a';", type='all')
             #for user_id in fix_list:
             await self.client._cursor.execute(f"UPDATE personal_info SET cur_MOB='n/a', cur_USER='n/a';")
-            await self.client._cursor.execute(f"UPDATE environ_mob SET lockon='n/a';")
+            # await self.client._cursor.execute(f"UPDATE environ_mob SET lockon='n/a';")
 
         await world_built()
         await rtzone_refresh()
