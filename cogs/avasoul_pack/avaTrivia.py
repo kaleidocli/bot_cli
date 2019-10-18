@@ -24,7 +24,7 @@ class avaTrivia(commands.Cog):
         self.topCommands = {'rich': self.toprich,
                             'pvp': self.toppvp,
                             'death': self.topdeath,
-                            'merit': self.tophonor,
+                            'merit': self.topmerit,
                             'duel': self.topduel,
                             'slayer': self.topslayer}
 
