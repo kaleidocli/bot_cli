@@ -846,8 +846,8 @@ class avaCommercial(commands.Cog):
             except TypeError: await ctx.send("<:osit:544356212846886924> User don't have an ava!"); return
 
             # Get item's info
-            try: w_tags, w_name, w_quantity, w_code = await self.client.quefe(f"SELECT tags, name, quantity, item_code FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{item_id}';")
-            except TypeError: await ctx.send("<:osit:544356212846886924> You don't own this item!"); return
+            try: w_tags, w_name, w_quantity, w_code = await self.client.quefe(f"SELECT tags, name, quantity, item_code FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{item_id}' AND quantity>={quantity};")
+            except TypeError: await ctx.send("<:osit:544356212846886924> You don't have enough of this item."); return
 
             # Tradable check
             if 'untradable' in w_tags: await ctx.send(f"<:osit:544356212846886924> You cannot trade this item, **{ctx.message.author.name}**. It's *untradable*, look at its tags."); return
@@ -923,9 +923,9 @@ class avaCommercial(commands.Cog):
         # SCAM :)
         if quantity <= 0: await ctx.send("**Heyyyyyyyyy scammer-!**"); return  
 
-        try: w_name, w_price, w_quantity, w_tags = await self.client.quefe(f"SELECT name, price, quantity, tags FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{item_id}';")
+        try: w_name, w_price, w_quantity, w_tags = await self.client.quefe(f"SELECT name, price, quantity, tags FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{item_id}' AND quantity>={quantity};")
         # E: Item_id not found
-        except TypeError: await ctx.send("<:osit:544356212846886924> You don't own this weapon!"); return      
+        except TypeError: await ctx.send("<:osit:544356212846886924> You don't have enough of this item."); return
         # E: Item_id not given
         except IndexError: await ctx.send("<:osit:544356212846886924> Missing argument"); return
 
