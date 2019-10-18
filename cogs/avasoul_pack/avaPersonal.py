@@ -190,7 +190,7 @@ class avaPersonal(commands.Cog):
                 # Quantity limit check
                 if await self.client._cursor.execute(f"SELECT COUNT(preset_id) FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats='CURRENT';") >= 3: await ctx.send(f"<:osit:544356212846886924> You cannot have more than three presets at a time, {str(ctx.message.author.id)}"); return
 
-                await self.client._cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT {str(ctx.message.author.id)}, '{pname}', 'PRESET', avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{ctx.message.id}' AND stats='CURRENT';")
+                await self.client._cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT '{ctx.author.id}', '{pname}', 'PRESET', avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats='CURRENT';")
 
                 await ctx.send(f":white_check_mark: Created preset **{pname}**. Use `wardrobe presets` to check its *id*."); return
 
