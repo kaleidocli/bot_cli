@@ -643,7 +643,7 @@ class avaCombat(commands.Cog):
 
         # GET Mob info =======================
         try:
-            t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_lockon_max = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, lockon_max FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+            t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_lockon_max, t_defpy = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, lockon_max, defense_physical FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
         # If mob not found (either mistyping or outdated lock), set lock to 'n/a'
         except TypeError:
             try:

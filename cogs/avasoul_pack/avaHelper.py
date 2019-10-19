@@ -23,7 +23,7 @@ class avaHelper(commands.Cog):
         self.helper_description = f"""
                                  ```ini
 [help <cmd>] to inspect a command.
-[incarnate] to begin your journey.```
+[tutorial] to being your journey.```
                                 ╟ **Confuse?** Use **`concept`** for conceptual questions!
                                 ╟ **Still confuse?** Join [our support camp!]({self.client.support_server_invite})
 

@@ -61,7 +61,7 @@ class avaActivity(commands.Cog):
                 await ctx.send(f":briefcase: **{ctx.author.name}** assigns as `{raw[0]}`|**{jname}** for `{(duration/60):.0f}` min(s). The guild will pay you **<:36pxGold:548661444133126185>{reward}** in advance!")
                 await self.client._cursor.execute(f"UPDATE personal_info SET STA={STA - sta}, money={money + reward} WHERE id='{ctx.author.id}'")
             # E: Unpack on empty query, due to degree not found
-            except TypeError: await ctx.send(f""":briefcase: You need `{"', '".join(requirement.split(' - '))}` to apply for this job!"""); return
+            except TypeError: await ctx.send(f""":briefcase: You need `{"', '".join(requirement.split(' - '))}` degree to apply for this job!"""); return
         except IndexError: await ctx.send(":briefcase: Please choose a job! You can use `works` check what you can do"); return
         # E: Unpack on empty query, due to job_code not found
         except TypeError: await ctx.send(":x: Job's code not found!"); return
