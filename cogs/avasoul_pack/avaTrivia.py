@@ -26,7 +26,7 @@ class avaTrivia(commands.Cog):
                             'death': self.topdeath,
                             'merit': self.topmerit,
                             'duel': self.topduel,
-                            'slayer': self.topslayer}
+                            'hunter': self.tophunter}
 
         self.biome = {'SAVANNA': 'https://imgur.com/qc1NNIu.png',
                     'JUNGLE': 'https://imgur.com/3j786qW.png',
@@ -299,7 +299,7 @@ class avaTrivia(commands.Cog):
             count += 1
             line = line + f"{count} | **{u[0]}** ({u[1]}) with <:36pxGold:548661444133126185> **{u[2]}**\n"
 
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+        await ctx.send(embed=discord.Embed(title=":military_medal: Top 10 richest Remnants!", description=line, colour=0xFFC26F))
 
     async def topmerit(self, ctx):
         ret = await self.client.quefe(f"SELECT name, age, merit FROM personal_info ORDER BY merit DESC LIMIT 10", type='all')
@@ -309,7 +309,7 @@ class avaTrivia(commands.Cog):
             count += 1
             line = line + f"{count} | **{u[0]}** ({u[1]}) with a merit **{u[2]}**\n"
 
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+        await ctx.send(embed=discord.Embed(title=":military_medal: Top 10 honorable Remnants!", description=line, colour=0xFFC26F))
 
     async def toppvp(self, ctx):
         ret = await self.client.quefe(f"SELECT name, EVO, kills FROM personal_info ORDER BY kills DESC LIMIT 10", type='all')
@@ -319,7 +319,7 @@ class avaTrivia(commands.Cog):
             count += 1
             line = line + f"{count} | **{u[0]}** (`EVO-{u[1]}`) with **{u[2]}** kills\n"
 
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+        await ctx.send(embed=discord.Embed(title=":military_medal: Top 10 player killers!", description=line, colour=0xFFC26F))
 
     async def topdeath(self, ctx):
         ret = await self.client.quefe(f"SELECT name, EVO, deaths FROM personal_info ORDER BY deaths DESC LIMIT 10", type='all')
@@ -329,7 +329,7 @@ class avaTrivia(commands.Cog):
             count += 1
             line = line + f"{count} | **{u[0]}** (`EVO-{u[1]}`) with **{u[2]}** deaths\n"
 
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+        await ctx.send(embed=discord.Embed(title=":military_medal: Top 10 highest death rate!", description=line, colour=0xFFC26F))
 
     async def topduel(self, ctx):
         ret = await self.client.quefe(f"SELECT (SELECT name FROM personal_info WHERE id=user_id), duel_win, duel_lost FROM misc_status ORDER BY duel_win DESC LIMIT 10", type='all')
@@ -339,9 +339,9 @@ class avaTrivia(commands.Cog):
             count += 1
             line = line + f"{count} | **{u[0]}** have won **{u[1]}** duels and lost **{u[2]}** duels\n"
 
-        await ctx.send(embed=discord.Embed(description=line, colour=0xFFC26F))
+        await ctx.send(embed=discord.Embed(title=":military_medal: Top 10 card duelists!", description=line, colour=0xFFC26F))
 
-    async def topslayer(self, ctx):
+    async def tophunter(self, ctx):
         ret = await self.client.quefe(f"SELECT (SELECT name FROM personal_info WHERE id=user_id), mob, boss FROM pi_mobs_collection ORDER BY mob DESC, boss DESC LIMIT 10", type='all')
         curuser = await self.client.quefe(f"SELECT user_id, mob, boss FROM pi_mobs_collection WHERE user_id='{ctx.author.id}';")
 
@@ -350,9 +350,9 @@ class avaTrivia(commands.Cog):
             count += 1
             line = line + f"{count} | **{u[0]}** have slayed **{u[1]}** monsters and raided **{u[2]}** bosses.\n"
 
-        if curuser: line = line + f"⠀\n**{ctx.author.name}**, you've slayed **{curuser[1]}** monsters and raided **{curuser[2]}** bosses!\n"
+        if curuser: line = line + f"⠀\n> **{ctx.author.name}**, you've slayed **{curuser[1]}** monsters and raided **{curuser[2]}** bosses!"
 
-        await ctx.send(embed=discord.Embed(title="Top 10 slayers of current region.", description=line, colour=0xFFC26F))
+        await ctx.send(embed=discord.Embed(title=":military_medal: Top 10 monster hunters of current region!", description=line, colour=0xFFC26F))
 
 
 
