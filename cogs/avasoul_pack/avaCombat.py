@@ -968,7 +968,7 @@ class avaCombat(commands.Cog):
                         # LOCK - IN
                         await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'lock{target_id}', f'lock{MSG.author.id}', ex=charm))
             # If lock doesn't exist, make one
-            except TypeError:
+            except (TypeError, AttributeError):
                 await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'lock{target_id}', f'lock{MSG.author.id}', ex=charm))
 
 
