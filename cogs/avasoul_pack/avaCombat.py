@@ -643,13 +643,13 @@ class avaCombat(commands.Cog):
 
         # GET Mob info =======================
         try:
-            t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_lockon_max, t_defpy = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, lockon_max, defense_physical FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+            t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_lockon_max, t_defpy = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, lockon_max, defense_physic FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
         # If mob not found (either mistyping or outdated lock), set lock to 'n/a'
         except TypeError:
             try:
                 target_id = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))
                 target_id = target_id[0]
-                t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_defpy = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, defense_physical FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+                t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_defpy = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, defense_physic FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
                 CE['lock'] = target_id
             except IndexError:
                 await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
