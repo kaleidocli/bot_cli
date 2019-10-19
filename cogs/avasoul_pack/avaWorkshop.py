@@ -105,7 +105,7 @@ class avaWorkshop(commands.Cog):
         raw = list(args)
 
         # Check if the previous course has been finished yet
-        if not await self.__cd_check(ctx.message, cmd_tag, f"No."): return
+        if not await self.__cd_check(ctx.message, cmd_tag, "No."): return
 
         try:
             # Item's info get
@@ -134,11 +134,11 @@ class avaWorkshop(commands.Cog):
                 await ctx.send("<:osit:544356212846886924> Insufficient balance!"); return
 
             # MERGE
-            try: W_weight = round(random.uniform(0, w_weight + t_w_weight), 1)
+            try: W_weight = round(random.uniform(0, (w_weight + t_w_weight)/10*7.8), 1)
             except IndexError: W_weight = 0
-            try: W_multiplier = round(random.uniform(0, (w_multiplier + t_w_multiplier)/10*7.5), 1)
+            try: W_multiplier = round(random.uniform(0, (w_multiplier + t_w_multiplier)/2), 1)
             except IndexError: W_multiplier = 0
-            try: W_str = round(random.uniform(0, (w_str + t_w_str)/10), 1)
+            try: W_str = round(random.uniform(0, (w_str + t_w_str)/10*7.25), 1)
             except IndexError: W_str = 0
             try: W_intt = round(random.uniform(0, (w_intt + t_w_intt)/10*7.5), 1)
             except IndexError: W_intt = 0
@@ -154,7 +154,7 @@ class avaWorkshop(commands.Cog):
             except IndexError: W_r_min = 0
             try: W_r_max = round(random.choice(range(int(w_r_max + t_w_r_max))), 1)
             except IndexError: W_r_max = 0
-            try: W_dmg = round(random.choice(range(int(w_dmg + t_w_dmg))), 1)
+            try: W_dmg = round(random.choice(range((w_dmg + t_w_dmg)//10*7+1)), 1)
             except IndexError: W_dmg = 0
             try: W_stealth = round(random.choice(range(int(w_stealth + t_w_stealth))), 1)
             except IndexError: W_stealth = 0
@@ -165,7 +165,7 @@ class avaWorkshop(commands.Cog):
             else: w_evo = int(w_evo)
             if not int(t_w_evo): t_w_evo = 1
             else: t_w_evo = int(t_w_evo)
-            
+
             W_evo = w_evo + t_w_evo
 
             # Insert
