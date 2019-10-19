@@ -282,7 +282,7 @@ class avaPersonal(commands.Cog):
                         ava_id, name, description = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id='{item[0]}';")
                         items.append([ava_id, name, description])
 
-                    def makeembed(top, least, pages, currentpage):
+                    def makeembed(items, top, least, pages, currentpage):
                         line = '' 
 
                         for item in items[top:least]:
@@ -295,58 +295,7 @@ class avaPersonal(commands.Cog):
                         #else:
                         #    await ctx.send("*Nothing but dust here...*")
                     
-                    async def attachreaction(msg):
-                        await msg.add_reaction("\U000023ee")    #Top-left
-                        await msg.add_reaction("\U00002b05")    #Left
-                        await msg.add_reaction("\U000027a1")    #Right
-                        await msg.add_reaction("\U000023ed")    #Top-right
-
-                    pages = int(len(items)/5)
-                    if len(items)%5 != 0: pages += 1
-                    currentpage = 1
-                    cursor = 0
-
-                    emli = []
-                    for curp in range(pages):
-                        myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
-                        emli.append(myembed)
-                        currentpage += 1
-
-                    if pages > 1:
-                        msg = await ctx.send(embed=emli[cursor])
-                        await attachreaction(msg)
-                    else: 
-                        msg = await ctx.send(embed=emli[cursor], delete_after=15)
-                        return
-
-                    def UM_check(reaction, user):
-                        return user.id == ctx.author.id and reaction.message.id == msg.id
-
-                    while True:
-                        try:
-                            reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                            if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                                cursor += 1
-                                await msg.edit(embed=emli[cursor])
-                                try: await msg.remove_reaction(reaction.emoji, user)
-                                except discordErrors.Forbidden: pass
-                            elif reaction.emoji == "\U00002b05" and cursor > 0:
-                                cursor -= 1
-                                await msg.edit(embed=emli[cursor])
-                                try: await msg.remove_reaction(reaction.emoji, user)
-                                except discordErrors.Forbidden: pass
-                            elif reaction.emoji == "\U000023ee" and cursor != 0:
-                                cursor = 0
-                                await msg.edit(embed=emli[cursor])
-                                try: await msg.remove_reaction(reaction.emoji, user)
-                                except discordErrors.Forbidden: pass
-                            elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                                cursor = pages - 1
-                                await msg.edit(embed=emli[cursor])
-                                try: await msg.remove_reaction(reaction.emoji, user)
-                                except discordErrors.Forbidden: pass
-                        except asyncio.TimeoutError:
-                            await msg.delete(); return
+                    await self.tools.pagiMain(ctx, items, makeembed)
 
                 else:
                     items2 = await self.client.quefe(f"SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}';", type='all')
@@ -357,7 +306,7 @@ class avaPersonal(commands.Cog):
                         ava_id, name, description = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code='{item[0]}';")
                         items.append([ava_id, name, description])
 
-                    def makeembed(top, least, pages, currentpage):
+                    def makeembed(items, top, least, pages, currentpage):
                         line = '' 
 
                         for item in items[top:least]:
@@ -370,59 +319,7 @@ class avaPersonal(commands.Cog):
                         #else:
                         #    await ctx.send("*Nothing but dust here...*")
                     
-                    async def attachreaction(msg):
-                        await msg.add_reaction("\U000023ee")    #Top-left
-                        await msg.add_reaction("\U00002b05")    #Left
-                        await msg.add_reaction("\U000027a1")    #Right
-                        await msg.add_reaction("\U000023ed")    #Top-right
-
-                    pages = int(len(items)/5)
-                    if len(items)%5 != 0: pages += 1
-                    currentpage = 1
-                    cursor = 0
-
-                    emli = []
-                    for curp in range(pages):
-                        myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
-                        emli.append(myembed)
-                        currentpage += 1
-
-                    if pages > 1:
-                        msg = await ctx.send(embed=emli[cursor])
-                        await attachreaction(msg)
-                    else: 
-                        msg = await ctx.send(embed=emli[cursor], delete_after=15)
-                        return
-
-                    def UM_check(reaction, user):
-                        return user.id == ctx.author.id and reaction.message.id == msg.id
-
-                    while True:
-                        try:
-                            reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                            if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                                cursor += 1
-                                await msg.edit(embed=emli[cursor])
-                                try: await msg.remove_reaction(reaction.emoji, user)
-                                except discordErrors.Forbidden: pass
-                            elif reaction.emoji == "\U00002b05" and cursor > 0:
-                                cursor -= 1
-                                await msg.edit(embed=emli[cursor])
-                                try: await msg.remove_reaction(reaction.emoji, user)
-                                except discordErrors.Forbidden: pass
-                            elif reaction.emoji == "\U000023ee" and cursor != 0:
-                                cursor = 0
-                                await msg.edit(embed=emli[cursor])
-                                try: await msg.remove_reaction(reaction.emoji, user)
-                                except discordErrors.Forbidden: pass
-                            elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                                cursor = pages - 1
-                                await msg.edit(embed=emli[cursor])
-                                try: await msg.remove_reaction(reaction.emoji, user)
-                                except discordErrors.Forbidden: pass
-                        except asyncio.TimeoutError:
-                            await msg.delete(); return
-
+                    await self.tools.pagiMain(ctx, items, makeembed)
             await browse()
 
         # FONTs
@@ -435,7 +332,7 @@ class avaPersonal(commands.Cog):
                 ava_id, name, description = await self.client.quefe(f"SELECT font_id, name, description FROM model_font WHERE font_id='{item[0]}';")
                 items.append([ava_id, name, description])
 
-            def makeembed(top, least, pages, currentpage):
+            def makeembed(items, top, least, pages, currentpage):
                 line = '' 
 
                 for item in items[top:least]:
@@ -448,58 +345,7 @@ class avaPersonal(commands.Cog):
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
             
-            async def attachreaction(msg):
-                await msg.add_reaction("\U000023ee")    #Top-left
-                await msg.add_reaction("\U00002b05")    #Left
-                await msg.add_reaction("\U000027a1")    #Right
-                await msg.add_reaction("\U000023ed")    #Top-right
-
-            pages = int(len(items)/5)
-            if len(items)%5 != 0: pages += 1
-            currentpage = 1
-            cursor = 0
-
-            emli = []
-            for curp in range(pages):
-                myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
-                emli.append(myembed)
-                currentpage += 1
-
-            if pages > 1:
-                msg = await ctx.send(embed=emli[cursor])
-                await attachreaction(msg)
-            else: 
-                msg = await ctx.send(embed=emli[cursor], delete_after=15)
-                return
-
-            def UM_check(reaction, user):
-                return user.id == ctx.author.id and reaction.message.id == msg.id
-
-            while True:
-                try:
-                    reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                        cursor += 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U00002b05" and cursor > 0:
-                        cursor -= 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ee" and cursor != 0:
-                        cursor = 0
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                        cursor = pages - 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                except asyncio.TimeoutError:
-                    await msg.delete(); return
+            await self.tools.pagiMain(ctx, items, makeembed)
 
 
 
@@ -645,7 +491,7 @@ class avaPersonal(commands.Cog):
             async def browse():
                 items = await self.client.quefe(f"SELECT slot_id, slot_name, item_id FROM pi_equipment WHERE user_Id='{ctx.author.id}';", type='all')
 
-                def makeembed(top, least, pages, currentpage):
+                def makeembed(items, top, least, pages, currentpage):
                     line = '' 
 
                     for item in items[top:least]:
@@ -657,58 +503,7 @@ class avaPersonal(commands.Cog):
                     #else:
                     #    await ctx.send("*Nothing but dust here...*")
                 
-                async def attachreaction(msg):
-                    await msg.add_reaction("\U000023ee")    #Top-left
-                    await msg.add_reaction("\U00002b05")    #Left
-                    await msg.add_reaction("\U000027a1")    #Right
-                    await msg.add_reaction("\U000023ed")    #Top-right
-
-                pages = int(len(items)/5)
-                if len(items)%5 != 0: pages += 1
-                currentpage = 1
-                cursor = 0
-
-                emli = []
-                for curp in range(pages):
-                    myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
-                    emli.append(myembed)
-                    currentpage += 1
-
-                if pages > 1:
-                    msg = await ctx.send(embed=emli[cursor])
-                    await attachreaction(msg)
-                else: 
-                    msg = await ctx.send(embed=emli[cursor], delete_after=15)
-                    return
-
-                def UM_check(reaction, user):
-                    return user.id == ctx.author.id and reaction.message.id == msg.id
-
-                while True:
-                    try:
-                        reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                            cursor += 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U00002b05" and cursor > 0:
-                            cursor -= 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ee" and cursor != 0:
-                            cursor = 0
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                            cursor = pages - 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                    except asyncio.TimeoutError:
-                        await msg.delete(); return
+                await self.tools.pagiMain(items, ctx, items, makeembed)
 
             await browse()
             return
@@ -776,6 +571,7 @@ class avaPersonal(commands.Cog):
 
 
 # ================== TOOLS ==================
+
     def compound_calc(self, itertime, func, value):
         """Func has to return what they're passed"""
 

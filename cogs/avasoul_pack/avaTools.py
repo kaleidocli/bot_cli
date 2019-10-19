@@ -1,4 +1,5 @@
 import pymysql.err as mysqlError
+import discord.errors as discordErrors
 
 import random
 from os import listdir
@@ -7,6 +8,7 @@ import asyncio
 from functools import partial
 
 import concurrent
+import inspect
 
 class avaTools:
 
@@ -170,7 +172,7 @@ class avaTools:
             ava['kills'] = 0; ava['deaths'] = 0
             ava['money'] = 100
             ava['merit'] = 0
-            ava['perks'] = 5
+            ava['perks'] = 100
             auras = {'FLAME': [0.5, 0, 0, 0], 'ICE': [0, 0.5, 0, 0], 'HOLY': [0, 0, 0.5, 0], 'DARK': [0, 0, 0, 0.5]}
             ava['auras'] = auras[r_aura]
 
@@ -222,6 +224,92 @@ class avaTools:
         if loss > b: return 1
         return b - loss
 
+    async def pagiButton(self, timeout=15, check=None):
+        try:
+            if check:
+                done, pending = await asyncio.wait([self.client.wait_for('reaction_add', timeout=timeout, check=check), self.client.wait_for('reaction_remove', timeout=timeout, check=check)], return_when=asyncio.FIRST_COMPLETED)
+            else:
+                done, pending = await asyncio.wait([self.client.wait_for('reaction_add', timeout=timeout), self.client.wait_for('reaction_remove', timeout=timeout)], return_when=asyncio.FIRST_COMPLETED)
+        except (asyncio.TimeoutError, concurrent.futures._base.TimeoutError, TimeoutError, concurrent.futures.TimeoutError):
+            return
+
+        try:
+            fut = done.pop()
+
+            fut = fut.result()
+
+            for future in pending:
+                future.cancel()
+
+            return fut
+        except asyncio.TimeoutError:
+            for future in pending:
+                future.cancel()
+            raise asyncio.TimeoutError
+
+    async def pageButtonAdd(self, msg, reaction=["\U000023ee", "\U00002b05", "\U000027a1", "\U000023ed"], extra=[]):
+        for charCode in reaction + extra:
+            await msg.add_reaction(charCode)
+
+    async def pageTurner(self, msg, reaction, user, pageInfoPack):
+        """cursor, pages, emli = pageInfoPack"""
+
+        cursor, pages, emli = pageInfoPack
+
+        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
+            cursor += 1
+            await msg.edit(embed=emli[cursor])
+        elif reaction.emoji == "\U00002b05" and cursor > 0:
+            cursor -= 1
+            await msg.edit(embed=emli[cursor])
+        elif reaction.emoji == "\U000023ee" and cursor != 0:
+            cursor = 0
+            await msg.edit(embed=emli[cursor])
+        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
+            cursor = pages - 1
+            await msg.edit(embed=emli[cursor])
+        
+        return cursor
+
+    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=[], pageTurner=None, cursor=0, timeout=15):
+        """
+            cursor:       (Int)  Starting cursor
+            makembed:     (Func/Coro) Generator for one page with specific format.  
+            extra_button: (List) Extra buttons for the paginator.
+            pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor."""
+
+        pages = int(len(items)/item_per_page)
+        if len(items)%item_per_page != 0: pages += 1
+        currentpage = 1
+
+        # Embedding items ============
+        emli = []
+        # pylint: disable=unused-variable
+        for curp in range(pages):
+            if inspect.iscoroutinefunction(makeembed):
+                myembed = await makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+            else:
+                myembed = makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+            emli.append(myembed)
+            currentpage += 1
+
+        # pylint: enable=unused-variable
+        if pages > 1:
+            msg = await ctx.send(embed=emli[cursor])
+            await self.pageButtonAdd(msg, extra=extra_button)
+        else: 
+            msg = await ctx.send(embed=emli[0], delete_after=15)
+
+        while True:
+            try:
+                reaction, user = await self.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=timeout)
+                if not pageTurner:
+                    cursor = await self.pageTurner(msg, reaction, user, (cursor, pages, emli))
+                else:
+                    cursor = await pageTurner(msg, reaction, user, (cursor, pages, emli))
+
+            except concurrent.futures.TimeoutError:
+                return
 
 
 

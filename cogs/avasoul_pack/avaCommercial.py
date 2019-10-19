@@ -107,7 +107,7 @@ class avaCommercial(commands.Cog):
 
             if not items: await ctx.send(f":x: No result..."); return
 
-            def makeembed(top, least, pages, currentpage):
+            def makeembed(items, top, least, pages, currentpage):
 
                 line = f"**╔═══════╡**`Total: {len(items)}`**╞═══════**\n" 
 
@@ -136,57 +136,8 @@ class avaCommercial(commands.Cog):
                 else: return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
-            
-            async def attachreaction(msg):
-                await msg.add_reaction("\U000023ee")    #Top-left
-                await msg.add_reaction("\U00002b05")    #Left
-                await msg.add_reaction("\U000027a1")    #Right
-                await msg.add_reaction("\U000023ed")    #Top-right
 
-            pages = int(len(items)/5)
-            if len(items)%5 != 0: pages += 1
-            currentpage = 1
-            cursor = 0
-
-            emli = []
-            # pylint: disable=unused-variable
-            for curp in range(pages):
-                myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
-                emli.append(myembed)
-                currentpage += 1
-            # pylint: enable=unused-variable
-            msg = await ctx.send(embed=emli[cursor])
-            if pages > 1: await attachreaction(msg)
-            else: return
-
-            def UM_check(reaction, user):
-                return user.id == ctx.author.id and reaction.message.id == msg.id
-
-            while True:
-                try:
-                    reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
-                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                        cursor += 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U00002b05" and cursor > 0:
-                        cursor -= 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ee" and cursor != 0:
-                        cursor = 0
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                        cursor = pages - 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                except asyncio.TimeoutError:
-                    break
+            await self.tools.pagiMain(ctx, items, makeembed, timeout=45)
 
         await browse()
 
@@ -466,7 +417,7 @@ class avaCommercial(commands.Cog):
 
 
     # SELF
-    @commands.command(aliases=['i'])
+    @commands.command(aliases=['i', 'inv'])
     @commands.cooldown(1, 5, type=BucketType.user)
     async def inventory(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
@@ -512,7 +463,7 @@ class avaCommercial(commands.Cog):
         for lkkey in raw:
             if not lk_query: lk_query = 'AND'
             # lkkey is PRICE
-            try: 
+            try:
                 if not sublk_price: sublk_price = sublk_price + f" price<={int(lkkey)}"
                 else: sublk_price = sublk_price + f" OR price={int(lkkey)}"
             # lkkey is TAG
@@ -534,7 +485,7 @@ class avaCommercial(commands.Cog):
                 items.sort(key=lambda v: v[1])
             except IndexError: await ctx.send(f":x: No result..."); return
 
-            def makeembed(top, least, pages, currentpage):
+            def makeembed(items, top, least, pages, currentpage):
                 line = f"**╔═══════╡**`Total: {len(items)}`**╞═══════**\n" 
 
                 for item in items[top:least]:
@@ -564,60 +515,8 @@ class avaCommercial(commands.Cog):
                 return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
-            
-            async def attachreaction(msg):
-                await msg.add_reaction("\U000023ee")    #Top-left
-                await msg.add_reaction("\U00002b05")    #Left
-                await msg.add_reaction("\U000027a1")    #Right
-                await msg.add_reaction("\U000023ed")    #Top-right
 
-            pages = int(len(items)/5)
-            if len(items)%5 != 0: pages += 1
-            currentpage = 1
-            cursor = 0
-
-            emli = []
-            # pylint: disable=unused-variable
-            for curp in range(pages):
-                myembed = makeembed(currentpage*5-5, currentpage*5, pages, currentpage)
-                emli.append(myembed)
-                currentpage += 1
-            # pylint: enable=unused-variable
-            if pages > 1:
-                msg = await ctx.send(embed=emli[cursor])
-                await attachreaction(msg)
-            else: 
-                msg = await ctx.send(embed=emli[0], delete_after=15)
-                return
-
-            def UM_check(reaction, user):
-                return user.id == ctx.author.id and reaction.message.id == msg.id
-
-            while True:
-                try:
-                    reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                        cursor += 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U00002b05" and cursor > 0:
-                        cursor -= 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ee" and cursor != 0:
-                        cursor = 0
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                        cursor = pages - 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                except asyncio.TimeoutError:
-                    await msg.delete(); return
+            await self.tools.pagiMain(ctx, items, makeembed)
 
         await browse()
 

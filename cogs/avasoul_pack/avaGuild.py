@@ -279,7 +279,8 @@ class avaGuild(commands.Cog):
                 tempbu = await self.client.quefe(f"SELECT name, description, quest_line, description FROM model_quest WHERE quest_code='{pack[1]}';", type='all')
                 bundle2.append(tempbu[0])
 
-            async def makeembed(top, least, pages, currentpage):
+            async def makeembed(bbb, top, least, pages, currentpage):
+                bundle, bundle2 = bbb
                 temb = discord.Embed(title = f"**ACTIVE QUESTS** || {ctx.author.name}", colour = discord.Colour(0x011C3A), description=f'═════════╡**`{currentpage}/{len(bundle)}`**╞═════════')
                 for pack, pack2 in zip(bundle[top:least], bundle2[top:least]):
                     # Get current snapshot
@@ -357,55 +358,8 @@ class avaGuild(commands.Cog):
                 return temb
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
-            
-            async def attachreaction(msg):
-                await msg.add_reaction("\U00002b05")    #Left
-                await msg.add_reaction("\U000027a1")    #Right
 
-            pages = int(len(bundle)/1)
-            if len(bundle)%1 != 0: pages += 1
-            currentpage = 1
-            cursor = 0
-
-            emli = []
-            for curp in range(pages):
-                myembed = await makeembed(currentpage*1-1, currentpage*1, pages, currentpage)
-                emli.append(myembed)
-                currentpage += 1
-
-            try: msg = await ctx.send(embed=emli[cursor])
-            except IndexError: await ctx.send("<:osit:544356212846886924> Please join a guild..."); return
-            if pages > 1: await attachreaction(msg)
-            else: return
-
-            def UM_check(reaction, user):
-                return user.id == ctx.author.id and reaction.message.id == msg.id
-
-            while True:
-                try:    
-                    reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                        cursor += 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U00002b05" and cursor > 0:
-                        cursor -= 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ee" and cursor != 0:
-                        cursor = 0
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                        cursor = pages - 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                except asyncio.TimeoutError:
-                    break          
+            await self.tools.pagiMain(ctx, (bundle, bundle2), makeembed, timeout=20)
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -429,8 +383,9 @@ class avaGuild(commands.Cog):
         try: completed_bundle = completed_bundle[0].split(' - ')
         except (TypeError, AttributeError): completed_bundle = []
 
-        def makeembed(top, least, pages, currentpage):
+        def makeembed(items, top, least, pages, currentpage):
             line = ''
+            bundle, completed_bundle = items
 
             line = f"\n```『Total』{len(bundle)}⠀⠀⠀⠀『Done』{len(completed_bundle)}```"
             for pack in bundle[top:least]:
@@ -443,55 +398,8 @@ class avaGuild(commands.Cog):
             return reembed
             #else:
             #    await ctx.send("*Nothing but dust here...*")
-        
-        async def attachreaction(msg):
-            await msg.add_reaction("\U00002b05")    #Left
-            await msg.add_reaction("\U000027a1")    #Right
 
-        pages = int(len(bundle)/3)
-        if len(bundle)%3 != 0: pages += 1
-        currentpage = 1
-        cursor = 0
-
-        emli = []
-        for curp in range(pages):
-            myembed = makeembed(currentpage*3-3, currentpage*3, pages, currentpage)
-            emli.append(myembed)
-            currentpage += 1
-
-        try: msg = await ctx.send(embed=emli[cursor])
-        except IndexError: await ctx.send("<:osit:544356212846886924> Please join a guild..."); return
-        if pages > 1: await attachreaction(msg)
-        else: return
-
-        def UM_check(reaction, user):
-            return user.id == ctx.author.id and reaction.message.id == msg.id
-
-        while True:
-            try:    
-                reaction, user = await self.client.wait_for('reaction_add', timeout=15, check=UM_check)
-                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                    cursor += 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U00002b05" and cursor > 0:
-                    cursor -= 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ee" and cursor != 0:
-                    cursor = 0
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                    cursor = pages - 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-            except asyncio.TimeoutError:
-                break
+        await self.tools.pagiMain(ctx, (bundle, completed_bundle), makeembed, timeout=60, item_per_page=3)
 
     @commands.command(aliases=['pp'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -716,7 +624,7 @@ class avaGuild(commands.Cog):
 
         arts = await self.client.quefe(f"SELECT art_code, art_name, art_type, description, value, tier, tier_cost, upgrade_increment, illulink FROM pi_arts WHERE user_id='{ctx.author.id}';", type='all')
         
-        async def makeembed(curp, pages, currentpage):
+        async def makeembed(arts, curp, dummy, pages, currentpage):
             d = arts[curp]
 
             if not d[5]: uplus = ''
@@ -729,52 +637,8 @@ class avaGuild(commands.Cog):
             reembed.set_footer(text=f">> Require {(float(d[6])*(float(d[5]) + 1)):.0f} for next tier (+{d[7]})")
             if d[8]: reembed.set_image(url=random.choice(d[8].split(" || ")))
             return reembed
-        
-        async def attachreaction(msg):
-            await msg.add_reaction("\U000023ee")    #Top-left
-            await msg.add_reaction("\U00002b05")    #Left
-            await msg.add_reaction("\U000027a1")    #Right
-            await msg.add_reaction("\U000023ed")    #Top-right
 
-        pages = len(arts)
-        currentpage = 1
-        cursor = 0
-
-        emli = []
-        for curp in range(pages):
-            myembed = await makeembed(curp, pages, currentpage)
-            emli.append(myembed)
-            currentpage += 1
-
-        msg = await ctx.send(embed=emli[cursor])
-        if pages > 1: await attachreaction(msg)
-        else: return
-
-        while True:
-            try:
-                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
-                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                    cursor += 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U00002b05" and cursor > 0:
-                    cursor -= 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ee" and cursor != 0:
-                    cursor = 0
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                    cursor = pages - 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-            except asyncio.TimeoutError: 
-                await msg.delete(); return
+        await self.tools.pagiMain(ctx, arts, makeembed, item_per_page=1)
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -788,7 +652,7 @@ class avaGuild(commands.Cog):
         tempaa = [a[0] for a in aa]
         arts = await self.client.quefe(f"""SELECT art_code, art_name, art_type, description, value, tier, tier_cost, upgrade_increment, illulink FROM model_arts WHERE art_code IN ('{"', '".join(tempaa)}');""", type='all')
         
-        async def makeembed(curp, pages, currentpage):
+        async def makeembed(arts, curp, dummy, pages, currentpage):
             d = arts[curp]
             r = aa[curp][1]
 
@@ -803,52 +667,8 @@ class avaGuild(commands.Cog):
             reembed.set_thumbnail(url=self.guild_rank_image[r])
             if d[8]: reembed.set_image(url=random.choice(d[8].split(" || ")))
             return reembed
-        
-        async def attachreaction(msg):
-            await msg.add_reaction("\U000023ee")    #Top-left
-            await msg.add_reaction("\U00002b05")    #Left
-            await msg.add_reaction("\U000027a1")    #Right
-            await msg.add_reaction("\U000023ed")    #Top-right
 
-        pages = len(arts)
-        currentpage = 1
-        cursor = 0
-
-        emli = []
-        for curp in range(pages):
-            myembed = await makeembed(curp, pages, currentpage)
-            emli.append(myembed)
-            currentpage += 1
-
-        msg = await ctx.send(embed=emli[cursor])
-        if pages > 1: await attachreaction(msg)
-        else: return
-
-        while True:
-            try:
-                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
-                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                    cursor += 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U00002b05" and cursor > 0:
-                    cursor -= 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ee" and cursor != 0:
-                    cursor = 0
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                    cursor = pages - 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-            except asyncio.TimeoutError: 
-                await msg.delete(); return
+        await self.tools.pagiMain(ctx, items, makeembed, timeout=60, item_per_page=1)        
 
     @commands.command()
     @commands.cooldown(1, 3, type=BucketType.user)

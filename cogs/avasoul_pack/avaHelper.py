@@ -107,32 +107,21 @@ Definition? Mechanism? Lore? Yaaa```
                 msg = await ctx.send(embed=emli[cursor])
                 await attachreaction(msg)
 
-                def UM_check(reaction, user):
-                    return user.id == ctx.author.id and reaction.message.id == msg.id
-
                 while True:
                     try:
-                        reaction, user = await self.client.wait_for('reaction_add', timeout=60, check=UM_check)
+                        reaction, user = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
                         if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                             cursor += 1
                             await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
                         elif reaction.emoji == "\U00002b05" and cursor > 0:
                             cursor -= 1
                             await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
                         elif reaction.emoji == "\U000023ee" and cursor != 0:
                             cursor = 0
                             await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
                         elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
                             cursor = pages - 1
                             await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
                     except asyncio.TimeoutError:
                         await msg.delete(); return
 
@@ -189,32 +178,21 @@ Definition? Mechanism? Lore? Yaaa```
                 msg = await ctx.send(embed=emli[cursor])
                 await attachreaction(msg)
 
-                def UM_check(reaction, user):
-                    return user.id == ctx.author.id and reaction.message.id == msg.id
-
                 while True:
                     try:
-                        reaction, user = await self.client.wait_for('reaction_add', timeout=60, check=UM_check)
+                        reaction, user = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
                         if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                             cursor += 1
                             await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
                         elif reaction.emoji == "\U00002b05" and cursor > 0:
                             cursor -= 1
                             await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
                         elif reaction.emoji == "\U000023ee" and cursor != 0:
                             cursor = 0
                             await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
                         elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
                             cursor = pages - 1
                             await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
                     except asyncio.TimeoutError:
                         await msg.delete(); return
 
