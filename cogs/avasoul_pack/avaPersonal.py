@@ -587,7 +587,7 @@ class avaPersonal(commands.Cog):
     def perk_calc(self, evo, addition=1):
         """Calculate the NEXT EVO of the given evo"""
 
-        return int(sum(range(evo+1, evo+addition+1))**2.4   )
+        return int(sum(range(evo+1, evo+addition+1))**2.05)
 
     def lp_calc(self, value):
         v = int(round(float(value)/100*2))
