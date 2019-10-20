@@ -136,9 +136,9 @@ class avaWorkshop(commands.Cog):
             # MERGE
             try: W_weight = round(random.uniform(0, (w_weight + t_w_weight)/2), 1)
             except IndexError: W_weight = 0
-            try: W_multiplier = round(random.uniform(0, (w_multiplier + t_w_multiplier)/10*8), 1)
+            try: W_multiplier = round(random.uniform(0, (w_multiplier + t_w_multiplier)/10*9), 1)
             except IndexError: W_multiplier = 0
-            try: W_str = round(random.uniform(0, (w_str + t_w_str)/10*8), 1)
+            try: W_str = round(random.uniform(0, (w_str + t_w_str)/10*9), 1)
             except IndexError: W_str = 0
             try: W_intt = round(random.uniform(0, (w_intt + t_w_intt)/10*7.5), 1)
             except IndexError: W_intt = 0
