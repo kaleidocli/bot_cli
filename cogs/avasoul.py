@@ -1993,7 +1993,7 @@ class avasoul(commands.Cog):
                         elif int(qk[0]) < mob[1]: mob[1] -= int(qk[0])
                         
                         # Get the <mob> prototype
-                        name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink = await self.client.quefe(f"SELECT name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, lockon_max, illulink FROM model_mob WHERE mob_code='{mob[0]}';")
+                        name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink = await self.client.quefe(f"SELECT name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink FROM model_mob WHERE mob_code='{mob[0]}';")
                         rewards = rewards.split(' | ')
                         
                         # Mass production
