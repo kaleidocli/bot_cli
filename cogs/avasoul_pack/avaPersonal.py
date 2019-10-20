@@ -432,18 +432,18 @@ class avaPersonal(commands.Cog):
             except (IndexError, TypeError): evos = 1
 
             evo_dict = {
-                'lp': ["UPDATE personal_info SET MAX_LP=MAX_LP+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", max_LP],
-                'sta': ["UPDATE personal_info SET MAX_STA=MAX_STA+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", max_STA],
-                'str': ["UPDATE personal_info SET STR=STR+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", strr],
-                'int': ["UPDATE personal_info SET INTT=INTT+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", intt],
-                'flame': ["UPDATE personal_info SET au_FLAME=au_FLAME+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_FLAME],
-                'ice': ["UPDATE personal_info SET au_ICE=au_ICE+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_ICE],
-                'holy': ["UPDATE personal_info SET au_HOLY=au_HOLY+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_HOLY],
-                'dark': ["UPDATE personal_info SET au_DARK=au_DARK+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_DARK],
-                'charm': ["UPDATE personal_info SET charm=charm+value_in_here, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", charm]
+                'lp': [f"UPDATE personal_info SET MAX_LP=MAX_LP+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", max_LP],
+                'sta': [f"UPDATE personal_info SET MAX_STA=MAX_STA+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", max_STA],
+                'str': [f"UPDATE personal_info SET STR=STR+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", strr],
+                'int': [f"UPDATE personal_info SET INTT=INTT+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", intt],
+                'flame': [f"UPDATE personal_info SET au_FLAME=au_FLAME+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_FLAME],
+                'ice': [f"UPDATE personal_info SET au_ICE=au_ICE+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_ICE],
+                'holy': [f"UPDATE personal_info SET au_HOLY=au_HOLY+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_HOLY],
+                'dark': [f"UPDATE personal_info SET au_DARK=au_DARK+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_DARK],
+                'charm': [f"UPDATE personal_info SET charm=charm+value_in_here, EVO=EVO+{evos}, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", charm]
                 }
 
-            if await self.client._cursor.execute(evo_dict[raw[0].lower()][0].replace('user_id_here', str(ctx.author.id)).replace('value_in_here', str(self.compound_calc(evos, self.evo_func['lp'], evo_dict[raw[0].lower()][1]))).replace('perk_cost_here', str(self.perk_calc(evo, addition=evos)))) == 0:
+            if await self.client._cursor.execute(evo_dict[raw[0].lower()][0].replace('user_id_here', str(ctx.author.id)).replace('value_in_here', str(self.compound_calc(evos, self.evo_func[raw[0]], evo_dict[raw[0].lower()][1]))).replace('perk_cost_here', str(self.perk_calc(evo, addition=evos)))) == 0:
                 await ctx.send("<:osit:544356212846886924> Not enough perks!"); return
 
             await ctx.send("<:zapp:524893958115950603> Done. You may use `profile` to check."); return
