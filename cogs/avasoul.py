@@ -2021,7 +2021,7 @@ class avasoul(commands.Cog):
                             rewards_query = f"{stata} {' '.join(objecto)}"
 
                             # Insert the mob to DB
-                            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob[0]}', "{name}", "{description}", '{branch}', {lp}, {str}, {chain}, {speed}, {attack_type}, {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {mob[2]}, {mob[3]}, {mob[4]}, {mob[5]}, {lockon_max}, "{illulink}", '');""")
+                            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob[0]}', "{name}", "{description}", '{branch}', {lp}, {str}, {chain}, {speed}, '{attack_type}'', {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {mob[2]}, {mob[3]}, {mob[4]}, {mob[5]}, {lockon_max}, "{illulink}", '');""")
                             counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
                             await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
                     
