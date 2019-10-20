@@ -421,7 +421,7 @@ class avaPersonal(commands.Cog):
             evo_dict = {
                 'lp': ["UPDATE personal_info SET MAX_LP=MAX_LP+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", max_LP],
                 'sta': ["UPDATE personal_info SET MAX_STA=MAX_STA+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", max_STA],
-                'str': ["UPDATE personal_info SET STR=STR+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here';", strr],
+                'str': ["UPDATE personal_info SET STR=STR+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", strr],
                 'int': ["UPDATE personal_info SET INTT=INTT+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", intt],
                 'flame': ["UPDATE personal_info SET au_FLAME=au_FLAME+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_FLAME],
                 'ice': ["UPDATE personal_info SET au_ICE=au_ICE+value_in_here, EVO=EVO+1, perks=perks-perk_cost_here WHERE id='user_id_here' AND perks >= perk_cost_here;", au_ICE],
