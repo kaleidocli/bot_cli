@@ -411,6 +411,19 @@ class avaPersonal(commands.Cog):
                 await self.client._cursor.execute(f"UPDATE personal_info SET perks=perks-1, LP={random.randint(0, LP*2)}, MAX_LP={random.randint(0, MAX_LP*2)}, STA={random.randint(0, STA*2)}, STR={random.randint(0, int(STR*2))}, INT={random.randint(0, int(INT*2))} WHERE id='{ctx.author.id}';")
                 await ctx.send("<:osit:544356212846886924> Mutation done! Check your profile immidiately..."); return
 
+            elif raw[0] == 'reset':
+                evo_return = self.perk_calc(0, addition=evo)
+                msg = await ctx.send(f"{ctx.author.mention}, resetting from <:zapp:524893958115950603>{evo} to <:zapp:524893958115950603>0.\nYou will fully receive your <:perk:632340885996044298>{evo_return}. Continue?")
+
+                await msg.add_reaction("\U00002705")
+
+                try: await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
+                except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request decline!"); return
+
+                await self.client._cursor.execute(f"UPDATE personal_info SET charm={random.randint(5, 20)}, perks=perks+{evo_return}, EVO=0, STR=0.5, INTT=0, MAX_STA=100, STA=MAX_STA, MAX_LP=1000, LP=MAX_LP, au_FLAME=0, au_ICE=0, au_HOLY=0, au_DARK=0 WHERE id='{ctx.author.id}';")
+                await ctx.send(":white_check_mark: Done")
+                return
+
             # EVOLVING =================================
             try:
                 evos = int(raw[1])
