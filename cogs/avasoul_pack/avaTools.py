@@ -53,6 +53,7 @@ class avaTools:
         return dedict
 
 
+
     async def ava_scan(self, MSG, type='all', target_id='n/a'):
         # Get target
         #try: target = await self.client.get_user_info(int(target_id))
@@ -223,6 +224,136 @@ class avaTools:
         loss = int(mb / time)
         if loss > b: return 1
         return b - loss
+
+
+
+    async def world_built(self):
+        regions = await self.client.quefe("SELECT environ_code FROM environ", type='all')
+
+        for region in regions:
+            await asyncio.sleep(0.2)
+            region = region[0]
+            
+            # ----------- MOB/BOSS/NPC initialize ------------
+            mobs = await self.client.quefe(f"SELECT mob_code, quantity, limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_diversity WHERE environ_code='{region}';", type='all')
+
+            for mob in mobs:
+                mob = list(mob)
+                # MOB
+                if mob[0].startswith('mb'):
+                    # Quantity of kind in a diversity check
+                    qk = await self.client.quefe(f"SELECT COUNT(*) FROM environ_mob WHERE mob_code='{mob[0]}' AND region='{region}';")
+
+                    if int(qk[0]) == mob[1]: continue
+                    elif int(qk[0]) < mob[1]: mob[1] -= int(qk[0])
+                    
+                    # Get the <mob> prototype
+                    name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink = await self.client.quefe(f"SELECT name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink FROM model_mob WHERE mob_code='{mob[0]}';")
+                    rewards = rewards.split(' | ')
+                    
+                    # Mass production
+                    for count in range(mob[1]):
+                        # await asyncio.sleep(0.01)
+                        # Generating rewards
+                        status = []; objecto = []; bingo_list = []
+                        # Gacha
+                        for reward in rewards:
+                            stuff = reward.split(' - ')
+                            if await self.utils.percenter(int(stuff[2])):
+
+                                # Stats reward
+                                if stuff[0] in ['money', 'perks']:
+                                    if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+                                    elif stuff[0] == 'perks': bingo_list.append(f"<:perk:632340885996044298>{stuff[1]}")
+
+                                    status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
+                                # ... other shit
+                                else:
+                                    objecto.append(f"""SELECT func_it_reward("user_id_here", "{stuff[0]}", {stuff[1]}); SELECT func_ig_reward("user_id_here", "{stuff[0]}", {stuff[1]});""")
+                                    bingo_list.append(f"item `{stuff[0]}`")
+
+                        stata = f"""UPDATE personal_info SET {', '.join(status)} WHERE id="user_id_here"; """
+                        rewards_query = f"{stata} {' '.join(objecto)}"
+
+                        # Insert the mob to DB
+                        await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob[0]}', "{name}", "{description}", '{branch}', {lp}, {str}, {chain}, {speed}, '{attack_type}', {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {mob[2]}, {mob[3]}, {mob[4]}, {mob[5]}, {lockon_max}, "{illulink}", '');""")
+                        counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
+                        await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
+                
+                # NPC
+                elif mob[0].startswith('p'):
+                    # Quantity of kind in a diversity check
+                    qk = await self.client.quefe(f"SELECT COUNT(*) FROM environ_npc WHERE npc_code='{mob[0]}' AND region='{region}';")
+                    if qk[0] == mob[1]: continue
+                    elif qk[0] < mob[1]: mob[1] -= qk[0]
+                    
+                    # Get the <mob> prototype
+                    name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY FROM model_npc WHERE npc_code='{mob[0]}';")
+                    if rewards:
+                        rewards = rewards.split(' | ')
+                        
+                        
+                        # Mass production
+                        for count in range(mob[1]):
+                            # await asyncio.sleep(0.01)
+                            # Generating rewards
+                            status = []; objecto = []; bingo_list = []
+                            for reward in rewards:
+                                stuff = reward.split(' - ')
+                                if random.choice(range(int(stuff[2]))) == 0:
+                                    if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+
+                                    # Stats reward
+                                    if stuff[0] in ['money']: status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
+                                    # ... other shit
+                                    else:
+                                        # Get item/weapon's info
+                                        temp = await self.client.quefe(f"SELECT * FROM model_item WHERE item_code='{stuff[0]}';")
+                                        # SERI / UN-SERI check
+                                        # SERI
+                                        if 'inconsumbale' in temp[2].split(' - '):
+                                            #objecto.append(f"""INSERT INTO pi_inventory VALUE ("user_id_here", {', '.join(temp)});""")
+                                            objecto.append(f"""SELECT func_it_reward('user_id_here', '{stuff[0]}', '{random.choice(range(stuff[1]))}');""")
+                                        # UN-SERI
+                                        else:
+                                            #objecto.append(f"""UPDATE pi_inventory SET quantity=quantity+{random.choice(range(stuff[1]))} WHERE user_id="user_id_here" AND item_code='{stuff[0]}';""")
+                                            objecto.append(f"""SELECT func_ig_reward('user_id_here', '{stuff[0]}', '{random.choice(range(stuff[1]))}');""")
+                            stata = f"""UPDATE personal_info SET {', '.join(status)} WHERE id="user_id_here"; """
+                            rewards_query = f"{stata} {' '.join(objecto)}"
+                    else: rewards_query = ''; bingo_list = []
+
+                    # Insert the mob to DB
+                    await self.client._cursor.execute(f"""INSERT INTO environ_npc VALUES (0, 'main', '{mob[0]}', "{name}", '{branch}', {lp}, {str}, {chain}, {speed}, {au_FLAME}, {au_ICE}, {au_DARK}, {au_HOLY}, '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {mob[2]}, {mob[3]}, {mob[4]}, {mob[5]}, 'n/a', '');""")
+                    counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_npc")
+                    await self.client._cursor.execute(f"UPDATE environ_npc SET npc_id='npc.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
+
+            # ----------- MAP initialize -------------
+            # Obsolete since JSON ver
+            """
+            map = []
+            for x in range(51):
+                x = []
+                for y in range(51):
+                    x.append([])
+                map.append(x)
+            #Assign user's id onto the map
+            for user_id in list(self.ava_dict.keys()):
+                try: map[int(self.ava_dict[user_id]['realtime_zone']['current_coord'][0])][int(self.ava_dict[user_id]['realtime_zone']['current_coord'][1])].append(user_id)
+                except TypeError: pass
+            #Return the map
+            self.environ[region]['map'] = map
+            """
+            
+            # ----------- QUESTS initialize ----------
+            # Obsolete since JSON ver
+            """           
+            try: self.environ[region]['characteristic']['quest'] = data_QUESTS
+            except KeyError: print("KEY_ERROR")
+            """
+        
+        print("___WORLD built() done")  
+
+
 
     async def pagiButton(self, timeout=15, check=None):
         try:

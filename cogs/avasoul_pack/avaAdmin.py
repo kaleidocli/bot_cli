@@ -23,6 +23,7 @@ class avaAdmin(commands.Cog):
         self.client = client
 
         self.utils = avaUtils(self.client)
+        self.tools = avaTools(self.client, self.utils)
 
         print("|| Admin --- Ready!")
 
@@ -148,6 +149,22 @@ class avaAdmin(commands.Cog):
 
         for code in codes:
             await self.client._cursor.execute(f"UPDATE environ_mob e INNER JOIN model_mob m ON m.mob_code='{code[0]}' SET e.name=m.name, e.description=m.description, e.lp=m.lp, e.str=m.str, e.chain=m.chain, e.speed=m.speed, e.au_FLAME=m.au_FLAME, e.au_ICE=m.au_ICE, e.au_HOLY=m.au_HOLY, e.au_DARK=m.au_DARK, e.effect=m.effect, e.illulink=m.illulink WHERE e.mob_code='{code[0]}';")
+
+        await ctx.send(":white_check_mark:")
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    @checks.check_author()
+    async def worldrebuild(self, ctx, *args):
+        try:
+            if args[0] == 'truncate': truncate = True
+            else: truncate = False
+        except IndexError: truncate = False
+
+        # TRUNCATE
+        if truncate: await self.client._cursor.execute("TRUNCATE environ_mob;")
+
+        await self.tools.world_built()
 
         await ctx.send(":white_check_mark:")
 
