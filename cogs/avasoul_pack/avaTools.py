@@ -409,8 +409,12 @@ class avaTools:
             extra_button: (List) Extra buttons for the paginator.
             pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor."""
 
-        pages = int(len(items)/item_per_page)
-        if len(items)%item_per_page != 0: pages += 1
+        if not isinstance(items, tuple):
+            pages = int(len(items)/item_per_page)
+            if len(items)%item_per_page != 0: pages += 1
+        else:
+            pages = int(len(items[0])/item_per_page)
+            if len(items[0])%item_per_page != 0: pages += 1
         currentpage = 1
 
         # Embedding items ============

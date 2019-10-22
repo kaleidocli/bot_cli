@@ -245,11 +245,11 @@ class avaPersonalUtils(commands.Cog):
             # Region INFO
             if args[0].startswith('region.'):
                 try: r_name, border_X, border_Y, pass_query = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query FROM environ WHERE environ_code='{args[0]}'")
-                except TypeError: await ctx.send(f"**{args[0]}**... There is no such place here, perhap it's from another era?"); return
+                except TypeError: await ctx.send(f"`{cur_PLACE}`... is no where to be found <:yeee:636045188153868309>"); return
             # Land INFO
             else:
                 try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{args[0]}'")
-                except TypeError: await ctx.send(f"**{args[0]}**... There is no such place here, perhap it's from another era?"); return
+                except TypeError: await ctx.send(f"`{cur_PLACE}`... is no where to be found <:yeee:636045188153868309>"); return
 
             # Region's pass check
             if pass_query:

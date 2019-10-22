@@ -109,7 +109,7 @@ class avaCommercial(commands.Cog):
 
             def makeembed(items, top, least, pages, currentpage):
 
-                line = f"**╔═══════╡**`Total: {len(items)}`**╞═══════**\n" 
+                line = f"**╔═════════╡**`Total: {len(items)}`**╞═════════**\n" 
 
                 for item in items[top:least]:
                     if 'melee' in item[3]:
@@ -126,18 +126,18 @@ class avaCommercial(commands.Cog):
                         #line = line + f""" `{item_code}` :small_orange_diamond: **{items[item_code].name}** \n| *"{items[item_code].description}"*\n| **`Price`** <:36pxGold:548661444133126185>{items[item_code].price}\n++ `{'` `'.join(items[item_code].tags)}`\n\n"""
                     elif 'blueprint' in item[3]:
                         icon = '<:blueprint512:557713942508470272>'
-                    line = line + f""" `{item[0]}` {icon} `{item[7]}`|**{item[1]}**\n╟ *"{item[2]}"*\n╟** `『Weight』{item[4]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[6]}/{item[5]}`**\n**╟╼**`{item[3].replace(' - ', '`·`')}`\n\n"""
+                    line = line + f""" `{item[0]}` {icon} `{item[7]}`|**{item[1]}**\n> *"{item[2]}"*\n╟** `『Weight』{item[4]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[6]}/{item[5]}`**\n**╟╼**`{item[3].replace(' - ', '`·`')}`\n\n"""
 
                 line = line + f"**╚═════════╡**`{currentpage}/{pages}`**╞══════════**"
 
-                reembed = discord.Embed(title = f":shopping_cart: `{cur_PLACE}|{environ_name}`| {seller}", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title = f"<:shl_1:636090807316905994><:shl_2:636090807266574356><:shl_3:636090807266574346><:shl_4:636090807237214209> `{cur_PLACE}`|**{seller}** <:shl_5:636090807127900180><:shl_6:636090807019110401><:shl_7:636090806901538817><:shl_8:636090807140745216>", colour = discord.Colour(0x011C3A), description=line)
                 
-                if line == "**╔═══════╡**`Total: 0`**╞═══════**\n**╚═════════╡**`0/0`**╞══════════**": return False
+                if line == "**╔═════════╡**`Total: 0`**╞═════════**\n**╚═════════╡**`0/0`**╞══════════**": return False
                 else: return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
 
-            await self.tools.pagiMain(ctx, items, makeembed, timeout=45)
+            await self.tools.pagiMain(ctx, items, makeembed, timeout=45, item_per_page=4)
 
         await browse()
 
@@ -486,7 +486,7 @@ class avaCommercial(commands.Cog):
             except IndexError: await ctx.send(f":x: No result..."); return
 
             def makeembed(items, top, least, pages, currentpage):
-                line = f"**╔═══════╡**`Total: {len(items)}`**╞═══════**\n" 
+                line = f"**╔═════════╡**`Total: {len(items)}`**╞═════════**\n" 
 
                 for item in items[top:least]:
                     if 'melee' in item[4]:
@@ -507,16 +507,16 @@ class avaCommercial(commands.Cog):
                     elif 'blueprint' in item[4]:
                         icon = '<:blueprint512:557713942508470272>'
                     else: icon = ':tools:'
-                    line = line + f""" `{item[0]}` {icon} `{item[1]}`| **{item[2]}** [{item[6]}]\n╟ *"{item[3]}"*\n**╟ `『Weight』{item[5]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[7]}`**\n**╟╼**`{item[4].replace(' - ', '`·`')}`\n\n"""
+                    line = line + f""" `{item[0]}` {icon} `{item[1]}`| **{item[2]}** [{item[6]}]\n> *"{item[3]}"*\n**╟ `『Weight』{item[5]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[7]}`**\n**╟╼**`{item[4].replace(' - ', '`·`')}`\n\n"""
                             
-                line = line + f"**╚═════════╡**`{currentpage}/{pages}`**╞══════════**" 
+                line = line + f"**╚══════════╡**`{currentpage}/{pages}`**╞═══════════**" 
 
-                reembed = discord.Embed(title = f"░░░░░<:mili_bag:507144828874915860> **I N V E N T O R Y** <:mili_bag:507144828874915860>░░░░░", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title = f"░░▒▓█ <:mili_bag:507144828874915860> **I N V E N T O R Y** <:mili_bag:507144828874915860> █▓▒░░", colour = discord.Colour(0x011C3A), description=line)
                 return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
 
-            await self.tools.pagiMain(ctx, items, makeembed)
+            await self.tools.pagiMain(ctx, items, makeembed, item_per_page=4)
 
         await browse()
 
