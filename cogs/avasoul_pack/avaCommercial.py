@@ -48,10 +48,10 @@ class avaCommercial(commands.Cog):
         try:
             # Get goods
             ## Regions
-            try: goods, environ_name = await self.client.quefe(f"SELECT goods, name FROM environ WHERE environ_code='{cur_PLACE}';")
+            try: goods, environ_name, seller = await self.client.quefe(f"SELECT goods, name, seller FROM environ WHERE environ_code='{cur_PLACE}';")
             ## Lands
             except TypeError:
-                goods, environ_name = await self.client.quefe(f"SELECT goods, name FROM pi_land WHERE land_code='{cur_PLACE}';")
+                goods, environ_name, seller = await self.client.quefe(f"SELECT goods, name, seller FROM pi_land WHERE land_code='{cur_PLACE}';")
                 if not goods: await ctx.send("There's not been goods through here, it seems..."); return
             goods = goods.replace(' - ', "', '")
             # Get info
@@ -130,7 +130,7 @@ class avaCommercial(commands.Cog):
 
                 line = line + f"**╚═════════╡**`{currentpage}/{pages}`**╞══════════**"
 
-                reembed = discord.Embed(title = f":shopping_cart: SIEGFIELD's Market of `{cur_PLACE}|{environ_name}`", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title = f":shopping_cart: `{cur_PLACE}|{environ_name}`| {seller}", colour = discord.Colour(0x011C3A), description=line)
                 
                 if line == "**╔═══════╡**`Total: 0`**╞═══════**\n**╚═════════╡**`0/0`**╞══════════**": return False
                 else: return reembed
