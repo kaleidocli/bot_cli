@@ -359,7 +359,7 @@ class avaGuild(commands.Cog):
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
 
-            await self.tools.pagiMain(ctx, (bundle, bundle2), makeembed, timeout=20, item_per_page=1)
+            await self.tools.pagiMain(ctx, (bundle, bundle2), makeembed, timeout=20, item_per_page=1, pair=True)
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -399,7 +399,7 @@ class avaGuild(commands.Cog):
             #else:
             #    await ctx.send("*Nothing but dust here...*")
 
-        await self.tools.pagiMain(ctx, (bundle, completed_bundle), makeembed, timeout=60, item_per_page=3)
+        await self.tools.pagiMain(ctx, (bundle, completed_bundle), makeembed, timeout=60, item_per_page=3, pair=True)
 
     @commands.command(aliases=['pp'])
     @commands.cooldown(1, 5, type=BucketType.user)

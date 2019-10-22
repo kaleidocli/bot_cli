@@ -402,14 +402,15 @@ class avaTools:
         
         return cursor
 
-    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=[], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True):
+    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=[], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False):
         """
             cursor:       (Int)  Starting cursor
             makembed:     (Func/Coro) Generator for one page with specific format.  
             extra_button: (List) Extra buttons for the paginator.
-            pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor."""
+            pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor.
+            pair:         (Bool) Check if items is given more than one package (e.g. cmd quest, quests)"""
 
-        if not isinstance(items, tuple):
+        if not pair:
             pages = int(len(items)/item_per_page)
             if len(items)%item_per_page != 0: pages += 1
         else:
