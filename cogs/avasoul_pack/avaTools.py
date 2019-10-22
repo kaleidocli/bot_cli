@@ -402,7 +402,7 @@ class avaTools:
         
         return cursor
 
-    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=[], pageTurner=None, cursor=0, timeout=15):
+    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=[], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True):
         """
             cursor:       (Int)  Starting cursor
             makembed:     (Func/Coro) Generator for one page with specific format.  
@@ -444,7 +444,10 @@ class avaTools:
                     cursor = await pageTurner(msg, reaction, user, (cursor, pages, emli))
 
             except concurrent.futures.TimeoutError:
+                if delete_on_exit:
+                    await msg.delete()
                 return
+
 
 
 

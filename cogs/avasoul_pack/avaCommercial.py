@@ -511,7 +511,7 @@ class avaCommercial(commands.Cog):
                             
                 line = line + f"**╚══════════╡**`{currentpage}/{pages}`**╞═══════════**" 
 
-                reembed = discord.Embed(title = f"<:shl_3:636090807266574346><:shl_4:636090807237214209> **I N V E N T O R Y** <:shl_5:636090807127900180><:shl_6:636090807019110401>", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title = f"<:shl_3:636090807266574346><:shl_1:636090807316905994><:shl_4:636090807237214209> **I N V E N T O R Y** <:shl_5:636090807127900180><:shl_7:636090806901538817><:shl_6:636090807019110401>", colour = discord.Colour(0x011C3A), description=line)
                 return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
