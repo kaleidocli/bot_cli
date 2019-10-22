@@ -109,7 +109,7 @@ class avaCommercial(commands.Cog):
 
             def makeembed(items, top, least, pages, currentpage):
 
-                line = f"**╔═════════╡**`Total: {len(items)}`**╞═════════**\n" 
+                line = f"**╔═══════╡**`Total: {len(items)}`**╞═══════**\n" 
 
                 for item in items[top:least]:
                     if 'melee' in item[3]:
@@ -130,9 +130,9 @@ class avaCommercial(commands.Cog):
 
                 line = line + f"**╚═════════╡**`{currentpage}/{pages}`**╞══════════**"
 
-                reembed = discord.Embed(title = f"<:shl_1:636090807316905994><:shl_2:636090807266574356><:shl_3:636090807266574346><:shl_4:636090807237214209> `{cur_PLACE}`|**{seller}** <:shl_5:636090807127900180><:shl_6:636090807019110401><:shl_7:636090806901538817><:shl_8:636090807140745216>", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title = f"<:shl_1:636090807316905994><:shl_2:636090807266574356> `{cur_PLACE}`|**{seller}** <:shl_7:636090806901538817><:shl_8:636090807140745216>", colour = discord.Colour(0x011C3A), description=line)
                 
-                if line == "**╔═════════╡**`Total: 0`**╞═════════**\n**╚═════════╡**`0/0`**╞══════════**": return False
+                if line == "**╔═══════╡**`Total: 0`**╞═══════**\n**╚═════════╡**`0/0`**╞══════════**": return False
                 else: return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
@@ -486,7 +486,7 @@ class avaCommercial(commands.Cog):
             except IndexError: await ctx.send(f":x: No result..."); return
 
             def makeembed(items, top, least, pages, currentpage):
-                line = f"**╔═════════╡**`Total: {len(items)}`**╞═════════**\n" 
+                line = f"**╔═══════╡**`Total: {len(items)}`**╞═══════**\n" 
 
                 for item in items[top:least]:
                     if 'melee' in item[4]:
@@ -511,7 +511,7 @@ class avaCommercial(commands.Cog):
                             
                 line = line + f"**╚══════════╡**`{currentpage}/{pages}`**╞═══════════**" 
 
-                reembed = discord.Embed(title = f"░░▒▓█ <:mili_bag:507144828874915860> **I N V E N T O R Y** <:mili_bag:507144828874915860> █▓▒░░", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title = f"<:shl_3:636090807266574346><:shl_4:636090807237214209> **I N V E N T O R Y** <:shl_5:636090807127900180><:shl_6:636090807019110401>", colour = discord.Colour(0x011C3A), description=line)
                 return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
