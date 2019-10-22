@@ -167,9 +167,9 @@ class avaPersonalUtils(commands.Cog):
             # Land INFO
             elif cur_PLACE.startswith('land.'):
                 try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{cur_PLACE}'")
-                except TypeError: await ctx.send(f"`{cur_PLACE}`... is no where to be found <:yeee:636045188153868309>"); return
+                except TypeError: await ctx.send(f"**`{cur_PLACE}`**... is no where to be found! <:yeee:636045188153868309>"); return
             else:
-                await ctx.send(f"`{cur_PLACE}`... is no where to be found <:yeee:636045188153868309>"); return
+                await ctx.send(f"**`{cur_PLACE}`**... is no where to be found! <:yeee:636045188153868309>"); return
 
             if len(args[0]) <= 5 and len(args[1]) <= 5:
                 if x > border_X: x = border_X
@@ -208,8 +208,8 @@ class avaPersonalUtils(commands.Cog):
                     # Land INFO
                     elif cur_PLACE.startswith('land.'):
                         try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{cur_PLACE}'")
-                        except TypeError: await ctx.send(f"`{cur_PLACE}`... is no where to be found <:yeee:636045188153868309>"); return
-                    else: await ctx.send(f"`{cur_PLACE}`... is no where to be found <:yeee:636045188153868309>"); return
+                        except TypeError: await ctx.send(f"**`{cur_PLACE}`**... is no where to be found! <:yeee:636045188153868309>"); return
+                    else: await ctx.send(f"**`{cur_PLACE}`**... is no where to be found! <:yeee:636045188153868309>"); return
 
                     if len(args[0]) <= 5 and len(args[1]) <= 5:
                         if x > border_X: x = border_X
@@ -245,11 +245,11 @@ class avaPersonalUtils(commands.Cog):
             # Region INFO
             if args[0].startswith('region.'):
                 try: r_name, border_X, border_Y, pass_query = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query FROM environ WHERE environ_code='{args[0]}'")
-                except TypeError: await ctx.send(f"`{cur_PLACE}`... is no where to be found <:yeee:636045188153868309>"); return
+                except TypeError: await ctx.send(f"**`{cur_PLACE}`**... is no where to be found! <:yeee:636045188153868309>"); return
             # Land INFO
             else:
                 try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{args[0]}'")
-                except TypeError: await ctx.send(f"`{cur_PLACE}`... is no where to be found <:yeee:636045188153868309>"); return
+                except TypeError: await ctx.send(f"**`{cur_PLACE}`**... is no where to be found! <:yeee:636045188153868309>"); return
 
             # Region's pass check
             if pass_query:
