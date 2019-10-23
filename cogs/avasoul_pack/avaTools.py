@@ -418,6 +418,7 @@ class avaTools:
             pages = int(len(items[pair_sample])/item_per_page)
             if len(items[pair_sample])%item_per_page != 0: pages += 1
         currentpage = 1
+        if not delete_on_exit: timeout = None
 
         # Embedding items ============
         emli = []
@@ -432,10 +433,10 @@ class avaTools:
 
         # pylint: enable=unused-variable
         if pages > 1:
-            msg = await ctx.send(embed=emli[cursor])
+            msg = await ctx.send(embed=emli[cursor], delete_after=timeout)
             await self.pageButtonAdd(msg, extra=extra_button)
         else: 
-            msg = await ctx.send(embed=emli[0], delete_after=15)
+            msg = await ctx.send(embed=emli[0], delete_after=timeout)
 
         while True:
             try:

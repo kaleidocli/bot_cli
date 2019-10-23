@@ -127,25 +127,28 @@ class avaNPC(commands.Cog):
 
         def makeembed_two(items, top, least, pages, currentpage):
             packs, npc = items
+            packs = packs[top:least]
 
             temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}** {self.utils.smalltext(f'{npc[2].capitalize()} NPC')}", description = f"""```dsconfig
-            {npc[1]}```""", colour = discord.Colour(0x011C3A))
+    {npc[1]}```""", colour = discord.Colour(0x011C3A))
             temb.set_thumbnail(url=random.choice(npc[4].split(' <> ')))
 
-            for pack in packs[top:least]:
-                tinue = True
-                while tinue:
-                    temp = []
-                    line = ''
-                    try:
-                        for i in range(4):
-                            temp.append(pack.pop(0))
-                    except IndexError: tinue = False
+            tinue = True
+            while tinue:
+                temp = []
+                line = ''
+                print(packs)
+                try:
+                    for i in range(4):
+                        temp.append(packs.pop(0))
+                except IndexError: tinue = False
 
-                    for p in temp:
-                        line += f"||`{p[0]}:{p[1]}`~`{p[2]}:{p[3]}`||"
+                for p in temp:
+                    line += f"> ||`{p[0]}:{p[1]}`~`{p[2]}:{p[3]}`|| \n"
 
-                    temb.add_field(name='═══════<:bubble_dot:544354428338044929>═══════', value=line)
+                temb.add_field(name='═══════<:bubble_dot:544354428338044929>═══════', value=line)
+
+            return temb
             
 
         await self.tools.pagiMain(ctx, (packs, npc), makeembed_two, item_per_page=8, timeout=60, delete_on_exit=False, pair=True)
