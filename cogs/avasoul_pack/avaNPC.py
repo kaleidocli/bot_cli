@@ -38,8 +38,8 @@ class avaNPC(commands.Cog):
 
 # ================== NPC ==================
 
-    @commands.command(aliases=['npcs'])
-    @commands.cooldown(1, 5, type=BucketType.user)
+    @commands.command()
+    @commands.cooldown(1, 13, type=BucketType.user)
     async def npc(self, ctx, *args):
         #if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
@@ -49,7 +49,7 @@ class avaNPC(commands.Cog):
             def makeembed(curp, pages, currentpage):
                 npc = npcs[curp]
 
-                temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}**\n━━━━━━━ {npc[2].capitalize()} NPC-{npc[3]}", description = f"""```dsconfig
+                temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}** {self.utils.smalltext(f'{npc[2].capitalize()} NPC')}", description = f"""```dsconfig
         {npc[1]}```""", colour = discord.Colour(0x011C3A))
                 temb.set_image(url=random.choice(npc[4].split(' <> ')))
 
@@ -106,16 +106,49 @@ class avaNPC(commands.Cog):
                     await msg.delete(); return
 
 
+        # User's info
+        cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
+
         try: npc = await self.client.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc WHERE npc_code='{args[0]}' OR name LIKE '%{args[0]}%';")
         except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing npc's code"); return
 
         if not npc: await ctx.send("<:osit:544356212846886924> NPC not found!"); return
 
-        temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}**\n━━━━━━━ {npc[2].capitalize()} NPC-{npc[3]}", description = f"""```dsconfig
-        {npc[1]}```""", colour = discord.Colour(0x011C3A))
-        temb.set_image(url=random.choice(npc[4].split(' <> ')))
+        # Relationship's info
+        try: value_chem, value_impression, flag = await self.client.quefe(f"SELECT value_chem, value_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{args[0]}';")
+        # E: Relationship not initiated. Init one.
+        except TypeError:
+            value_chem = 0; value_impression = 0; flag = 'n/a'
+            await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{args[0]}', {value_chem}, {value_impression}, '{flag}');")
 
-        await ctx.send(embed=temb)
+        packs = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE entity_code='{args[0]}' AND limit_flag='{flag}' AND (({value_chem}>=limit_chem AND chem_compasign='>=') OR ({value_chem}<limit_chem AND chem_compasign='<')) AND (({value_impression}>=limit_impression AND imp_compasign='>=') OR ({value_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC;", type='all')
+        # Remove duplicate (?)
+        packs = list(set(packs))
+
+        def makeembed_two(items, top, least, pages, currentpage):
+            packs, npc = items
+
+            temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}** {self.utils.smalltext(f'{npc[2].capitalize()} NPC')}", description = f"""```dsconfig
+            {npc[1]}```""", colour = discord.Colour(0x011C3A))
+            temb.set_thumbnail(url=random.choice(npc[4].split(' <> ')))
+
+            for pack in packs[top:least]:
+                tinue = True
+                while tinue:
+                    temp = []
+                    line = ''
+                    try:
+                        for i in range(4):
+                            temp.append(pack.pop(0))
+                    except IndexError: tinue = False
+
+                    for p in temp:
+                        line += f"||`{p[0]}:{p[1]}`~`{p[2]}:{p[3]}`||"
+
+                    temb.add_field(name='═══════<:bubble_dot:544354428338044929>═══════', value=line)
+            
+
+        await self.tools.pagiMain(ctx, (packs, npc), makeembed_two, item_per_page=8, timeout=60, delete_on_exit=False, pair=True)
 
     @commands.command(aliases=['I'])
     @commands.cooldown(1, 8, type=BucketType.user)

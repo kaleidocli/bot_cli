@@ -11,6 +11,10 @@ class avaUtils:
 
     def __init__(self, client):
         self.client = client
+        self.smoltext = str.maketrans({'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ', 'i': 'ᶦ',
+                                'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ', 'q': 'ᵠ', 'r': 'ʳ',
+                                's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ'
+                                '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹'})
 
     def time_get(self):
         day = 1; month = 1; year = 1
@@ -167,6 +171,13 @@ class avaUtils:
         # remove `foo`
         return content.strip('` \n')
 
+    def smalltext(self, text):
+        """
+        ᵗᵘʳⁿˢ ʸᵒᵘʳ ᵗᵉˣᵗ ᶦⁿᵗᵒ ˢᵐᵃˡˡ ᵗᵉˣᵗ \n
+        Credit: (GitHub) XuaTheGrate \n
+        Source: https://github.com/XuaTheGrate/Abyss/blob/master/cogs/shit.py#L14-L17
+        """
+        return text.lower().translate(self.smoltext)
 
 
 
