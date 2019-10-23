@@ -38,7 +38,7 @@ class ErrorHandler(commands.Cog):
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
         elif isinstance(error, commands.errors.CommandNotFound):
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
-        elif isinstance(error, asyncio.TimeoutError):
+        elif isinstance(error, asyncio.TimeoutError) or isinstance(error, discord.errors.Forbidden):
             return
         else:
             try:

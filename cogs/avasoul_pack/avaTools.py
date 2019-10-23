@@ -378,20 +378,30 @@ class avaTools:
                 future.cancel()
             raise asyncio.TimeoutError
 
-    async def pageButtonAdd(self, msg, reaction=["\U000023ee", "\U00002b05", "\U000027a1", "\U000023ed"], extra=[]):
-        for charCode in reaction + extra:
-            await msg.add_reaction(charCode)
+    async def pageButtonAdd(self, msg, reaction=["\U000023ee", "\U00002b05", "\U000027a1", "\U000023ed"], extra=[], extra_replace=False):
+        """
+        Extra           (List) List of addition button. \n
+        Extra_replace   (Bool) Whether Extra overwrites the main button"""
+
+        if extra_replace:
+            for charCode in extra:
+                await msg.add_reaction(charCode)
+        else:
+            for charCode in reaction + extra:
+                await msg.add_reaction(charCode)
 
     async def pageTurner(self, msg, reaction, user, pageInfoPack):
         """cursor, pages, emli = pageInfoPack"""
 
         cursor, pages, emli = pageInfoPack
 
-        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-            cursor += 1
+        if reaction.emoji == "\U000027a1":
+            if cursor < pages - 1: cursor += 1
+            else: cursor = 0
             await msg.edit(embed=emli[cursor])
-        elif reaction.emoji == "\U00002b05" and cursor > 0:
-            cursor -= 1
+        elif reaction.emoji == "\U00002b05":
+            if cursor > 0: cursor -= 1
+            else: cursor = pages - 1
             await msg.edit(embed=emli[cursor])
         elif reaction.emoji == "\U000023ee" and cursor != 0:
             cursor = 0
@@ -422,7 +432,6 @@ class avaTools:
 
         # Embedding items ============
         emli = []
-        # pylint: disable=unused-variable
         for curp in range(pages):
             if inspect.iscoroutinefunction(makeembed):
                 myembed = await makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
@@ -431,13 +440,17 @@ class avaTools:
             emli.append(myembed)
             currentpage += 1
 
-        # pylint: enable=unused-variable
-        if pages > 1:
-            msg = await ctx.send(embed=emli[cursor], delete_after=timeout)
-            await self.pageButtonAdd(msg, extra=extra_button)
-        else: 
-            msg = await ctx.send(embed=emli[0], delete_after=timeout)
+        # Send
+        try:
+            if pages > 1:
+                msg = await ctx.send(embed=emli[cursor])
+                await self.pageButtonAdd(msg, extra=extra_button)
+            else: 
+                msg = await ctx.send(embed=emli[0])
+        except discordErrors.HTTPException:
+            await ctx.send(":spider_web::spider_web::spider_web: Empty result... :spider_web::spider_web::spider_web:"); return
 
+        # Button-ing
         while True:
             try:
                 reaction, user = await self.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=timeout)
@@ -448,7 +461,8 @@ class avaTools:
 
             except concurrent.futures.TimeoutError:
                 if delete_on_exit:
-                    await msg.delete()
+                    try: await msg.delete()
+                    except discordErrors.NotFound: pass
                 return
 
 
