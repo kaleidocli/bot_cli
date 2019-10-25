@@ -249,16 +249,16 @@ class avaPersonalUtils(commands.Cog):
             port = port.split(' | ')
             PB = [b.split(' - ') for b in PB.split(' | ')]
 
-            # cur_PLACE PB check
-            for b in PB:
-                if not (cur_X >= float(b[0]) and cur_Y >= float(b[1]) and cur_X <= float(b[2]) and cur_Y <= float(b[3])):
-                    await ctx.send(f"<:osit:544356212846886924> Please `teleport` to the nearest Peace Belt and try again."); return
-
             # Destination info
             # REGION
             if args[0].startswith('region.'):
                 # cur_PLACE port check
                 if 'alre' not in port or args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
+
+                # cur_PLACE PB check
+                for b in PB:
+                    if not (cur_X >= float(b[0]) and cur_Y >= float(b[1]) and cur_X <= float(b[2]) and cur_Y <= float(b[3])):
+                        await ctx.send(f"<:osit:544356212846886924> Please `teleport` to the nearest Peace Belt and try again."); return
 
                 try: r_name, border_X, border_Y, pass_query, pass_note = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query, pass_note FROM environ WHERE environ_code='{args[0]}'")
                 except TypeError: await ctx.send(f"**`{args[0]}`**... is no where to be found! <:yeee:636045188153868309>"); return
@@ -274,6 +274,11 @@ class avaPersonalUtils(commands.Cog):
             else:
                 # cur_PLACE port check
                 if 'alre' not in port or args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
+
+                # cur_PLACE PB check
+                for b in PB:
+                    if not (cur_X >= float(b[0]) and cur_Y >= float(b[1]) and cur_X <= float(b[2]) and cur_Y <= float(b[3])):
+                        await ctx.send(f"<:osit:544356212846886924> Please `teleport` to the nearest Peace Belt and try again."); return
 
                 try:
                     r_name, border_X, border_Y, pass_query, pass_note = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query, pass_note FROM pi_land WHERE land_code='{args[0]}'")
