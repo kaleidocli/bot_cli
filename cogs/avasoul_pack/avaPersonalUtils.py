@@ -253,7 +253,7 @@ class avaPersonalUtils(commands.Cog):
             # REGION
             if args[0].startswith('region.'):
                 # cur_PLACE port check
-                if 'alre' not in port or args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
+                if 'alre' not in port and args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
 
                 # cur_PLACE PB check
                 for b in PB:
@@ -265,7 +265,7 @@ class avaPersonalUtils(commands.Cog):
             # AREA
             elif args[0].startswith('area.'):
                 # cur_PLACE port check
-                if 'alar' not in port or args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
+                if 'alar' not in port and args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
 
                 try:
                     r_name, border_X, border_Y, pass_query, pass_note = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query, pass_note FROM environ WHERE environ_code='{args[0]}'")
@@ -273,7 +273,7 @@ class avaPersonalUtils(commands.Cog):
             # LAND
             else:
                 # cur_PLACE port check
-                if 'alre' not in port or args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
+                if 'alre' not in port and args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
 
                 # cur_PLACE PB check
                 for b in PB:
