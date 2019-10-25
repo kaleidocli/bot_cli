@@ -392,7 +392,7 @@ class avaAvatar(commands.Cog):
             # PARTICLEs prep ========================
             # particle_after = []
             outImPart = []
-            particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
+            particles = imageio.mimread(path.join('data', 'profile', 'bg_gif', 'train.gif'), memtest=False)
             partilen = len(particles)
 
             bar = 20                               # Set a maximum particles in ordercli a gif not overload
