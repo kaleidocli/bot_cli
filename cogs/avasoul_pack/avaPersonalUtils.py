@@ -155,7 +155,7 @@ class avaPersonalUtils(commands.Cog):
 
         # COORD
         if not args:
-            if cur_PLACE.startswith('region.'): r_name = await self.client.quefe(f"SELECT name FROM environ WHERE environ_code='{cur_PLACE}';")
+            if cur_PLACE.startswith('region.') or cur_PLACE.startswith('area.'): r_name = await self.client.quefe(f"SELECT name FROM environ WHERE environ_code='{cur_PLACE}';")
             else: r_name = await self.client.quefe(f"SELECT name FROM pi_land WHERE land_code='{cur_PLACE}';")
             await ctx.send(f":map: **`{cur_X:.3f}`** · **`{cur_Y:.3f}`** · `{cur_PLACE}`|**{r_name[0]}** · {ctx.message.author.mention}", delete_after=5); return
 
@@ -163,7 +163,7 @@ class avaPersonalUtils(commands.Cog):
             x = int(args[0])/1000; y = int(args[1])/1000
 
             # Region INFO
-            if cur_PLACE.startswith('region.'): r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM environ WHERE environ_code='{cur_PLACE}'")
+            if cur_PLACE.startswith('region.') or cur_PLACE.startswith('area.'): r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM environ WHERE environ_code='{cur_PLACE}'")
             # Land INFO
             elif cur_PLACE.startswith('land.'):
                 try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{cur_PLACE}'")
@@ -204,7 +204,7 @@ class avaPersonalUtils(commands.Cog):
                     x = int(args[0])/1000; y = int(args[1])/1000
 
                     # Region INFO
-                    if cur_PLACE.startswith('region.'): r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM environ WHERE environ_code='{cur_PLACE}'")
+                    if cur_PLACE.startswith('region.') or cur_PLACE.startswith('area.'): r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM environ WHERE environ_code='{cur_PLACE}'")
                     # Land INFO
                     elif cur_PLACE.startswith('land.'):
                         try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{cur_PLACE}'")
@@ -242,24 +242,51 @@ class avaPersonalUtils(commands.Cog):
         except (KeyError, ValueError):
             if cur_PLACE == args[0]: await ctx.send("<:osit:544356212846886924> You're already there :|"); return
 
-            # Region INFO
+            # Get info of cur_PLACE
+            if cur_PLACE.startswith('land.'): port, PB = await self.client.quefe(f"SELECT port, PB FROM pi_land WHERE land_code='{cur_PLACE}'")
+            else: port, PB = await self.client.quefe(f"SELECT port, PB FROM environ WHERE environ_code='{cur_PLACE}'")
+            # Prep info
+            port = port.split(' | ')
+            PB = [b.split(' - ') for b in PB.split(' | ')]
+
+            # cur_PLACE PB check
+            for b in PB:
+                if not (cur_X >= b[0] and cur_Y >= b[1] and cur_X <= b[2] and cur_Y <= b[3]):
+                    await ctx.send(f"<:osit:544356212846886924> Please `teleport` to the nearest Peace Belt and try again."); return
+
+            # Destination info
+            # REGION
             if args[0].startswith('region.'):
-                try: r_name, border_X, border_Y, pass_query = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query FROM environ WHERE environ_code='{args[0]}'")
+                # cur_PLACE port check
+                if 'alre' not in port or args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
+
+                try: r_name, border_X, border_Y, pass_query, pass_note = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query, pass_note FROM environ WHERE environ_code='{args[0]}'")
                 except TypeError: await ctx.send(f"**`{args[0]}`**... is no where to be found! <:yeee:636045188153868309>"); return
-            # Land INFO
+            # AREA
+            elif args[0].startswith('area.'):
+                # cur_PLACE port check
+                if 'alar' not in port or args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
+
+                try:
+                    r_name, border_X, border_Y, pass_query, pass_note = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query, pass_note FROM environ WHERE environ_code='{args[0]}'")
+                except TypeError: await ctx.send(f"**`{args[0]}`**... is no where to be found! <:yeee:636045188153868309>"); return
+            # LAND
             else:
-                try: r_name, border_X, border_Y = await self.client.quefe(f"SELECT name, border_X, border_Y FROM pi_land WHERE land_code='{args[0]}'")
+                # cur_PLACE port check
+                if 'alre' not in port or args[0] not in port: await ctx.send(f"<:yeee:636045188153868309> Unable to reach the destination from your current location."); return
+
+                try:
+                    r_name, border_X, border_Y, pass_query, pass_note = await self.client.quefe(f"SELECT name, border_X, border_Y, pass_query, pass_note FROM pi_land WHERE land_code='{args[0]}'")
                 except TypeError: await ctx.send(f"**`{args[0]}`**... is no where to be found! <:yeee:636045188153868309>"); return
 
-            # Region's pass check
+            # Destination's pass check
             if pass_query:
-                if await self.client._cursor.execute(pass_query.replace('user_id_here', str(ctx.author.id))) == 0:
-                    await ctx.send(f"<:osit:544356212846886924> The requirements to join this region is not met!"); return
+                if await self.client._cursor.execute(pass_query.replace('user_id_here', str(ctx.author.id)).replace('cur_X_here', str(cur_X)).replace('cur_Y_here', str(cur_Y)).replace('cur_PLACE_here', str(cur_PLACE))) == 0:
+                    await ctx.send(f"<:osit:544356212846886924> Condition of destination is not met!\n>>> ⠀{pass_note}"); return
 
-            if cur_X <= 1 and cur_Y <=1:
-                await self.client._cursor.execute(f"UPDATE personal_info SET cur_PLACE='{args[0]}' WHERE id='{ctx.author.id}';")
-                await ctx.send(f":round_pushpin: Successfully move to `{args[0]}`|**{r_name}**!", delete_after=5)
-            else: await ctx.send(f"<:osit:544356212846886924> You can only travel between regions inside **Peace Belt**!"); return
+
+            await self.client._cursor.execute(f"UPDATE personal_info SET cur_PLACE='{args[0]}' WHERE id='{ctx.author.id}';")
+            await ctx.send(f":round_pushpin: Successfully move to `{args[0]}`|**{r_name}**!", delete_after=5); return
 
     @commands.command(aliases=['md'])
     async def measure_distance(self, ctx, *args):
