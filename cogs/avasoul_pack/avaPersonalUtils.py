@@ -251,7 +251,7 @@ class avaPersonalUtils(commands.Cog):
 
             # cur_PLACE PB check
             for b in PB:
-                if not (cur_X >= b[0] and cur_Y >= b[1] and cur_X <= b[2] and cur_Y <= b[3]):
+                if not (cur_X >= float(b[0]) and cur_Y >= float(b[1]) and cur_X <= float(b[2]) and cur_Y <= float(b[3])):
                     await ctx.send(f"<:osit:544356212846886924> Please `teleport` to the nearest Peace Belt and try again."); return
 
             # Destination info
