@@ -261,8 +261,8 @@ class avaTrivia(commands.Cog):
 
         emli = []
         emli.append(await makeembed_2())
-        for curp in range(pages):
-            emli.append(await makeembed(bundle, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage))
+        for _ in range(pages):
+            emli.append(makeembed(bundle, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage))
             currentpage += 1
 
         msg = await ctx.send(embed=emli[cursor])
