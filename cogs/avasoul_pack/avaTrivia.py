@@ -179,7 +179,7 @@ class avaTrivia(commands.Cog):
                 elif reaction.emoji == '\U0001f44b':
                     re = None
                     for r in regions:
-                        if r[1] == emli[cursor][1]:
+                        if r[0] == emli[cursor][1]:
                             await self.map_engine(ctx, pack=(r[0], r[1], r[3]))
                             return
                 elif reaction.emoji == "\U000023ee" and cursor != 0:
@@ -266,6 +266,7 @@ class avaTrivia(commands.Cog):
             currentpage += 1
 
         msg = await ctx.send(embed=emli[cursor])
+        await self.tools.pageButtonAdd(msg)
 
         # Button-ing
         while True:
