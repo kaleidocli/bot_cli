@@ -443,6 +443,7 @@ class avaTools:
         # Send
         try:
             if pages > 1:
+                if not emli[cursor]: await ctx.send(":spider_web::spider_web::spider_web: Empty result... :spider_web::spider_web::spider_web:"); return
                 msg = await ctx.send(embed=emli[cursor])
                 await self.pageButtonAdd(msg, extra=extra_button)
             else: 
