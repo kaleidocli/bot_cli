@@ -75,11 +75,22 @@ class avasoul(commands.Cog):
     @commands.cooldown(1, 3, type=BucketType.user)
     async def tutorial(self, ctx, *args):
 
-        try:
-            bundle = await self.client.quefe(f"SELECT line, timeout, trg, illulink FROM sys_tutorial WHERE tutorial_code='{args[0]}' ORDER BY ordera ASC;", type='all')
-            if not bundle: await ctx.send(":x: Tutorial's id not found"); return
-        except IndexError:
-            await ctx.send("<:9_:544354429055533068> Please use `tutorial intro` or `tutorial 2`"); return
+        # CATALOG =======================
+        if not args:
+            buntu = await self.client.quefe(f"SELECT tut_code, tut_name, tut_description, tags FROM sys_tut ORDER BY level ASC;", type='all')
+
+            def makeembed(items, top, least, pages, currentpage):
+                line = ''
+                for item in items[top:least]:
+                    line += f"""<:old_paperroll:636090807136419840> `{item[0]}`| **{items[1]}**\n> ```ini
+    {item[2]}```\n> Tags: ||{item[3]}||"""
+
+            await self.tools.pagiMain(ctx, buntu, makeembed, item_per_page=4)
+            return
+
+        # TUTORIAL ======================
+        bundle = await self.client.quefe(f"SELECT line, timeout, trg, illulink FROM sys_tutorial WHERE tutorial_code='{args[0]}' ORDER BY ordera ASC;", type='all')
+        if not bundle: await ctx.send("<:9_:544354429055533068> Tutorial's code not found."); return
 
         # INTRO =======
         if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me!\n· You can react :white_check_mark: to turn page.\n· Do you want me to *DM* you? <a:wiink:590460293705105418>", t=15):
