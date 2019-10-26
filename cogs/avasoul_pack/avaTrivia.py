@@ -223,18 +223,19 @@ class avaTrivia(commands.Cog):
 
         def makeembed(items, top, least, pages, currentpage):
             bundle, pack = items
-
-            reembed = discord.Embed(description=f"""```ini
-[{pack[0]}] {pack[1]}```""", colour = discord.Colour(0x011C3A))
-            if pack[2]: reembed.set_thumbnail(url=pack[2])
+            descr = ''
 
             # Mapping
             if bundle:
                 for b in bundle[top:least]:
-                    if not b[2]: pass_note = '-----------'
-                    else: pass_note = b[2]
-                    reembed.add_field(name=f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}**", value=f">>> ||{self.utils.smalltext(pass_note)}||", inline=True)
-            
+                    if not b[2]: pass_note = ''
+                    else: pass_note = f"||{self.utils.smalltext(b[2])}||"
+                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}** {pass_note}"
+
+            reembed = discord.Embed(description=f"""```ini
+[{pack[0]}] {pack[1]}```{descr}""", colour = discord.Colour(0x011C3A))
+            if pack[2]: reembed.set_thumbnail(url=pack[2])
+
             return reembed
 
         await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4, timeout=20)
