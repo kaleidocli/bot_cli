@@ -98,7 +98,7 @@ class avaTrivia(commands.Cog):
     async def maps(self, ctx, *args):
         # Get cur_PLACE
         cur_PLACE = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
-        regions = await self.client.quefe(f"SELECT environ_code, name, description, illulink, border_X, border_Y, biome, land_slot, cuisine, goods FROM environ WHERE type='REGION' ORDER BY ord ASC;", type='all')
+        regions = await self.client.quefe(f"SELECT environ_code, name, description, illulink, border_X, border_Y, biome, land_slot, cuisine, goods, port FROM environ WHERE type='REGION' ORDER BY ord ASC;", type='all')
 
         async def makeembed(curp, pages, currentpage):
             region = regions[curp]; line = ''; swi = 0
@@ -161,7 +161,7 @@ class avaTrivia(commands.Cog):
 
         while True:
             try:
-                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                reaction, user = await self.tools.pagiButton(timeout=20)
                 if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                     cursor += 1
                     await msg.edit(embed=emli[cursor][0])
@@ -186,7 +186,11 @@ class avaTrivia(commands.Cog):
                     try: await msg.remove_reaction(reaction.emoji, user)
                     except discordErrors.Forbidden: pass
                 elif reaction.emoji == '\U0001f44b':
-                    await self.map_engine(ctx, pack=(regions[0], regions[1], regions[3]))
+                    re = None
+                    for em in emli:
+                        if em[1] == cur_PLACE[0]: re = em[0]; break
+
+                    await self.map_engine(ctx, pack=(re[0], re[1], re[3]))
                     return
                 elif reaction.emoji == "\U000023ee" and cursor != 0:
                     cursor = 0
@@ -209,12 +213,12 @@ class avaTrivia(commands.Cog):
         if not cur_PLACE: cur_PLACE = 'region.0'
 
         # Get info
-        pack = await self.client.quefe(f"SELECT environ_code, name, illulink FROM environ WHERE environ_code='{cur_PLACE}';")
+        pack = await self.client.quefe(f"SELECT environ_code, name, illulink, port FROM environ WHERE environ_code='{cur_PLACE[0]}';")
 
         await self.map_engine(ctx, pack=pack)
 
     async def map_engine(self, ctx, pack=None):
-        """environ_code, name, illulink = pack"""
+        """environ_code, name, illulink, port = pack"""
 
         bundle = await self.client.quefe(f"SELECT environ_code, name, pass_note FROM environ WHERE environ_code='{pack[0]}' ORDER BY environ_code ASC;", type='all')
 
@@ -226,9 +230,9 @@ class avaTrivia(commands.Cog):
 
             # Mapping
             for b in bundle[top:least]:
-                if not b[2]: pass_note = 'No data'
+                if not b[2]: pass_note = '---no data---'
                 else: pass_note = b[2]
-                reembed.add_field(name=f"`{b[0]}`|**{b[1]}**", value=f">>> {pass_note}", inline=True)
+                reembed.add_field(name=f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}**", value=f">>> {pass_note}", inline=True)
             
             return reembed
 
