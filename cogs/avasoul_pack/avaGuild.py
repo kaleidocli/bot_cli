@@ -668,7 +668,7 @@ class avaGuild(commands.Cog):
             if d[8]: reembed.set_image(url=random.choice(d[8].split(" || ")))
             return reembed
 
-        await self.tools.pagiMain(ctx, items, makeembed, timeout=60, item_per_page=1)        
+        await self.tools.pagiMain(ctx, arts, makeembed, timeout=60, item_per_page=1)        
 
     @commands.command()
     @commands.cooldown(1, 3, type=BucketType.user)

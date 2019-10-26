@@ -252,6 +252,7 @@ class avaTrivia(commands.Cog):
             return reembed
 
         pages = len(bundle)
+        if not pages: pages = 1
         item_per_page = 4
         currentpage = 1
         cursor = 0

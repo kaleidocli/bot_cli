@@ -252,7 +252,7 @@ class avaTools:
                     rewards = rewards.split(' | ')
                     
                     # Mass production
-                    for count in range(mob[1]):
+                    for _ in range(mob[1]):
                         # await asyncio.sleep(0.01)
                         # Generating rewards
                         status = []; objecto = []; bingo_list = []
@@ -432,7 +432,7 @@ class avaTools:
 
         # Embedding items ============
         emli = []
-        for curp in range(pages):
+        for _ in range(pages):
             if inspect.iscoroutinefunction(makeembed):
                 myembed = await makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
             else:
