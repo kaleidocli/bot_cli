@@ -422,10 +422,7 @@ class avaCommercial(commands.Cog):
     async def inventory(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
-        cur_PLACE  = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
-        cur_PLACE = cur_PLACE[0]
-
-        # INSPECT ===============
+        # INSPECT ================
         raw = list(args)
         try:
             # Get info
@@ -458,10 +455,38 @@ class avaCommercial(commands.Cog):
         # E: No args given
         except IndexError: pass
 
+        # PEEK ===================
+        try:
+            target = ctx.message.mentions[0]
+            partner_q = f" AND EXISTS (SELECT * FROM personal_info WHERE user_id='{ctx.author.id}' AND partner='{target.id}') "
+            peeking = True
+        except IndexError:
+            target = ctx.author
+            partner_q = ''
+            peeking = False
+
+        # TAKE ===================
+        if peeking and 'take' in args:
+            # Get info
+            item_id = ''
+            for kw in args:
+                if kw.startswith('<@') or kw == 'take': continue
+                else: item_id = kw; break
+            if not item_id: await ctx.send("<:osit:544356212846886924> Please provide an item's id!")
+
+            # Get item's info
+            if not await self.client._cursor.execute(f"UPDATE pi_inventory SET user_id='{ctx.author.id}' WHERE item_id='{item_id}' AND user_id='{target.id}' AND EXISTS (SELECT user_id FROM personal_info WHERE user_id='{ctx.author.id}' AND partner='{target.id}');"):
+                await ctx.send("<:osit:544356212846886924> Either the targeted user's not your partner, or the item doesn't exist"); return
+
         # SEARCH =================
         lk_query = ''; sublk_price = ''; sublk_tag = ''
         for lkkey in raw:
             if not lk_query: lk_query = 'AND'
+            
+            # Filter
+            # Mention
+            if lkkey.startswith('<@'): continue
+
             # lkkey is PRICE
             try:
                 if not sublk_price: sublk_price = sublk_price + f" price<={int(lkkey)}"
@@ -478,7 +503,8 @@ class avaCommercial(commands.Cog):
         elif not sublk_price: lk_query = lk_query + f" {sublk_tag}"
 
         async def browse():
-            items = await self.client.quefe(f"""SELECT item_id, item_code, name, description, tags, weight, quantity, price, aura FROM pi_inventory WHERE existence='GOOD' AND user_id='{str(ctx.message.author.id)}' {lk_query};""", type='all')
+            if peeking: items = await self.client.quefe(f"""SELECT item_id, item_code, name, description, tags, weight, quantity, price, aura, '{target.name}', '{target.avatar_url}' FROM pi_inventory WHERE existence='GOOD' AND user_id='{target.id}' {lk_query} {partner_q};""", type='all')
+            else: items = await self.client.quefe(f"""SELECT item_id, item_code, name, description, tags, weight, quantity, price, aura, '', '' FROM pi_inventory WHERE existence='GOOD' AND user_id='{target.id}' {lk_query} {partner_q};""", type='all')
 
             try:
                 items = list(items)
@@ -509,9 +535,10 @@ class avaCommercial(commands.Cog):
                     else: icon = ':tools:'
                     line = line + f""" `{item[0]}` {icon} `{item[1]}`| **{item[2]}** [{item[6]}]\n> *"{item[3]}"*\n**╟ `『Weight』{item[5]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[7]}`**\n**╟╼**`{item[4].replace(' - ', '`·`')}`\n\n"""
                             
-                line = line + f"**╚══════════╡**`{currentpage}/{pages}`**╞═══════════**" 
+                line = line + f"**╚═══════╡**`{currentpage}/{pages}`**╞═══════**" 
 
                 reembed = discord.Embed(title = f"<:shl_3:636090807266574346><:shl_1:636090807316905994><:shl_4:636090807237214209> **I N V E N T O R Y** <:shl_5:636090807127900180><:shl_7:636090806901538817><:shl_6:636090807019110401>", colour = discord.Colour(0x011C3A), description=line)
+                if items[0][9]: reembed.set_footer(text=f"From {items[0][9]} with love", icon_url=items[0][9])
                 return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
