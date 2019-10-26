@@ -481,11 +481,11 @@ class avaCommercial(commands.Cog):
         # SEARCH =================
         lk_query = ''; sublk_price = ''; sublk_tag = ''
         for lkkey in raw:
-            if not lk_query: lk_query = 'AND'
-            
             # Filter
             # Mention
             if lkkey.startswith('<@'): continue
+
+            if not lk_query: lk_query = 'AND'
 
             # lkkey is PRICE
             try:
