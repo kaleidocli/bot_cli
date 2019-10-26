@@ -155,13 +155,11 @@ class avaTrivia(commands.Cog):
         msg = await ctx.send(embed=emli[cursor][0])
         if pages > 1: await attachreaction(msg)
         else: return
-
-        def UM_check(reaction, user):
-            return user.id == ctx.author.id and reaction.message.id == msg.id
+        await asyncio.sleep(1)
 
         while True:
             try:
-                reaction, user = await self.tools.pagiButton(timeout=20)
+                reaction, user = await self.tools.pagiButton(timeout=20, check=lambda r, u: u == ctx.author)
                 if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                     cursor += 1
                     await msg.edit(embed=emli[cursor][0])
@@ -226,16 +224,16 @@ class avaTrivia(commands.Cog):
         def makeembed(items, top, least, pages, currentpage):
             bundle, pack = items
 
-            reembed = discord.Embed(description=f"```[{pack[0]}] {pack[1]}```", colour = discord.Colour(0x011C3A))
+            reembed = discord.Embed(description=f"""```ini
+[{pack[0]}] {pack[1]}```""", colour = discord.Colour(0x011C3A))
             if pack[2]: reembed.set_thumbnail(url=pack[2])
-            print(bundle)
 
             # Mapping
             if bundle:
                 for b in bundle[top:least]:
                     if not b[2]: pass_note = '-----------'
                     else: pass_note = b[2]
-                    reembed.add_field(name=f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}**", value=f"||{pass_note}||", inline=True)
+                    reembed.add_field(name=f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}**", value=f">>> ||{self.utils.smalltext(pass_note)}||", inline=True)
             
             return reembed
 
