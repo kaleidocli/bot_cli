@@ -102,20 +102,16 @@ class avaTrivia(commands.Cog):
         regions = await self.client.quefe(f"SELECT environ_code, name, description, illulink, border_X, border_Y, biome, land_slot, cuisine, goods, port FROM environ WHERE type='REGION' ORDER BY ord ASC;", type='all')
 
         async def makeembed(curp, pages, currentpage):
-            region = regions[curp]; line = ''; swi = 0
+            region = regions[curp]
             players = await self.client._cursor.execute(f"SELECT * FROM personal_info WHERE cur_PLACE='{region[0]}';")
             mobs = await self.client._cursor.execute(f"SELECT * FROM environ_mob WHERE region='{region[0]}';")
-            try: shop_quantity = len(region[9].split(' - '))
-            except AttributeError: shop_quantity = 0
-            try: trader_quantity = len(region[8].split(' - '))
-            except AttributeError: trader_quantity = 0
 
             reembed = discord.Embed(title = f":map: `{region[0]}`|**{region[1]}**", description = f"""```dsconfig
     {region[2]}```""", colour = discord.Colour(0x011C3A))
             reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**", inline=True)
             reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
             reembed.set_thumbnail(url=self.biome[region[6].split(' - ')[0]])
-            reembed.set_image(url=region[3])
+            if region[3]: reembed.set_image(url=region[3])
             return reembed, region[0]
             #else:
             #    await ctx.send("*Nothing but dust here...*")
@@ -180,7 +176,7 @@ class avaTrivia(commands.Cog):
                     re = None
                     for r in regions:
                         if r[0] == emli[cursor][1]:
-                            await self.map_engine(ctx, pack=(r[0], r[1], r[3]))
+                            await self.map_engine(ctx, pack=(r[0], r[1], r[3], r[10]))
                             return
                 elif reaction.emoji == "\U000023ee" and cursor != 0:
                     cursor = 0
@@ -232,9 +228,9 @@ class avaTrivia(commands.Cog):
             reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**\n╟`NPCs` · **{npcs}**", inline=True)
             reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
             reembed.add_field(name=":scales: Economy", value=f"╟`Shop` · Selling **{shop_quantity}** items\n╟`Traders` · Selling **{trader_quantity}** ingredients", inline=True)
-            reembed.add_field(name=f":smiling_imp: Diversity ({len(mob_types)})", value=line, inline=True)
+            if line: reembed.add_field(name=f":smiling_imp: Diversity ({len(mob_types)})", value=line, inline=True)
             reembed.set_thumbnail(url=self.biome[region[6].split(' - ')[0]])
-            reembed.set_image(url=region[3])
+            if region[3]: reembed.set_image(url=region[3])
             return reembed
 
         # PORT ============
