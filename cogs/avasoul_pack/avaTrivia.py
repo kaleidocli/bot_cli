@@ -469,7 +469,7 @@ class avaTrivia(commands.Cog):
             try:
                 # On cooldown
                 if time == None or time <= 0:
-                    off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`{cmd}`**")
+                    off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`{cmd}`**")
                 # Off cooldown
                 else:
                     on_cd.append(f"\n:stopwatch: Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
@@ -483,7 +483,7 @@ class avaTrivia(commands.Cog):
             temp = await self.client.quefe(f"SELECT npc_code, name FROM model_npc WHERE npc_code='{t[0]}';")
             temp2all = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE limit_flag='{t[1]}' AND entity_code='{t[0]}';", type='all')
             for temp2 in temp2all:
-                interas.append(f"\n<:exclamation_cyan:626639669836382218> NPC `{temp[0]}`|**{temp[1]}** at ||`{temp2[0]:.3f}:{temp2[1]:.3f}` ~ `{temp2[2]:.3f}:{temp2[3]:.3f}`||")
+                interas.append(f"\n<:npc_question_mark:637744510109089792> NPC `{temp[0]}`|**{temp[1]}** at ||`{temp2[0]:.3f}:{temp2[1]:.3f}` ~ `{temp2[2]:.3f}:{temp2[3]:.3f}`||")
 
         # HUNT
         try:
@@ -492,9 +492,9 @@ class avaTrivia(commands.Cog):
             # Still in progress
             if datetime.now() < end_point[0]: on_cd.append(f"\n:stopwatch: Command **`hunt`**: `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`")
             # Done, but not collected
-            else: off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`hunt`**: Fisnished")
+            else: off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`hunt`**: Fisnished")
         except TypeError:
-            off_cd.append(f"<:exclamation_yellow:626639669995503616> Command **`hunt`**: Ready to go")
+            off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`hunt`**: Ready to go")
 
         await ctx.send(f""">>> {chr(10).join(off_cd)} {' '.join(on_cd)} {' '.join(interas)}""")
 
