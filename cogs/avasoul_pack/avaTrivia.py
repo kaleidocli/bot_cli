@@ -116,14 +116,6 @@ class avaTrivia(commands.Cog):
             return reembed, region[0]
             #else:
             #    await ctx.send("*Nothing but dust here...*")
-        
-        async def attachreaction(msg):
-            await msg.add_reaction("\U000023ee")    #Top-left
-            await msg.add_reaction("\U00002b05")    #Left
-            await msg.add_reaction("\U0001f44b")    #Pick
-            await msg.add_reaction("\U000027a1")    #Right
-            await msg.add_reaction("\U000023ed")    #Top-right
-            await msg.add_reaction("\U0001f50e")    #Top-right
 
         pages = len(regions)
         currentpage = 1
@@ -143,7 +135,9 @@ class avaTrivia(commands.Cog):
                 if em[1] == 'region.0': cursor = emli.index(em); break
 
         msg = await ctx.send(embed=emli[cursor][0])
-        if pages > 1: await attachreaction(msg)
+        if pages > 1:
+            #Top-left   #Left   #Pick   #Right   #Top-right   #Top-right
+            await self.tools.pageButtonAdd(msg, reaction=["\U000023ee", "\U00002b05", "\U0001f44b", "\U000027a1", "\U000023ed", "\U0001f50e"])
         else: return
         await asyncio.sleep(1)
 
@@ -174,7 +168,6 @@ class avaTrivia(commands.Cog):
                     try: await msg.remove_reaction(reaction.emoji, user)
                     except discordErrors.Forbidden: pass
                 elif reaction.emoji == '\U0001f44b':
-                    re = None
                     for r in regions:
                         if r[0] == emli[cursor][1]:
                             await self.map_engine(ctx, pack=(r[0], r[1], r[3], r[10]))

@@ -45,6 +45,7 @@ class avaNPC(commands.Cog):
     async def npc(self, ctx, *args):
         #if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
+        # LIST ==========================================
         if not args:
             npcs = await self.client.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc WHERE npc_code IN (SELECT DISTINCT entity_code FROM environ_interaction WHERE region=(SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'));", type='all')
 
@@ -55,13 +56,7 @@ class avaNPC(commands.Cog):
         {npc[1]}```""", colour = discord.Colour(0x011C3A))
                 temb.set_image(url=random.choice(npc[4].split(' <> ')))
 
-                return temb
-
-            async def attachreaction(msg):
-                await msg.add_reaction("\U000023ee")    #Top-left
-                await msg.add_reaction("\U00002b05")    #Left
-                await msg.add_reaction("\U000027a1")    #Right
-                await msg.add_reaction("\U000023ed")    #Top-right
+                return temb, npc[5]
 
             pages = len(npcs)
             currentpage = 1
@@ -69,45 +64,47 @@ class avaNPC(commands.Cog):
 
             emli = []
             for curp in range(pages):
-                myembed = makeembed(curp, pages, currentpage)
-                emli.append(myembed)
+                micro_embed = makeembed(curp, pages, currentpage)
+                emli.append(micro_embed)
                 currentpage += 1
 
-            if pages > 1: 
-                msg = await ctx.send(embed=emli[cursor])
-                await attachreaction(msg)
-            else: msg = await ctx.send(embed=emli[cursor], delete_after=30); return
-
-            def UM_check(reaction, user):
-                return user.id == ctx.message.author.id and reaction.message.id == msg.id
+            if pages > 1:
+                msg = await ctx.send(embed=emli[cursor][0])
+                #Top-left   #Left   #Pick   #Right   #Top-right
+                await self.tools.pageButtonAdd(msg, reaction=["\U000023ee", "\U00002b05", "\U0001f44b", "\U000027a1", "\U000023ed"])
+            else: msg = await ctx.send(embed=emli[cursor][0], delete_after=30); return
 
             while True:
-                try:    
-                    reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
+                try:
+                    reaction, user = await self.tools.pagiButton(timeout=20, check=lambda r, u: u == ctx.author)
                     if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                         cursor += 1
-                        await msg.edit(embed=emli[cursor])
+                        await msg.edit(embed=emli[cursor][0])
                         try: await msg.remove_reaction(reaction.emoji, user)
                         except discordErrors.Forbidden: pass
                     elif reaction.emoji == "\U00002b05" and cursor > 0:
                         cursor -= 1
-                        await msg.edit(embed=emli[cursor])
+                        await msg.edit(embed=emli[cursor][0])
                         try: await msg.remove_reaction(reaction.emoji, user)
                         except discordErrors.Forbidden: pass
+                    elif reaction.emoji == '\U0001f44b':
+                        await ctx.invoke('interact', *args[2:])
+                        return
                     elif reaction.emoji == "\U000023ee" and cursor != 0:
                         cursor = 0
-                        await msg.edit(embed=emli[cursor])
+                        await msg.edit(embed=emli[cursor][0])
                         try: await msg.remove_reaction(reaction.emoji, user)
                         except discordErrors.Forbidden: pass
                     elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
                         cursor = pages - 1
-                        await msg.edit(embed=emli[cursor])
+                        await msg.edit(embed=emli[cursor][0])
                         try: await msg.remove_reaction(reaction.emoji, user)
                         except discordErrors.Forbidden: pass
                 except asyncio.TimeoutError:
                     await msg.delete(); return
 
 
+        # SPECIFIC ========================================
         # User's info
         cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
 
@@ -290,6 +287,7 @@ class avaNPC(commands.Cog):
             except asyncio.TimeoutError:
                 await msg.delete(); return
 
+
     @commands.command(aliases=['in'])
     @commands.cooldown(1, 25, type=BucketType.user)
     async def interact(self, ctx, *args):
@@ -304,7 +302,7 @@ class avaNPC(commands.Cog):
 
         # NPC / Item
         try:
-            int(args[0])
+            int(args[0])        # Please don't, don't don't remove this
             try: entity_code, entity_name, illulink = await self.client.quefe(f"SELECT item_id, name, illulink FROM pi_inventory WHERE item_id='{args[0]}' AND user_id='n/a' AND existence='GOOD';")
             # E: Item not found --> Silently ignore
             except TypeError: await ctx.message.add_reaction('\U00002754'); return
@@ -346,7 +344,6 @@ class avaNPC(commands.Cog):
             stringembed = self.stringembed_intera((packs, [entity_code, entity_name, illulink]), currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
             emli.append(stringembed)
             currentpage += 1
-        print(pages, emli)
 
         # [ [[em, kw], [em, kw]], [] ]
 
