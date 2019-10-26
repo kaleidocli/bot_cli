@@ -447,7 +447,8 @@ class avaTools:
                 await self.pageButtonAdd(msg, extra=extra_button)
             else: 
                 msg = await ctx.send(embed=emli[0])
-        except discordErrors.HTTPException:
+        # except discordErrors.HTTPException:
+        except IndexError:
             await ctx.send(":spider_web::spider_web::spider_web: Empty result... :spider_web::spider_web::spider_web:"); return
 
         # Button-ing

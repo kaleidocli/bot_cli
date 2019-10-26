@@ -503,7 +503,6 @@ class avaCommercial(commands.Cog):
         elif not sublk_price: lk_query = lk_query + f" {sublk_tag}"
 
         async def browse():
-            print(f"""SELECT item_id, item_code, name, description, tags, weight, quantity, price, aura, '{target.name}', '{target.avatar_url}' FROM pi_inventory WHERE existence='GOOD' AND user_id='{target.id}' {lk_query} {partner_q};""")
             if peeking: items = await self.client.quefe(f"""SELECT item_id, item_code, name, description, tags, weight, quantity, price, aura, '{target.name}', '{target.avatar_url}' FROM pi_inventory WHERE existence='GOOD' AND user_id='{target.id}' {lk_query} {partner_q};""", type='all')
             else: items = await self.client.quefe(f"""SELECT item_id, item_code, name, description, tags, weight, quantity, price, aura, '', '' FROM pi_inventory WHERE existence='GOOD' AND user_id='{target.id}' {lk_query} {partner_q};""", type='all')
 
