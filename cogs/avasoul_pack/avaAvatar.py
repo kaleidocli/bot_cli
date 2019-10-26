@@ -70,7 +70,9 @@ class avaAvatar(commands.Cog):
                         'av28': 'SAO_Asuna',
                         'av29': 'P5_Ann',
                         'av30': 'atelier_male',
-                        'av31': 'atelier_female'}
+                        'av31': 'atelier_female',
+                        'av32': 'fgo_female',
+                        'av33': 'fgo_male'}
         self.font_dict = {'fnt0': 'ERASLGHT.ttf',
                         'fnt1': 'Persona_Non_Grata.ttf',
                         'fnt2': 'Phorssa.ttf',

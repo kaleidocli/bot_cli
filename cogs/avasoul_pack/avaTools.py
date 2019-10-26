@@ -294,7 +294,7 @@ class avaTools:
                         
                         
                         # Mass production
-                        for count in range(mob[1]):
+                        for _ in range(mob[1]):
                             # await asyncio.sleep(0.01)
                             # Generating rewards
                             status = []; objecto = []; bingo_list = []

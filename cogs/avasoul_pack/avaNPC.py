@@ -140,7 +140,7 @@ class avaNPC(commands.Cog):
                 temp = []
                 line = ''
                 try:
-                    for i in range(4):
+                    for _ in range(4):
                         temp.append(packs.pop(0))
                 except IndexError: tinue = False
 
@@ -342,7 +342,7 @@ class avaNPC(commands.Cog):
 
         # Creating strings ============
         emli = []
-        for curp in range(pages):
+        for _ in range(pages):
             stringembed = self.stringembed_intera((packs, [entity_code, entity_name, illulink]), currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
             emli.append(stringembed)
             currentpage += 1
@@ -358,7 +358,7 @@ class avaNPC(commands.Cog):
 
         while True:
             try:
-                reaction, user = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
+                reaction, _ = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
                 if reaction.emoji == "\U000027a1":
                     if cursor_string < pages - 1: cursor_string += 1
                     else: cursor_string = 0
@@ -407,7 +407,7 @@ class avaNPC(commands.Cog):
         while tinue:
             temp = []
             try:
-                for i in range(row_len):
+                for _ in range(row_len):
                     kw = packs.pop(0)[0]
                     if kw == ikw: kw = f"[{kw}]"
                     temp.append(kw)
