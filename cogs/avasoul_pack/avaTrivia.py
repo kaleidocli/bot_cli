@@ -1,4 +1,5 @@
 import asyncio
+import concurrent
 from functools import partial
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -104,23 +105,15 @@ class avaTrivia(commands.Cog):
             region = regions[curp]; line = ''; swi = 0
             players = await self.client._cursor.execute(f"SELECT * FROM personal_info WHERE cur_PLACE='{region[0]}';")
             mobs = await self.client._cursor.execute(f"SELECT * FROM environ_mob WHERE region='{region[0]}';")
-            mob_types = await self.client.quefe(f"SELECT mob_code, quantity FROM environ_diversity WHERE environ_code='{region[0]}';", type='all')
             try: shop_quantity = len(region[9].split(' - '))
             except AttributeError: shop_quantity = 0
             try: trader_quantity = len(region[8].split(' - '))
             except AttributeError: trader_quantity = 0
 
-            for m in mob_types:
-                if swi == 0: line = line + f"╟**`{m[0]}`**`[{m[1]}]`"; swi += 2
-                elif swi < 4: line = line + f"⠀·⠀**`{m[0]}`**`[{m[1]}]`"; swi += 1
-                elif swi == 4: line = line + f"\n╟**`{m[0]}`**`[{m[1]}]`"; swi = 2
-
             reembed = discord.Embed(title = f":map: `{region[0]}`|**{region[1]}**", description = f"""```dsconfig
     {region[2]}```""", colour = discord.Colour(0x011C3A))
             reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**", inline=True)
             reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
-            reembed.add_field(name=f":smiling_imp: Diversity ({len(mob_types)})", value=line, inline=True)
-            reembed.add_field(name=":scales: Economy", value=f"╟`Shop` · Selling **{shop_quantity}** items\n╟`Traders` · Selling **{trader_quantity}** ingredients", inline=True)
             reembed.set_thumbnail(url=self.biome[region[6].split(' - ')[0]])
             reembed.set_image(url=region[3])
             return reembed, region[0]
@@ -186,10 +179,9 @@ class avaTrivia(commands.Cog):
                 elif reaction.emoji == '\U0001f44b':
                     re = None
                     for r in regions:
-                        if r[1] == cur_PLACE[0]: re = r; break
-
-                    await self.map_engine(ctx, pack=(re[0], re[1], re[3]))
-                    return
+                        if r[1] == emli[cursor][1]:
+                            await self.map_engine(ctx, pack=(r[0], r[1], r[3]))
+                            return
                 elif reaction.emoji == "\U000023ee" and cursor != 0:
                     cursor = 0
                     await msg.edit(embed=emli[cursor][0])
@@ -209,11 +201,77 @@ class avaTrivia(commands.Cog):
         # Get cur_PLACE
         cur_PLACE = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
         if not cur_PLACE: cur_PLACE = 'region.0'
+        region = await self.client.quefe(f"SELECT environ_code, name, description, illulink, border_X, border_Y, biome, land_slot, cuisine, goods, port FROM environ WHERE environ_code='{cur_PLACE}';")
 
-        # Get info
-        pack = await self.client.quefe(f"SELECT environ_code, name, illulink, port FROM environ WHERE environ_code='{cur_PLACE[0]}';")
+        # Get map info
+        if region[10]: bundle = await self.client.quefe(f"""SELECT environ_code, name, pass_note FROM environ WHERE environ_code IN ('{"', '".join(region[10].split(' | '))}') ORDER BY environ_code ASC;""", type='all')
 
-        await self.map_engine(ctx, pack=pack)
+
+        # FIRST ==============
+        async def makeembed_2():
+            line = ''; swi = 0
+            players = await self.client._cursor.execute(f"SELECT * FROM personal_info WHERE cur_PLACE='{region[0]}';")
+            mobs = await self.client._cursor.execute(f"SELECT * FROM environ_mob WHERE region='{region[0]}';")
+            mob_types = await self.client.quefe(f"SELECT mob_code, quantity FROM environ_diversity WHERE environ_code='{region[0]}';", type='all')
+            npcs = await self.client._cursor.execute(f"SELECT DISTINCT entity_code FROM environ_interaction WHERE region='{region[0]}' AND entity_code LIKE 'p%';")
+            try: shop_quantity = len(region[9].split(' - '))
+            except AttributeError: shop_quantity = 0
+            try: trader_quantity = len(region[8].split(' - '))
+            except AttributeError: trader_quantity = 0
+
+            for m in mob_types:
+                if swi == 0: line = line + f"╟**`{m[0]}`**`[{m[1]}]`"; swi += 2
+                elif swi < 4: line = line + f"⠀·⠀**`{m[0]}`**`[{m[1]}]`"; swi += 1
+                elif swi == 4: line = line + f"\n╟**`{m[0]}`**`[{m[1]}]`"; swi = 2
+
+            reembed = discord.Embed(title = f":map: `{region[0]}`|**{region[1]}**", description = f"""```dsconfig
+    {region[2]}```""", colour = discord.Colour(0x011C3A))
+            reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**\n╟`NPCs` · **{npcs}**", inline=True)
+            reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
+            reembed.add_field(name=":scales: Economy", value=f"╟`Shop` · Selling **{shop_quantity}** items\n╟`Traders` · Selling **{trader_quantity}** ingredients", inline=True)
+            reembed.add_field(name=f":smiling_imp: Diversity ({len(mob_types)})", value=line, inline=True)
+            reembed.set_thumbnail(url=self.biome[region[6].split(' - ')[0]])
+            reembed.set_image(url=region[3])
+            return reembed
+
+        # PORT ============
+        def makeembed(items, top, least, pages, currentpage):
+            """environ_code, name, illulink, port = pack"""
+            bundle = items
+            descr = ''
+
+            # Mapping
+            if bundle:
+                for b in bundle[top:least]:
+                    if not b[2]: pass_note = ''
+                    else: pass_note = f"||{self.utils.smalltext(b[2])}||"
+                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}**\n> {pass_note}\n"
+
+            reembed = discord.Embed(title=f"""{len(bundle)} portals in this map:""", description=descr, colour = discord.Colour(0x011C3A))
+
+            return reembed
+
+        pages = len(bundle)
+        item_per_page = 4
+        currentpage = 1
+        cursor = 0
+
+        emli = []
+        emli.append(await makeembed_2())
+        for curp in range(pages):
+            emli.append(await makeembed(bundle, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage))
+            currentpage += 1
+
+        msg = await ctx.send(embed=emli[cursor])
+
+        # Button-ing
+        while True:
+            try:
+                reaction, user = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
+                cursor = await self.tools.pageTurner(msg, reaction, user, (cursor, pages, emli))
+            except concurrent.futures.TimeoutError:
+                pass
+
 
     async def map_engine(self, ctx, pack=None):
         """environ_code, name, illulink, port = pack"""
@@ -230,7 +288,7 @@ class avaTrivia(commands.Cog):
                 for b in bundle[top:least]:
                     if not b[2]: pass_note = ''
                     else: pass_note = f"||{self.utils.smalltext(b[2])}||"
-                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}** {pass_note}"
+                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}** {pass_note}\n"
 
             reembed = discord.Embed(description=f"""```ini
 [{pack[0]}] {pack[1]}```{descr}""", colour = discord.Colour(0x011C3A))
@@ -238,7 +296,8 @@ class avaTrivia(commands.Cog):
 
             return reembed
 
-        await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4, timeout=20)
+        if bundle: await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4, timeout=20)
+        else: await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4, timeout=20, pair_sample=1)
 
     @commands.command()
     @commands.cooldown(1, 2, type=BucketType.user)
