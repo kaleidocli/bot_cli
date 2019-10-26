@@ -187,8 +187,8 @@ class avaTrivia(commands.Cog):
                     except discordErrors.Forbidden: pass
                 elif reaction.emoji == '\U0001f44b':
                     re = None
-                    for em in emli:
-                        if em[1] == cur_PLACE[0]: re = em[0]; break
+                    for r in regions:
+                        if r[1] == cur_PLACE[0]: re = r; break
 
                     await self.map_engine(ctx, pack=(re[0], re[1], re[3]))
                     return
@@ -220,19 +220,22 @@ class avaTrivia(commands.Cog):
     async def map_engine(self, ctx, pack=None):
         """environ_code, name, illulink, port = pack"""
 
-        bundle = await self.client.quefe(f"SELECT environ_code, name, pass_note FROM environ WHERE environ_code='{pack[0]}' ORDER BY environ_code ASC;", type='all')
+        if pack[3]:
+            bundle = await self.client.quefe(f"""SELECT environ_code, name, pass_note FROM environ WHERE environ_code IN ('{"', '".join(pack[3].split(' | '))}') ORDER BY environ_code ASC;""", type='all')
 
         def makeembed(items, top, least, pages, currentpage):
             bundle, pack = items
 
-            reembed = discord.Embed(title = f":map: `{pack[0]}`|**{pack[1]}**", colour = discord.Colour(0x011C3A))
+            reembed = discord.Embed(title = f"```[{pack[0]}] {pack[1]}```", colour = discord.Colour(0x011C3A))
             if pack[2]: reembed.set_thumbnail(url=pack[2])
+            print(bundle)
 
             # Mapping
-            for b in bundle[top:least]:
-                if not b[2]: pass_note = '---no data---'
-                else: pass_note = b[2]
-                reembed.add_field(name=f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}**", value=f">>> {pass_note}", inline=True)
+            if bundle:
+                for b in bundle[top:least]:
+                    if not b[2]: pass_note = '---no data---'
+                    else: pass_note = b[2]
+                    reembed.add_field(name=f"--------------", value=f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}**\n>>> {pass_note}", inline=True)
             
             return reembed
 
