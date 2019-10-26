@@ -78,7 +78,7 @@ class avaTools:
             LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'")
             #LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'")
             # pylint: enable=unused-variable
-        except TypeError: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. Use `incarnate` to create one."); return
+        except TypeError: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. Use `incarnate` to create one, then `tutorial` for... tutorial <:yeee:636045188153868309>"); return
         if stats == 'DEAD': 
             #if target_id == MSG.author.id: await MSG.channel.say(f"<:tumbstone:544353849264177172> You. Are. Dead, **{target.mention}**. Have a nice day!"); return
             #else: await MSG.channel.send(f"<:tumbstone:544353849264177172> The target **{target.name}** was dead, **{MSG.author.mention}**. *Press F to pay respect.*"); return

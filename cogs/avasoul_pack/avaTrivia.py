@@ -93,17 +93,22 @@ class avaTrivia(commands.Cog):
 
         await ctx.send(embed=reembed)
 
-    @commands.command(aliases=['map'])
+    @commands.command(aliases=['regions'])
     @commands.cooldown(1, 5, type=BucketType.user)
-    async def regions(self, ctx, *args):
+    async def maps(self, ctx, *args):
+        # Get cur_PLACE
         cur_PLACE = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
-        regions = await self.client.quefe(f"SELECT environ_code, name, description, illulink, border_X, border_Y, biome, land_slot, cuisine, goods FROM environ ORDER BY ord ASC;", type='all')
+        regions = await self.client.quefe(f"SELECT environ_code, name, description, illulink, border_X, border_Y, biome, land_slot, cuisine, goods FROM environ WHERE type='REGION' ORDER BY ord ASC;", type='all')
 
         async def makeembed(curp, pages, currentpage):
             region = regions[curp]; line = ''; swi = 0
             players = await self.client._cursor.execute(f"SELECT * FROM personal_info WHERE cur_PLACE='{region[0]}';")
             mobs = await self.client._cursor.execute(f"SELECT * FROM environ_mob WHERE region='{region[0]}';")
             mob_types = await self.client.quefe(f"SELECT mob_code, quantity FROM environ_diversity WHERE environ_code='{region[0]}';", type='all')
+            try: shop_quantity = len(region[9].split(' - '))
+            except AttributeError: shop_quantity = 0
+            try: trader_quantity = len(region[8].split(' - '))
+            except AttributeError: trader_quantity = 0
 
             for m in mob_types:
                 if swi == 0: line = line + f"╟**`{m[0]}`**`[{m[1]}]`"; swi += 2
@@ -115,7 +120,7 @@ class avaTrivia(commands.Cog):
             reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**", inline=True)
             reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
             reembed.add_field(name=f":smiling_imp: Diversity ({len(mob_types)})", value=line, inline=True)
-            reembed.add_field(name=":scales: Economy", value=f"╟`Shop` · Selling **{len(region[9].split(' - '))}** items\n╟`Traders` · Selling **{len(region[8].split(' - '))}** ingredients", inline=True)
+            reembed.add_field(name=":scales: Economy", value=f"╟`Shop` · Selling **{shop_quantity}** items\n╟`Traders` · Selling **{trader_quantity}** ingredients", inline=True)
             reembed.set_thumbnail(url=self.biome[region[6].split(' - ')[0]])
             reembed.set_image(url=region[3])
             return reembed, region[0]
@@ -125,6 +130,7 @@ class avaTrivia(commands.Cog):
         async def attachreaction(msg):
             await msg.add_reaction("\U000023ee")    #Top-left
             await msg.add_reaction("\U00002b05")    #Left
+            await msg.add_reaction("\U0001f44b")    #Pick
             await msg.add_reaction("\U000027a1")    #Right
             await msg.add_reaction("\U000023ed")    #Top-right
             await msg.add_reaction("\U0001f50e")    #Top-right
@@ -169,10 +175,7 @@ class avaTrivia(commands.Cog):
                 elif reaction.emoji == "\U0001f50e":
                     temsg = await ctx.send(":mag_right: Please provide region's code (e.g. `region.0`)")
 
-                    def UMC_check(m):
-                        return m.channel == ctx.channel and m.author == ctx.author
-
-                    try: m = await self.client.wait_for('message', timeout=15, check=UMC_check)
+                    try: m = await self.client.wait_for('message', timeout=15, check=lambda m: m.channel == ctx.channel and m.author == ctx.author)
                     except asyncio.TimeoutError: await ctx.send(f"<:osit:544356212846886924> Requested time-out!"); return
 
                     for em in emli:
@@ -182,6 +185,9 @@ class avaTrivia(commands.Cog):
                     except NameError: await ctx.send("<:osit:544356212846886924> Region not found :<"); continue
                     try: await msg.remove_reaction(reaction.emoji, user)
                     except discordErrors.Forbidden: pass
+                elif reaction.emoji == '\U0001f44b':
+                    await self.map_engine(ctx, pack=(regions[0], regions[1], regions[3]))
+                    return
                 elif reaction.emoji == "\U000023ee" and cursor != 0:
                     cursor = 0
                     await msg.edit(embed=emli[cursor][0])
@@ -194,6 +200,39 @@ class avaTrivia(commands.Cog):
                     except discordErrors.Forbidden: pass
             except asyncio.TimeoutError:
                 await msg.delete(); return
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def map(self, ctx, *args):
+        # Get cur_PLACE
+        cur_PLACE = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
+        if not cur_PLACE: cur_PLACE = 'region.0'
+
+        # Get info
+        pack = await self.client.quefe(f"SELECT environ_code, name, illulink FROM environ WHERE environ_code='{cur_PLACE}';")
+
+        await self.map_engine(ctx, pack=pack)
+
+    async def map_engine(self, ctx, pack=None):
+        """environ_code, name, illulink = pack"""
+
+        bundle = await self.client.quefe(f"SELECT environ_code, name, pass_note FROM environ WHERE environ_code='{pack[0]}' ORDER BY environ_code ASC;", type='all')
+
+        def makeembed(items, top, least, pages, currentpage):
+            bundle, pack = items
+
+            reembed = discord.Embed(title = f":map: `{pack[0]}`|**{pack[1]}**", colour = discord.Colour(0x011C3A))
+            if pack[2]: reembed.set_thumbnail(url=pack[2])
+
+            # Mapping
+            for b in bundle[top:least]:
+                if not b[2]: pass_note = 'No data'
+                else: pass_note = b[2]
+                reembed.add_field(name=f"`{b[0]}`|**{b[1]}**", value=f">>> {pass_note}", inline=True)
+            
+            return reembed
+
+        await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4)
 
     @commands.command()
     @commands.cooldown(1, 2, type=BucketType.user)
