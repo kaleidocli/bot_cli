@@ -458,7 +458,7 @@ class avaCommercial(commands.Cog):
         # PEEK ===================
         try:
             target = ctx.message.mentions[0]
-            partner_q = f" AND EXISTS (SELECT * FROM personal_info WHERE user_id='{ctx.author.id}' AND partner='{target.id}') "
+            partner_q = f" AND EXISTS (SELECT * FROM personal_info WHERE id='{ctx.author.id}' AND partner='{target.id}') "
             peeking = True
         except IndexError:
             target = ctx.author
@@ -466,7 +466,7 @@ class avaCommercial(commands.Cog):
             peeking = False
 
         # TAKE ===================
-        if peeking and 'take' in args:
+        if peeking and ('take' in args):
             # Get info
             item_id = ''
             for kw in args:
@@ -475,7 +475,7 @@ class avaCommercial(commands.Cog):
             if not item_id: await ctx.send("<:osit:544356212846886924> Please provide an item's id!")
 
             # Get item's info
-            if not await self.client._cursor.execute(f"UPDATE pi_inventory SET user_id='{ctx.author.id}' WHERE item_id='{item_id}' AND user_id='{target.id}' AND EXISTS (SELECT user_id FROM personal_info WHERE user_id='{ctx.author.id}' AND partner='{target.id}');"):
+            if not await self.client._cursor.execute(f"UPDATE pi_inventory SET user_id='{ctx.author.id}' WHERE item_id='{item_id}' AND user_id='{target.id}' AND EXISTS (SELECT id FROM personal_info WHERE id='{ctx.author.id}' AND partner='{target.id}');"):
                 await ctx.send("<:osit:544356212846886924> Either the targeted user's not your partner, or the item doesn't exist"); return
 
         # SEARCH =================
