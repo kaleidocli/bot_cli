@@ -200,7 +200,10 @@ class avaTrivia(commands.Cog):
     async def map(self, ctx, *args):
         # Get cur_PLACE
         cur_PLACE = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}';")
-        if not cur_PLACE: cur_PLACE = 'region.0'
+        try:
+            cur_PLACE = cur_PLACE[0]
+        except (TypeError, IndexError):
+            cur_PLACE = 'region.0'
         region = await self.client.quefe(f"SELECT environ_code, name, description, illulink, border_X, border_Y, biome, land_slot, cuisine, goods, port FROM environ WHERE environ_code='{cur_PLACE}';")
 
         # Get map info
