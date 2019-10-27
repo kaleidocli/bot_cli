@@ -83,7 +83,7 @@ class avaAvatar(commands.Cog):
         self.char_dir = {}
         self.client.chardict_meta = {}
         for d in self.char_dict.items():
-            self.char_dir[d[0]] = [dir for dir in listdir(path.join('data', 'profile', 'char', self.char_dict[d[1]])) if dir.endswith('.png')]
+            self.char_dir[d[0]] = [dir for dir in listdir(path.join('data', 'profile', 'char', self.char_dict[d[0]])) if dir.endswith('.png')]
 
             try: self.client.chardict_meta[d[0]]['quantity'] = len(self.char_dir[d[0]])     # Avoiding overwrite
             except KeyError: self.client.chardict_meta[d[0]] = {'quantity': len(self.char_dir[d[0]])}
@@ -91,7 +91,7 @@ class avaAvatar(commands.Cog):
         self.bg_dir = {}
         self.client.bgdict_meta = {}
         for d in self.bg_dict.items():
-            self.bg_dir[d[0]] = [dir for dir in listdir(listdir(path.join('data', 'profile', 'bg', self.bg_dict[d[1]]))) if dir.endswith('.png') or dir.endswith('.jpg')]
+            self.bg_dir[d[0]] = [dir for dir in listdir(listdir(path.join('data', 'profile', 'bg', self.bg_dict[d[0]]))) if dir.endswith('.png') or dir.endswith('.jpg')]
 
             try: self.client.bgdict_meta[d[0]]['quantity'] = len(self.bg_dir[d[0]])     # Avoiding overwrite
             except KeyError: self.client.bgdict_meta[d[0]] = {'quantity': len(self.bg_dir[d[0]])}
@@ -139,6 +139,7 @@ class avaAvatar(commands.Cog):
         user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
         master_que = ''
         for pack in user_ids:
+            await asyncio.sleep(0)
             que = ''
             for ava in avas:
                 que = que + f"INSERT INTO pi_avatars (user_id, avatar_id) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_avatars WHERE user_id='{pack[0]}' AND avatar_id='{ava}'); "
@@ -152,6 +153,7 @@ class avaAvatar(commands.Cog):
         user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
         master_que = ''
         for pack in user_ids:
+            await asyncio.sleep(0)
             que = ''
             for ava in avas:
                 que = que + f"INSERT INTO pi_backgrounds (user_id, bg_code) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_backgrounds WHERE user_id='{pack[0]}' AND bg_code='{ava}'); "
@@ -165,6 +167,7 @@ class avaAvatar(commands.Cog):
         user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
         master_que = ''
         for pack in user_ids:
+            await asyncio.sleep(0)
             que = ''
             for ava in avas:
                 que = que + f"INSERT INTO pi_fonts (user_id, font_id) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_fonts WHERE user_id='{pack[0]}' AND font_id='{ava}'); "
