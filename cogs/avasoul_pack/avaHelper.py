@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
+from utils import checks
 from .avaTools import avaTools
 from .avaUtils import avaUtils
 
@@ -290,6 +291,7 @@ Definition? Mechanism? Lore? Yaaa```
         await ctx.send(self.client.support_server_invite)
 
     @commands.command()
+    @checks.check_author()
     async def source(self, ctx, *args):
         await ctx.send('https://github.com/kaleidocli/bot_cli')
 
