@@ -242,7 +242,7 @@ class avaPersonal(commands.Cog):
                             if raw[1] == 'default':
                                 blur_in = 2.6
                             else:
-                                blur_in = round(float(raw[1:6]), 1)
+                                blur_in = round(float(''.join(raw[1:6])), 1)
                                 # Prep
                                 if blur_in < 0: blur_in = 0
                                 elif blur_in > 10: blur_in = 10
