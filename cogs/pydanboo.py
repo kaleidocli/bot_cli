@@ -43,14 +43,10 @@ class dan(commands.Cog):
                     tags = f"`{post['tags'].replace(' ', '` `')}`"
                     await self.client.send_message(ctx.message.channel, tags)
                 elif str(reac[0].emoji) == '\U0001f512':
-                    await self.client.remove_reaction(msg, '\U0001f512', msg.author)
-                    await self.client.remove_reaction(msg, '\U0001f512', ctx.message.author)
                     await msg.add_reaction('\U0001f513')
                     try: a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
                     except asyncio.TimeoutError: check = '1'; break
                     if not a: break
-                    await self.client.remove_reaction(msg, '\U0001f513', msg.author)
-                    await self.client.remove_reaction(msg, '\U0001f513', ctx.message.author)
                     await msg.add_reaction('\U0001f512')
                 #Check if reac's string == <Next_emoji>. If true, quit the REACTION LOOP
                 elif str(reac[0].emoji) == '\U000027a1':
@@ -138,14 +134,10 @@ class dan(commands.Cog):
                     tags = f"`{posts_list[0]['tag_string_general'].replace(' ', '` `')}`"
                     await ctx.send(tags)
                 elif str(reac[0].emoji) == '\U0001f512':
-                    await msg.remove_reaction('\U0001f512', msg.author)
-                    await msg.remove_reaction('\U0001f512', ctx.message.author)
                     await msg.add_reaction('\U0001f513')
                     try: a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
                     except asyncio.TimeoutError: check = '1'; break
                     if not a: break
-                    await msg.remove_reaction('\U0001f513', msg.author)
-                    await msg.remove_reaction('\U0001f513', ctx.message.author)
                     await msg.add_reaction('\U0001f512')
                 #Check if reac's string == <Next_emoji>. If true, quit the REACTION LOOP
                 elif str(reac[0].emoji) == '\U000027a1':
