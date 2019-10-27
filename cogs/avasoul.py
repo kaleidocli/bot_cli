@@ -71,51 +71,7 @@ class avasoul(commands.Cog):
 
 # ================== MISC ==================
 
-    @commands.command(aliases=['tut'])
-    @commands.cooldown(1, 3, type=BucketType.user)
-    async def tutorial(self, ctx, *args):
 
-        # CATALOG =======================
-        if not args:
-            buntu = await self.client.quefe(f"SELECT tut_code, tut_name, tut_description, tags FROM sys_tut ORDER BY level ASC;", type='all')
-
-            def makeembed(items, top, least, pages, currentpage):
-                line = ''
-                for item in items[top:least]:
-                    line += f"""<:old_paperroll:636090807136419840> `{item[0]}`| **{items[1]}**\n> ```ini
-    {item[2]}```\n> Tags: ||{item[3]}||"""
-
-            await self.tools.pagiMain(ctx, buntu, makeembed, item_per_page=4)
-            return
-
-        # TUTORIAL ======================
-        bundle = await self.client.quefe(f"SELECT line, timeout, trg, illulink FROM sys_tutorial WHERE tutorial_code='{args[0]}' ORDER BY ordera ASC;", type='all')
-        if not bundle: await ctx.send("<:9_:544354429055533068> Tutorial's code not found."); return
-
-        # INTRO =======
-        if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me!\n· You can react :white_check_mark: to turn page.\n· Do you want me to *DM* you? <a:wiink:590460293705105418>", t=15):
-            await ctx.send(f"{ctx.author.mention}, we're moving to DM in 3 secs...")
-            await asyncio.sleep(4)
-            DM = True
-        else:
-            await asyncio.sleep(1)
-            DM = False
-
-        # START =======
-        for pack in bundle:
-            try: trg = pack[2].split(' || ')
-            except AttributeError: trg = []
-            if pack[1] < 60: t = 60
-            else: t = pack[1]
-            if not await self.engine_waitor(ctx, pack[0], t=t, keylist=trg, DM=DM, illulink=pack[3]): break
-
-        # END =========
-        if DM:
-            await ctx.author.send(f"**Thank you for your time,** {ctx.author.mention}**!**\nIf you want, you can always receive more intuitive helps from our support server!")
-            await ctx.author.send(self.client.support_server_invite)
-        else:
-            await ctx.send(f"**Thank you for your time,** {ctx.author.mention}**!**\nIf you want, you can always receive more intuitive helps from our support server!")
-            await ctx.send(self.client.support_server_invite)
 
 
 
@@ -962,7 +918,7 @@ class avasoul(commands.Cog):
 
         # pylint disable=unused-variable
         emli = []
-        for curp in range(pages):
+        for _ in range(pages):
             myembed = makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
             emli.append(myembed)
             currentpage += 1
@@ -1585,7 +1541,7 @@ class avasoul(commands.Cog):
             cursor = 0
 
             emli = []
-            for curp in range(pages):
+            for _ in range(pages):
                 myembed = makeembed(currentpage*3-3, currentpage*3, pages, currentpage)
                 emli.append(myembed)
                 currentpage += 1
@@ -1849,44 +1805,6 @@ class avasoul(commands.Cog):
 
 # ================== TUTORIALS ==================
 
-    async def engine_roller(self, ctx, tut_code, headers, box='direct'):
-        if box == 'direct': box = ctx.author
-        else: box = ctx.channel
-
-        text = await self.client.quefe(f"""SELECT tut_head, tut_text FROM sys_tut WHERE tut_code='{tut_code}' AND tut_head IN ('{"', '".join(headers)}');""", type='all')
-        # Re-arrange
-        h = []
-        for he in headers:
-            for t in text:
-                if he == t[0]: h.append(t[1])
-
-        msg = await box.send(embed=discord.Embed(description=h[0], color=0x36393E))
-        await msg.add_reaction('\U00002705')
-
-        def RUM_check(reaction, user):
-            return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) == '\U00002705'
-        try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=60)
-        except asyncio.TimeoutError: await box.send("<:osit:544356212846886924> Request timeout!"); return False
-
-        for head in h[1:]:
-            await msg.edit(embed=discord.Embed(description=head, color=0x36393E))
-
-            try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=60)
-            except asyncio.TimeoutError: await box.send("<:osit:544356212846886924> Request timeout!"); return False
-
-    async def engine_waitor(self, ctx, line, t=20, keylist=[], DM=False, illulink=None):
-
-        if DM:
-            if illulink: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
-            else: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F))
-        else:
-            if illulink: msg = await ctx.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
-            else: msg = await ctx.send(embed=discord.Embed(description=line, colour=0x527D8F))
-
-        await msg.add_reaction("\U00002705")
-
-        try: await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U00002705' and u == ctx.author, timeout=t); return True
-        except asyncio.TimeoutError: return False
 
 
 
