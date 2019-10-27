@@ -107,7 +107,7 @@ class avaTrivia(commands.Cog):
             players = await self.client._cursor.execute(f"SELECT * FROM personal_info WHERE cur_PLACE='{region[0]}';")
             mobs = await self.client._cursor.execute(f"SELECT * FROM environ_mob WHERE region='{region[0]}';")
 
-            reembed = discord.Embed(title = f":map: `{region[0]}`|**{region[1]}**", description = f"""```dsconfig
+            reembed = discord.Embed(title = f":map: `{region[0]}`| **{region[1]}**", description = f"""```dsconfig
     {region[2]}```""", colour = discord.Colour(0x011C3A))
             reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**", inline=True)
             reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
@@ -217,7 +217,7 @@ class avaTrivia(commands.Cog):
                 elif swi < 4: line = line + f"⠀·⠀**`{m[0]}`**`[{m[1]}]`"; swi += 1
                 elif swi == 4: line = line + f"\n╟**`{m[0]}`**`[{m[1]}]`"; swi = 2
 
-            reembed = discord.Embed(title = f":map: `{region[0]}`|**{region[1]}**", description = f"""```dsconfig
+            reembed = discord.Embed(title = f":map: `{region[0]}`| **{region[1]}**", description = f"""```dsconfig
     {region[2]}```""", colour = discord.Colour(0x011C3A))
             reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**\n╟`NPCs` · **{npcs}**", inline=True)
             reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
@@ -238,7 +238,7 @@ class avaTrivia(commands.Cog):
                 for b in bundle[top:least]:
                     if not b[2]: pass_note = ''
                     else: pass_note = f"||{self.utils.smalltext(b[2])}||"
-                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}**\n> {pass_note}\n"
+                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`| **{b[1]}**\n> {pass_note}\n"
 
             reembed = discord.Embed(title=f"""{len(bundle)} portals in this map:""", description=descr, colour = discord.Colour(0x011C3A))
 
@@ -283,7 +283,7 @@ class avaTrivia(commands.Cog):
                 for b in bundle[top:least]:
                     if not b[2]: pass_note = ''
                     else: pass_note = f"||{self.utils.smalltext(b[2])}||"
-                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`|**{b[1]}** {pass_note}\n"
+                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`| **{b[1]}** {pass_note}\n"
 
             reembed = discord.Embed(description=f"""```ini
 [{pack[0]}] {pack[1]}```{descr}""", colour = discord.Colour(0x011C3A))
@@ -322,7 +322,7 @@ class avaTrivia(commands.Cog):
             except (IndexError, KeyError):
                 effect = '----------------------'
 
-            box = discord.Embed(title=f"{self.mob_icon[mob[3]]} `{mob[0]}`|**{mob[1]}**", description=f"```{mob[2]}```", colour = discord.Colour(0x36393F))
+            box = discord.Embed(title=f"{self.mob_icon[mob[3]]} `{mob[0]}`| **{mob[1]}**", description=f"```{mob[2]}```", colour = discord.Colour(0x36393F))
             box.add_field(name=f'>>> **`LP`** · {mob[5]}\n**`STR`** · {mob[6]}\n**`CHAIN`** · {mob[7]}\n**`SPEED`** · {mob[8]}\n**`DEFPY`** · {mob[16]}', value=effect)
             box.add_field(name=f'>>> **`FLAME`** · {mob[9]}\n**`ICE`** · {mob[10]}\n**`HOLY`** · {mob[11]}\n**`DARK`** · {mob[12]}\n**`DEFMA`** · {mob[17]}', value=f"> `EVO.{mob[4]}`")
 
@@ -483,7 +483,7 @@ class avaTrivia(commands.Cog):
             temp = await self.client.quefe(f"SELECT npc_code, name FROM model_npc WHERE npc_code='{t[0]}';")
             temp2all = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE limit_flag='{t[1]}' AND entity_code='{t[0]}';", type='all')
             for temp2 in temp2all:
-                interas.append(f"\n<:npc_question_mark:637744510109089792> NPC `{temp[0]}`|**{temp[1]}** at ||`{temp2[0]:.3f}:{temp2[1]:.3f}` ~ `{temp2[2]:.3f}:{temp2[3]:.3f}`||")
+                interas.append(f"\n<:npc_question_mark:637744510109089792> NPC `{temp[0]}`| **{temp[1]}** at ||`{temp2[0]:.3f}:{temp2[1]:.3f}` ~ `{temp2[2]:.3f}:{temp2[3]:.3f}`||")
 
         # HUNT
         try:

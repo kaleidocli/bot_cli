@@ -66,7 +66,7 @@ class avaCommercial(commands.Cog):
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n\n```"{description}"```\n"""
                 
-                reembed = discord.Embed(title=f"`{item_code}`|**{' '.join([x for x in name.upper()])}**", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title=f"`{item_code}`| **{' '.join([x for x in name.upper()])}**", colour = discord.Colour(0x011C3A), description=line)
                 reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
 
                 try: acc_per = 10//accuracy_randomness
@@ -105,7 +105,7 @@ class avaCommercial(commands.Cog):
         async def browse():
             items = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, quantity, price, aura FROM model_item WHERE item_code IN ('{goods}') {lk_query};""", type='all')
 
-            if not items: await ctx.send(f":x: No result..."); return
+            if not items: await ctx.send(f":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
 
             def makeembed(items, top, least, pages, currentpage):
 
@@ -126,11 +126,11 @@ class avaCommercial(commands.Cog):
                         #line = line + f""" `{item_code}` :small_orange_diamond: **{items[item_code].name}** \n| *"{items[item_code].description}"*\n| **`Price`** <:36pxGold:548661444133126185>{items[item_code].price}\n++ `{'` `'.join(items[item_code].tags)}`\n\n"""
                     elif 'blueprint' in item[3]:
                         icon = '<:blueprint512:557713942508470272>'
-                    line = line + f""" `{item[0]}` {icon} `{item[7]}`|**{item[1]}**\n> *"{item[2]}"*\n╟** `『Weight』{item[4]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[6]}/{item[5]}`**\n**╟╼**`{item[3].replace(' - ', '`·`')}`\n\n"""
+                    line = line + f""" `{item[0]}` {icon} `{item[7]}`| **{item[1]}**\n> *"{item[2]}"*\n╟** `『Weight』{item[4]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[6]}/{item[5]}`**\n**╟╼**`{item[3].replace(' - ', '`·`')}`\n\n"""
 
                 line = line + f"**╚═════════╡**`{currentpage}/{pages}`**╞══════════**"
 
-                reembed = discord.Embed(title = f"<:shl_1:636090807316905994><:shl_2:636090807266574356> `{cur_PLACE}`|**{seller}** <:shl_7:636090806901538817><:shl_8:636090807140745216>", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title = f"<:shl_1:636090807316905994><:shl_2:636090807266574356> `{cur_PLACE}`| **{seller}** <:shl_7:636090806901538817><:shl_8:636090807140745216>", colour = discord.Colour(0x011C3A), description=line)
                 
                 if line == "**╔═══════╡**`Total: 0`**╞═══════**\n**╚═════════╡**`0/0`**╞══════════**": return False
                 else: return reembed
@@ -178,7 +178,7 @@ class avaCommercial(commands.Cog):
         for ig_code in menu:
             line = line + f""" `{ig_code}` <:green_ruby:520092621381697540> **{items[ig_code][0]}**\n| **`Market price`** <:36pxGold:548661444133126185>{items[ig_code][2]}\n++ `{items[ig_code][3].replace(' - ', '` `')}`\n\n"""
             
-        reembed = discord.Embed(title = f"------------- KINUKIZA's MARKET of `{cur_PLACE}`|**{r_name}** -----------", colour = discord.Colour(0x011C3A), description=line)
+        reembed = discord.Embed(title = f"------------- KINUKIZA's MARKET of `{cur_PLACE}`| **{r_name}** -----------", colour = discord.Colour(0x011C3A), description=line)
         temp1 = await ctx.send(embed=reembed)
         await ctx.send('<a:RingingBell:559282950190006282> Syntax: `!buy` `[item_code]` `[quantity]` |  Time out: 60s')
 
@@ -209,7 +209,7 @@ class avaCommercial(commands.Cog):
         # Reconfirm
         price = int(items[ig_code][2]*random.choice([0.1, 0.2, 0.5, 1, 2, 5, 0.75, 10]))
         deposit = (price*quantity)//5
-        msgdeal = await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, please react upon accepting the following deal:\n>>> **<:36pxGold:548661444133126185>{price}** per item `{ig_code}`|**{items[ig_code][0]}**, meaning **<:36pxGold:548661444133126185>{price*quantity}** in total.\nDeposit would be <:36pxGold:548661444133126185>**{deposit}**")
+        msgdeal = await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, please react upon accepting the following deal:\n>>> **<:36pxGold:548661444133126185>{price}** per item `{ig_code}`| **{items[ig_code][0]}**, meaning **<:36pxGold:548661444133126185>{price*quantity}** in total.\nDeposit would be <:36pxGold:548661444133126185>**{deposit}**")
         await msgdeal.add_reaction('\U0001f44c')
         try: await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f44c' and u == ctx.author, timeout=10)
         except asyncio.TimeoutError:
@@ -236,7 +236,7 @@ class avaCommercial(commands.Cog):
 
         # Greeting, of course :)
         await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'trading', ex=2700, nx=True))
-        await ctx.send(f":white_check_mark: Received **{quantity}** item `{ig_code}`|**{items[ig_code][0]}**. Nice trade!")
+        await ctx.send(f":white_check_mark: Received **{quantity}** item `{ig_code}`| **{items[ig_code][0]}**. Nice trade!")
 
     @commands.command(aliases=['b'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -509,7 +509,7 @@ class avaCommercial(commands.Cog):
             try:
                 items = list(items)
                 items.sort(key=lambda v: v[1])
-            except IndexError: await ctx.send(f":x: No result..."); return
+            except IndexError: await ctx.send(f":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
 
             def makeembed(items, top, least, pages, currentpage):
                 line = f"**╔═══════╡**`Total: {len(items)}`**╞═══════**\n" 
@@ -597,10 +597,10 @@ class avaCommercial(commands.Cog):
 
             # Get line
             sw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{sw}';")
-            if sw_name: line_1 = f"`{sw}`|**{sw_name[0]}** ➠ `right_hand`"
+            if sw_name: line_1 = f"`{sw}`| **{sw_name[0]}** ➠ `right_hand`"
             else: line_1 = '`right_hand` is left empty'
             mw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{mw}';")
-            if mw_name: line_2 = f"`{mw}`|**{mw_name[0]}** ➠ `{slots['l']}`"
+            if mw_name: line_2 = f"`{mw}`| **{mw_name[0]}** ➠ `{slots['l']}`"
             else: line_2 = f"`{slots['l']}` is left empty"
             # Inform :)
             await ctx.send(f":twisted_rightwards_arrows: {line_1} \n:twisted_rightwards_arrows: {line_2} "); return
@@ -641,7 +641,7 @@ class avaCommercial(commands.Cog):
                 ## Adjusting things with quantity
                 await self.client._cursor.execute(f"SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity}); " + af_query)
                 await self.tools.ava_scan(ctx.message, type='normalize', target_id=target_id)
-                await ctx.send(f":white_check_mark: Used {quantity} `{item_id}`|**{w_name}** on **{target_name}**")     
+                await ctx.send(f":white_check_mark: Used {quantity} `{item_id}`| **{w_name}** on **{target_name}**")     
 
             # INCONSUMABLE ===========================================
             else:
@@ -658,11 +658,11 @@ class avaCommercial(commands.Cog):
                 if item_id != weapon:
                     await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}='{item_id}' WHERE id='{str(ctx.message.author.id)}';")
                     # Inform, of course :)
-                    await ctx.send(f":fist: Equipped `{item_id}`|**{w_name}** to `{slot_name}` slot!"); return
+                    await ctx.send(f":fist: Equipped `{item_id}`| **{w_name}** to `{slot_name}` slot!"); return
                 ###Already equip    -----> Unequip
                 else:
                     await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}=(SELECT item_id FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13') WHERE id='{ctx.author.id}'")
-                    await ctx.send(f":raised_hand: Unequipped item `{w_code}`|**{w_name}** from `{slot_name}` slot!")
+                    await ctx.send(f":raised_hand: Unequipped item `{w_code}`| **{w_name}** from `{slot_name}` slot!")
                     return
 
 
@@ -778,7 +778,7 @@ class avaCommercial(commands.Cog):
             # Tradable check
             if 'untradable' in w_tags: await ctx.send(f"<:osit:544356212846886924> You cannot trade this item, **{ctx.message.author.name}**. It's *untradable*, look at its tags."); return
 
-            msg = await ctx.send(f"**{ctx.author.name}** wants to sell you **{quantity}** `{w_code}`|**{w_name}**. Accept, {receiver.mention}?")
+            msg = await ctx.send(f"**{ctx.author.name}** wants to sell you **{quantity}** `{w_code}`| **{w_name}**. Accept, {receiver.mention}?")
             await msg.add_reaction('\U0001f6d2')
 
             def RUM_check(reaction, user):
@@ -831,7 +831,7 @@ class avaCommercial(commands.Cog):
                     else: await self.client._cursor.execute(f"SELECT func_it_reward('{receiver.id}', '{w_code}', {quantity}); SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity});")
 
             # Inform, of course :>
-            await ctx.send(f":white_check_mark: You've been given `{quantity}` `{w_code}`|**{w_name}**, {receiver.mention}!"); return
+            await ctx.send(f":white_check_mark: You've been given `{quantity}` `{w_code}`| **{w_name}**, {receiver.mention}!"); return
 
         except commands.CommandError:
             try: quantity = int(raw[1])
@@ -886,7 +886,7 @@ class avaCommercial(commands.Cog):
         # Receiving money/Removing item
         await self.client._cursor.execute(receive_query + quantity_query)
 
-        await ctx.send(f":white_check_mark: You received **<:36pxGold:548661444133126185>{receive}** from selling {quantity} `{item_id}`|**{w_name}**, **{ctx.message.author.name}**!")
+        await ctx.send(f":white_check_mark: You received **<:36pxGold:548661444133126185>{receive}** from selling {quantity} `{item_id}`| **{w_name}**, **{ctx.message.author.name}**!")
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)

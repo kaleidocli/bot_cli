@@ -52,7 +52,7 @@ class avaNPC(commands.Cog):
             def makeembed(curp, pages, currentpage):
                 npc = npcs[curp]
 
-                temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}** {self.utils.smalltext(f'{npc[2].capitalize()} NPC')}", description = f"""```dsconfig
+                temb = discord.Embed(title = f"`{npc[5]}`| **{npc[0].upper()}** {self.utils.smalltext(f'{npc[2].capitalize()} NPC')}", description = f"""```dsconfig
         {npc[1]}```""", colour = discord.Colour(0x011C3A))
                 temb.set_image(url=random.choice(npc[4].split(' <> ')))
 
@@ -129,7 +129,7 @@ class avaNPC(commands.Cog):
             packs, npc = items
             packs = packs[top:least]
 
-            temb = discord.Embed(title = f"`{npc[5]}` | **{npc[0].upper()}** {self.utils.smalltext(f'{npc[2].capitalize()} NPC')}", description = f"""```dsconfig
+            temb = discord.Embed(title = f"`{npc[5]}`| **{npc[0].upper()}** {self.utils.smalltext(f'{npc[2].capitalize()} NPC')}", description = f"""```dsconfig
     {npc[1]}```""", colour = discord.Colour(0x011C3A))
             temb.set_thumbnail(url=random.choice(npc[4].split(' <> ')))
 
@@ -414,7 +414,7 @@ class avaNPC(commands.Cog):
                 if temp: temp2.append(temp)
                 tinue = False
 
-        temb = discord.Embed(title = f"`{npc[0]}` | **{npc[1].upper()}**", description = f"""```ini
+        temb = discord.Embed(title = f"`{npc[0]}`| **{npc[1].upper()}**", description = f"""```ini
 {tabulate(temp2, tablefmt='plain')}```""", colour = discord.Colour(0x011C3A))
         temb.set_thumbnail(url=random.choice(npc[2].split(' <> ')))
 

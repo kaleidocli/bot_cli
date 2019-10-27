@@ -35,7 +35,7 @@ class npcTrigger:
         quantity = 1
 
         # COOLDOWN
-        if not await self.__cd_check(pack[0].message, cmd_tag, f"Busy busy, **{pack[0].author.name}**!"): return
+        if not await self.__cd_check(pack[0].message, cmd_tag, f"<:osit:544356212846886924> Busy busy, **{pack[0].author.name}**!"): return
 
         money = await self.client.quefe(f"SELECT money FROM personal_info WHERE id='{pack[0].author.id}';"); money = money[0]
 
