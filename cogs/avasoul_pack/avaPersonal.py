@@ -311,7 +311,7 @@ class avaPersonal(commands.Cog):
 
                         for item in items[top:least]:
                             
-                            line = line + f"""\n`{item[0]}` · **{item[1]}**{item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
+                            line = line + f"""\n`{item[0]}` · **{item[1]}** {item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
 
                         reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s avatars", colour = discord.Colour(0x011C3A), description=line)
                         reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
@@ -335,7 +335,7 @@ class avaPersonal(commands.Cog):
 
                         for item in items[top:least]:
                             
-                            line = line + f"""\n`{item[0]}` · **{item[1]}**{items[4](items[3])}\n⠀⠀⠀| *"{item[2]}"*"""
+                            line = line + f"""\n`{item[0]}` · **{item[1]}**{item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
 
                         reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
                         reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
