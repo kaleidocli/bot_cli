@@ -72,8 +72,7 @@ class avaAvatar(commands.Cog):
                         'av29': 'P5_Ann',
                         'av30': 'atelier_male',
                         'av31': 'atelier_female',
-                        'av32': 'fgo_female',
-                        'av33': 'fgo_male'}
+                        'av32': 'FGO_Artoria'}
         self.font_dict = {'fnt0': 'ERASLGHT.ttf',
                         'fnt1': 'Persona_Non_Grata.ttf',
                         'fnt2': 'Phorssa.ttf',
@@ -81,6 +80,21 @@ class avaAvatar(commands.Cog):
                         'fnt4': 'the_unseen.ttf',
                         'fnt5': 'MARSNEVENEKSK_Regular.otf'}
 
+        self.char_dir = {}
+        self.client.chardict_meta = {}
+        for d in self.char_dict.items():
+            self.char_dir[d[0]] = [dir for dir in listdir(path.join('data', 'profile', 'char', self.char_dict[d[1]])) if dir.endswith('.png')]
+
+            try: self.client.chardict_meta[d[0]]['quantity'] = len(self.char_dir[d[0]])     # Avoiding overwrite
+            except KeyError: self.client.chardict_meta[d[0]] = {'quantity': len(self.char_dir[d[0]])}
+
+        self.bg_dir = {}
+        self.client.bgdict_meta = {}
+        for d in self.bg_dict.items():
+            self.bg_dir[d[0]] = [dir for dir in listdir(listdir(path.join('data', 'profile', 'bg', self.bg_dict[d[1]]))) if dir.endswith('.png') or dir.endswith('.jpg')]
+
+            try: self.client.bgdict_meta[d[0]]['quantity'] = len(self.bg_dir[d[0]])     # Avoiding overwrite
+            except KeyError: self.client.bgdict_meta[d[0]] = {'quantity': len(self.bg_dir[d[0]])}
 
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
@@ -759,7 +773,9 @@ class avaAvatar(commands.Cog):
 
 
     async def bg_generator(self, bg_code, blur_rate=2.6):
-        bg_path = random.choice(listdir(path.join('data', 'profile', 'bg', self.bg_dict[bg_code])))
+        # Random FILE name
+        bg_path = random.choice(self.bg_dir[bg_code])
+        # Get FULL PATH
         bg_path = path.join('data', 'profile', 'bg', self.bg_dict[bg_code], bg_path)
         img = Image.open(bg_path).convert('RGBA')
         img = img.resize((800, 600), resample=Image.LANCZOS)
@@ -767,7 +783,9 @@ class avaAvatar(commands.Cog):
         return img
 
     async def char_generator(self, char_code):
-        char_path = random.choice(listdir(path.join('data', 'profile', 'char', self.char_dict[char_code])))
+        # Random FILE name
+        char_path = random.choice(self.char_dir[char_code])
+        # Get FULL PATH
         char_path = path.join('data', 'profile', 'char', self.char_dict[char_code], char_path)
         img = Image.open(char_path).convert('RGBA')
         img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)

@@ -304,14 +304,14 @@ class avaPersonal(commands.Cog):
                     items = []
                     for item in items2:
                         ava_id, name, description = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id='{item[0]}';")
-                        items.append([ava_id, name, description])
+                        items.append([ava_id, name, description, self.client.chardict_meta[ava_id], self.utils.smalltext])
 
                     def makeembed(items, top, least, pages, currentpage):
                         line = '' 
 
                         for item in items[top:least]:
                             
-                            line = line + f"""\n`{item[0]}` · **{item[1]}**\n⠀⠀⠀| *"{item[2]}"*"""
+                            line = line + f"""\n`{item[0]}` · **{item[1]}**{items[4](items[3])}\n⠀⠀⠀| *"{item[2]}"*"""
 
                         reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s avatars", colour = discord.Colour(0x011C3A), description=line)
                         reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
@@ -327,15 +327,15 @@ class avaPersonal(commands.Cog):
 
                     items = []
                     for item in items2:
-                        ava_id, name, description = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code='{item[0]}';")
-                        items.append([ava_id, name, description])
+                        bg_code, name, description = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code='{item[0]}';")
+                        items.append([bg_code, name, description, self.client.bgdict_meta[bg_code], self.utils.smalltext])
 
                     def makeembed(items, top, least, pages, currentpage):
                         line = '' 
 
                         for item in items[top:least]:
                             
-                            line = line + f"""\n`{item[0]}` · **{item[1]}**\n⠀⠀⠀| *"{item[2]}"*"""
+                            line = line + f"""\n`{item[0]}` · **{item[1]}**{items[4](items[3])}\n⠀⠀⠀| *"{item[2]}"*"""
 
                         reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
                         reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
