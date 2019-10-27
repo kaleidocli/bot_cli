@@ -248,7 +248,7 @@ class avaPersonal(commands.Cog):
                                 elif blur_in > 10: blur_in = 10
 
                             await self.client._cursor.execute(f"UPDATE cosmetic_preset SET blur_rate={blur_in} WHERE user_id='{ctx.author.id}' AND stats='CURRENT';")
-                            await ctx.send(f":white_check_mark: Blurriness was changed to **`{blur_in}`**")
+                            await ctx.send(f":white_check_mark: Blurriness was changed to **`{blur_in}`**"); return
                         except ValueError:
                             await ctx.send("<:osit:544356212846886924> Invalid blurriness!"); return
 
