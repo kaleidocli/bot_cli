@@ -122,7 +122,7 @@ class avaWorkshop(commands.Cog):
             except TypeError: degrees = ()
 
             # Price
-            price = (abs(w_evo - t_w_evo)*1000)//(1 + len(degrees))
+            price = ((w_evo + t_w_evo)//2*1000)//(1 + len(degrees))
             if price < 1: price = 1
 
             await ctx.send(f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirm` | Timeout=20s)")
@@ -166,7 +166,7 @@ class avaWorkshop(commands.Cog):
             if not int(t_w_evo): t_w_evo = 1
             else: t_w_evo = int(t_w_evo)
 
-            W_evo = w_evo + t_w_evo
+            W_evo = (w_evo + t_w_evo)//2
 
             # Insert
             await self.client._cursor.execute(f"UPDATE pi_inventory SET weight={W_weight}, multiplier={W_multiplier}, str={W_str}, intt={W_intt}, sta={W_sta}, speed={W_speed}, accuracy_randomness={W_acc_randomness}, accuracy_range={W_acc_range}, range_min={W_r_min}, range_max={W_r_max}, dmg={W_dmg}, stealth={W_stealth}, evo={W_evo}, price={w_price} WHERE user_id='{str(ctx.message.author.id)}' AND item_id='{raw[0]}';")
