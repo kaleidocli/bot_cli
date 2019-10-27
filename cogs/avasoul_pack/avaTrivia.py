@@ -267,38 +267,6 @@ class avaTrivia(commands.Cog):
             except concurrent.futures.TimeoutError:
                 pass
 
-
-    async def map_engine(self, ctx, pack=None):
-        """environ_code, name, illulink, port = pack"""
-
-        if pack[3]:
-            bundle = await self.client.quefe(f"""SELECT environ_code, name, pass_note FROM environ WHERE environ_code IN ('{"', '".join(pack[3].split(' | '))}') ORDER BY environ_code ASC;""", type='all')
-
-        def makeembed(items, top, least, pages, currentpage):
-            bundle, pack = items
-            descr = ''
-
-            # Mapping
-            if bundle:
-                for b in bundle[top:least]:
-                    if not b[2]: pass_note = ''
-                    else: pass_note = f"||{self.utils.smalltext(b[2])}||"
-                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`| **{b[1]}** {pass_note}\n"
-
-            reembed = discord.Embed(description=f"""```ini
-[{pack[0]}] {pack[1]}```{descr}""", colour = discord.Colour(0x011C3A))
-            if pack[2]: reembed.set_thumbnail(url=pack[2])
-
-            return reembed
-
-        if bundle: await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4, timeout=20)
-        else: await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4, timeout=20, pair_sample=1)
-
-    @commands.command()
-    @commands.cooldown(1, 2, type=BucketType.user)
-    async def pralaeyr(self, ctx):
-        await ctx.send("https://media.discordapp.net/attachments/381963689470984203/546796245994307595/map_description.png")
-
     @commands.command()
     @commands.cooldown(1, 2, type=BucketType.user)
     async def mobs(self, ctx, *args):
@@ -503,9 +471,31 @@ class avaTrivia(commands.Cog):
 
 
 
-
-
 # ================== REAL MISC ==================
+
+    @commands.command()
+    @commands.cooldown(1, 2, type=BucketType.user)
+    async def pralaeyr(self, ctx):
+        await ctx.send("https://media.discordapp.net/attachments/381963689470984203/546796245994307595/map_description.png")
+
+
+    @commands.command()
+    @commands.cooldown(1, 2, type=BucketType.user)
+    async def about(self, ctx):
+        await ctx.send(f"""
+    If you love classic RPG, like *character building* or *weapon building*, Cli might serve your taste.
+    Because in the development of Cli, we always consider 3 things:
+    ```dsconfig
+    Everything belong to you is customizable.   (Weapons, character,..)
+    Everything must be real-time.               (Quest, battle,..)
+    User's freedom always comes first.          (Movement, battle, build,..)```
+    She also shares many similarities with Dark Souls saga, Fate saga and other games.
+    Hence if it's ever become too complex for you, you can always reach help at our support server below. :arrow_down: 
+        """)
+        await ctx.send(self.client.support_server_invite)
+
+
+# ================== DUMB COMMANDS ==================
     @commands.command()
     async def swear(self, ctx, *args):
         args = list(args)
@@ -590,6 +580,39 @@ class avaTrivia(commands.Cog):
         except discordErrors.Forbidden: pass    
 
         await ctx.send(resp2)
+
+
+
+
+
+# ================== TOOLS ==================
+    async def map_engine(self, ctx, pack=None):
+        """environ_code, name, illulink, port = pack"""
+
+        if pack[3]:
+            bundle = await self.client.quefe(f"""SELECT environ_code, name, pass_note FROM environ WHERE environ_code IN ('{"', '".join(pack[3].split(' | '))}') ORDER BY environ_code ASC;""", type='all')
+
+        def makeembed(items, top, least, pages, currentpage):
+            bundle, pack = items
+            descr = ''
+
+            # Mapping
+            if bundle:
+                for b in bundle[top:least]:
+                    if not b[2]: pass_note = ''
+                    else: pass_note = f"||{self.utils.smalltext(b[2])}||"
+                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`| **{b[1]}** {pass_note}\n"
+
+            reembed = discord.Embed(description=f"""```ini
+[{pack[0]}] {pack[1]}```{descr}""", colour = discord.Colour(0x011C3A))
+            if pack[2]: reembed.set_thumbnail(url=pack[2])
+
+            return reembed
+
+        if bundle: await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4, timeout=20)
+        else: await self.tools.pagiMain(ctx, (bundle, pack), makeembed, pair=True, item_per_page=4, timeout=20, pair_sample=1)
+
+
 
 
 

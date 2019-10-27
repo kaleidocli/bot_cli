@@ -286,6 +286,10 @@ Definition? Mechanism? Lore? Yaaa```
         await ctx.send(embed=temb)
 
     @commands.command()
+    async def support(self, ctx):
+        await ctx.send(self.client.support_server_invite)
+
+    @commands.command()
     async def source(self, ctx, *args):
         await ctx.send('https://github.com/kaleidocli/bot_cli')
 

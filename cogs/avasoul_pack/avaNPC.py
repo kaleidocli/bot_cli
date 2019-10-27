@@ -88,7 +88,7 @@ class avaNPC(commands.Cog):
                         try: await msg.remove_reaction(reaction.emoji, user)
                         except discordErrors.Forbidden: pass
                     elif reaction.emoji == '\U0001f44b':
-                        await ctx.invoke(self.interact)
+                        await ctx.invoke(self.interact, emli[cursor][1])
                         return
                     elif reaction.emoji == "\U000023ee" and cursor != 0:
                         cursor = 0
