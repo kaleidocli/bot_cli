@@ -38,7 +38,8 @@ class avaAvatar(commands.Cog):
                     'bg8': 'rocha_gold',
                     'bg9': 'rocha_green', 
                     'bg10': 'pengzhen_zhang',
-                    'bg11': 'persona5'}
+                    'bg11': 'persona5',
+                    'bg12': 'adrien_girod'}
         self.char_dict = {'av0': 'Iris',
                         'av1': 'Zoey',
                         'av2': 'Ardena',
@@ -178,7 +179,7 @@ class avaAvatar(commands.Cog):
         except IndexError: user_id = ctx.author.id
 
         # Colour n Character get
-        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id = await self.client.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id, bg_code, font_id FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
+        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id, blur_rate = await self.client.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id, bg_code, font_id, blur_rate FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
         except TypeError: await ctx.send(f"<:osit:544356212846886924> User has not incarnated! ({user_id})"); return
         #co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = ('#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')
 
@@ -209,7 +210,7 @@ class avaAvatar(commands.Cog):
             #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
             #bg = self.prote_lib['bg'][0]
             """bg = copy.deepcopy(random.choice(self.prote_lib['bg'][bg_code]))"""
-            bg = await self.bg_generator(bg_code)
+            bg = await self.bg_generator(bg_code, blur_rate=blur_rate)
             #bg = bg.resize((800, 600), resample=Image.LANCZOS)
             #bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
             name_box = Image.new('RGBA', form_img.size, (255, 255, 255, 0))
@@ -497,7 +498,7 @@ class avaAvatar(commands.Cog):
         except IndexError: user_id = ctx.author.id
 
         # Colour n Character get
-        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id = await self.client.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id, bg_code, font_id FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
+        try: co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id, blur_rate = await self.client.quefe(f"SELECT co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, avatar_id, bg_code, font_id, blur_rate FROM cosmetic_preset WHERE user_id='{user_id}' AND stats='CURRENT';")
         except TypeError: await ctx.send(f"<:osit:544356212846886924> User has not incarnated! ({user_id})"); return
         #co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = ('#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')
 
@@ -505,7 +506,7 @@ class avaAvatar(commands.Cog):
             await ctx.trigger_typing()
 
             # objgraph.show_growth(limit=3) # doctest: +RANDOM_OUTPUT
-            output_buffer = await self.magiking(user_id, (co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id))
+            output_buffer = await self.magiking(user_id, (co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death, char_name, bg_code, font_id, blur_rate))
             # objgraph.show_growth() # doctest: +RANDOM_OUTPUT
 
             # objgraph.show_chain(
@@ -547,7 +548,7 @@ class avaAvatar(commands.Cog):
         #badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
         #bg = self.prote_lib['bg'][0]
         """bg = copy.deepcopy(random.choice(self.prote_lib['bg'][pack[10]]))"""
-        bg = await self.bg_generator(pack[10])
+        bg = await self.bg_generator(pack[10], blur_rate=pack[12])
         #bg = bg.resize((800, 600), resample=Image.LANCZOS)
         #bg = bg.filter(ImageFilter.GaussianBlur(2.6))           # prev(best)=2.6
 
@@ -757,12 +758,12 @@ class avaAvatar(commands.Cog):
         return output_buffer
 
 
-    async def bg_generator(self, bg_code):
+    async def bg_generator(self, bg_code, blur_rate=2.6):
         bg_path = random.choice(listdir(path.join('data', 'profile', 'bg', self.bg_dict[bg_code])))
         bg_path = path.join('data', 'profile', 'bg', self.bg_dict[bg_code], bg_path)
         img = Image.open(bg_path).convert('RGBA')
         img = img.resize((800, 600), resample=Image.LANCZOS)
-        img = img.filter(ImageFilter.GaussianBlur(2.6))
+        img = img.filter(ImageFilter.GaussianBlur(blur_rate))
         return img
 
     async def char_generator(self, char_code):

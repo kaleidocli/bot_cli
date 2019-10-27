@@ -190,7 +190,7 @@ class avaPersonal(commands.Cog):
                 # Quantity limit check
                 if await self.client._cursor.execute(f"SELECT COUNT(preset_id) FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats NOT IN ('CURRENT', 'DEFAULT');") >= 3: await ctx.send(f"<:osit:544356212846886924> You cannot have more than three presets at a time, {str(ctx.message.author.id)}"); return
 
-                await self.client._cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT '{ctx.author.id}', '{pname}', 'PRESET', avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats='CURRENT';")
+                await self.client._cursor.execute(f"INSERT INTO cosmetic_preset(user_id, name, stats, avatar_id, bg_code, font_id, blur_rate, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death) SELECT '{ctx.author.id}', '{pname}', 'PRESET', avatar_id, bg_code, font_id, blur_rate, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats='CURRENT';")
 
                 await ctx.send(f":white_check_mark: Created preset **{pname}**. Use `wardrobe presets` to check its *id*."); return
 
@@ -207,14 +207,14 @@ class avaPersonal(commands.Cog):
                 # GET preset
                 try: 
                     if raw[1] == 'default':
-                        avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.client.quefe(f"SELECT avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND stats='DEFAULT';")
+                        avatar_id, bg_code, font_id, blur_rate, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.client.quefe(f"SELECT avatar_id, bg_code, font_id, blur_rate, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{ctx.author.id}' AND stats='DEFAULT';")
                     else:
-                        avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.client.quefe(f"SELECT avatar_id, bg_code, font_id, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND preset_id='{raw[1]}';")
+                        avatar_id, bg_code, font_id, blur_rate, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death = await self.client.quefe(f"SELECT avatar_id, bg_code, font_id, blur_rate, co_name, co_partner, co_money, co_age, co_guild, co_rank, co_evo, co_kill, co_death FROM cosmetic_preset WHERE user_id='{str(ctx.message.author.id)}' AND preset_id='{raw[1]}';")
                 # E: Preset's id not found
                 except (IndexError, TypeError): await ctx.send("<:osit:544356212846886924> Preset's id not found!"); return
 
                 # UPDATE current
-                await self.client._cursor.execute(f"UPDATE cosmetic_preset SET user_id='{str(ctx.message.author.id)}', name='current of {ctx.message.author.name}', stats='CURRENT', avatar_id='{avatar_id}', bg_code='{bg_code}', font_id='{font_id}', co_name='{co_name}', co_partner='{co_partner}', co_money='{co_money}', co_age='{co_age}', co_guild='{co_guild}', co_rank='{co_rank}', co_evo='{co_evo}', co_kill='{co_kill}', co_death='{co_death}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
+                await self.client._cursor.execute(f"UPDATE cosmetic_preset SET user_id='{str(ctx.message.author.id)}', name='current of {ctx.message.author.name}', stats='CURRENT', avatar_id='{avatar_id}', bg_code='{bg_code}', font_id='{font_id}', blur_rate={blur_rate} co_name='{co_name}', co_partner='{co_partner}', co_money='{co_money}', co_age='{co_age}', co_guild='{co_guild}', co_rank='{co_rank}', co_evo='{co_evo}', co_kill='{co_kill}', co_death='{co_death}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
                 await ctx.send(":white_check_mark: Preset's loaded!"); return
             
             elif raw[0] == 'presets':
@@ -234,16 +234,40 @@ class avaPersonal(commands.Cog):
             elif raw[0] in ['font', 'fnt']: raise ZeroDivisionError
 
             else:
-                # COLOUR
+                # COLOUR / BLUR
                 try:
-                    if not re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', raw[1]): await ctx.send("<:osit:544356212846886924> Please use **hexa-decimal** colour code!\n:moyai: You can get them here --> https://htmlcolorcodes.com/"); return
+                    # BLUR
+                    if raw[0] == 'blur':
+                        try:
+                            if raw[1] == 'default':
+                                blur_in = 2.6
+                            else:
+                                blur_in = round(float(raw[1:6]), 1)
+                                # Prep
+                                if blur_in < 0: blur_in = 0
+                                elif blur_in > 10: blur_in = 10
+
+                            await self.client._cursor.execute(f"UPDATE cosmetic_preset SET blur_rate={blur_in} WHERE user_id='{ctx.author.id}' AND stats='CURRENT';")
+                            await ctx.send(f":white_check_mark: Blurriness was changed to **`{blur_in}`**")
+                        except ValueError:
+                            await ctx.send("<:osit:544356212846886924> Invalid blurriness!"); return
+
+                    # COLOUR
+                    if raw[1] == 'default':
+                        coattri = {'name': 'co_name', 'age': 'co_age', 'money': 'co_money', 'partner': 'co_partner', 'guild': 'co_guild', 'rank': 'co_rank', 'evo': 'co_evo', 'lp': 'co_kill', 'sta': 'co_death'}
+                        await self.client._cursor.execute(f"UPDATE cosmetic_preset SET {coattri[raw[0]]}=(SELECT {coattri[raw[0]]} FROM cosmetic_preset WHERE stats='DEFAULT' AND user_id='{ctx.author.id}') WHERE user_id='{ctx.author.id}' AND stats='CURRENT';")
+                        await ctx.send(f":white_check_mark: Attribute's colour was reset to default."); return
+
+                    if not re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', raw[1]):
+                        await ctx.send("<:osit:544356212846886924> Please use **hexa-decimal** colour code! (e.g. `#FFFFFF`)\n:moyai: You can get them here --> https://htmlcolorcodes.com/"); return
                     
                     coattri = {'name': 'co_name', 'age': 'co_age', 'money': 'co_money', 'partner': 'co_partner', 'guild': 'co_guild', 'rank': 'co_rank', 'evo': 'co_evo', 'lp': 'co_kill', 'sta': 'co_death'}
+
                     try:
-                        await self.client._cursor.execute(f"UPDATE cosmetic_preset SET {coattri[raw[0]]}='{raw[1]}' WHERE user_id='{str(ctx.message.author.id)}' AND stats='CURRENT';")
+                        await self.client._cursor.execute(f"UPDATE cosmetic_preset SET {coattri[raw[0]]}='{raw[1]}' WHERE user_id='{ctx.author.id}' AND stats='CURRENT';")
                         await ctx.send(f":white_check_mark: Attribute's colour was changed to **`{raw[1]}`**."); return
                     # E: Attributes not found
-                    except KeyError: await ctx.send(f":moyai: Please use the following attributes: **`{'`** **`'.join(list(coattri.keys()))}`**"); return
+                    except KeyError: await ctx.send(f":moyai: Please use the following attributes: **`{'`** · **`'.join(list(coattri.keys()))}` · **`blur`**"); return
 
                 # Avatar/Background/Font
                 # E: Color not given
