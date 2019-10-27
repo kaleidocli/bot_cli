@@ -24,7 +24,7 @@ class avaHelper(commands.Cog):
         self.helper_description = f"""
                                  ```ini
 [help <cmd>] to inspect a command.
-[tutorial] to being your journey.```
+[tutorial] to begin your journey.```
                                 ╟ **Confuse?** Use **`concept`** for conceptual questions!
                                 ╟ **Still confuse?** Join [our support camp!]({self.client.support_server_invite})
 
@@ -269,7 +269,8 @@ Definition? Mechanism? Lore? Yaaa```
         # END =========
         if DM:
             await ctx.author.send(f"**Thank you for your time,** {ctx.author.mention}**!**\nIf you want, you can always receive more intuitive helps from our support server!")
-            await ctx.author.send(self.client.support_server_invite)
+            try: await ctx.author.send(self.client.support_server_invite)
+            except discordErrors.Forbidden: await ctx.send(f"{ctx.author.mention}, you don't allow others to DM you so, yea..."); return
         else:
             await ctx.send(f"**Thank you for your time,** {ctx.author.mention}**!**\nIf you want, you can always receive more intuitive helps from our support server!")
             await ctx.send(self.client.support_server_invite)

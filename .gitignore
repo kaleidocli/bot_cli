@@ -1,4 +1,6 @@
 cogs/configs.py
+cogs/audio.py
 te.txt
 cogs/__pycache__/
 __pycache__/
+data/audio
