@@ -91,7 +91,7 @@ class avaAvatar(commands.Cog):
         self.bg_dir = {}
         self.client.bgdict_meta = {}
         for d in self.bg_dict.items():
-            self.bg_dir[d[0]] = [dir for dir in listdir(listdir(path.join('data', 'profile', 'bg', self.bg_dict[d[0]]))) if dir.endswith('.png') or dir.endswith('.jpg')]
+            self.bg_dir[d[0]] = [dir for dir in listdir(path.join('data', 'profile', 'bg', self.bg_dict[d[0]])) if dir.endswith('.png') or dir.endswith('.jpg')]
 
             try: self.client.bgdict_meta[d[0]]['quantity'] = len(self.bg_dir[d[0]])     # Avoiding overwrite
             except KeyError: self.client.bgdict_meta[d[0]] = {'quantity': len(self.bg_dir[d[0]])}
