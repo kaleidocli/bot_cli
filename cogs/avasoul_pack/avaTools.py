@@ -400,7 +400,7 @@ class avaTools:
         def makeembed_race(items, top, least, pages, currentpage):
             item = items[top:least][0]
 
-            reembed = discord.Embed(title=f"RACE [`{item[0]}`| **{item[1]}**]", description=f"╟ `HEIGHT` · {item[6]}~{item[7]} m\n╟ `WEIGHT` · {item[3]}~{item[4]} kg", colour=0x36393E)
+            reembed = discord.Embed(title=f"RACE :: [`{item[0]}`| **{item[1]}**]", description=f"╟ `HEIGHT` · {item[6]}~{item[7]} m\n╟ `WEIGHT` · {item[3]}~{item[4]} kg", colour=0x36393E)
             reembed.set_thumbnail(url=aui[item[2]])
             if item[5]: reembed.set_image(url=item[5])
 
@@ -410,6 +410,7 @@ class avaTools:
         await ctx.send(f"> {ctx.author.mention}, please choose yourself a **race**.")
         re_race = await self.pagiMainMicro(ctx, rundle, makeembed_race, item_per_page=1, timeout=60)
         if not re_race: return False
+        else: return re_race
 
     async def incarnateGender_collect(self, ctx):
         # Prep =============================================
@@ -425,14 +426,16 @@ class avaTools:
         await ctx.send(f"> {ctx.author.mention}, please choose yourself a **gender**.")
         re_gender = await self.pagiMainMicro(ctx, (('f', 'https://imgur.com/2X1E62g.png'), ('m', 'https://imgur.com/RPQ6cd9.png')), makeembed_gender, item_per_page=1, timeout=60, extra_button=["\U00002b05", '\U0001f44b', "\U000027a1"])
         if not re_gender: return False
+        else: return re_gender
 
     async def incarnateName_collect(self, ctx):
         # NAME ==============================================
         await ctx.send(f"> {ctx.author.mention}, please give yourself a **name**. (Type `default` to use your user name)")
         raw = await self.client.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60)
         if not raw: return False
-        re_name = self.utils.inj_filter(raw.content)
-        if re_name == 'default': re_name = ctx.author.namew
+        re_name = await self.utils.inj_filter(raw.content)
+        if re_name == 'default': re_name = ctx.author.name
+        else: return re_name
 
 
 

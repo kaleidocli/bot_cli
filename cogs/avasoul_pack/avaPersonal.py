@@ -80,7 +80,7 @@ class avaPersonal(commands.Cog):
 
         bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
         if not bump:
-            await ctx.send(f">>> {ctx.author.mention}**, welcome to Pralayer!\nYou're a Remnant, wielding an incomprehensible power. However this world isn't a joke, so before you write your own journey, you might (really really) need some basic instructions.\nYou can use `tutorial 1`.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+            await ctx.send(f">>> {ctx.author.mention}, welcome to The Pralayer!**\nThis world is hard and complex, thus you will need every help you can.\nFor now, my advice is using `tutorial 1` to at least know what to do with this bot.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
         elif bump == 3:
             await ctx.send(f"<:osit:544356212846886924> You've already incarnated!"); return
         else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
@@ -680,7 +680,7 @@ class avaPersonal(commands.Cog):
     async def test_incarnate(self, ctx):
         try:
             r, g, n = await self.tools.incarnateData_collect(ctx, self.aui)
-        except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!")
+        except ZeroDivisionError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!"); return
         await ctx.send(f"{r} {g} {n}")
 
 
