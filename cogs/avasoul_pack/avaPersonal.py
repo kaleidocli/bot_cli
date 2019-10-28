@@ -682,7 +682,7 @@ class avaPersonal(commands.Cog):
             r, g, n = await self.tools.incarnateData_collect(ctx, self.aui)
         except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!"); return
         # await ctx.send(f"{r} {g} {n}")
-        await ctx.send(f">>> {ctx.author.mention}, welcome to The Pralayer!**\nThis world is hard and complex, thus you will need every help you can.\nFor now, my advice is using `tutorial 1` to at least know what to do with this bot.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+        await ctx.send(f">>> **{ctx.author.mention}, welcome to The Pralayer!**\nThis world is hard and complex, thus you will need every help you can.\nFor now, my advice is using `tutorial 1` to at least know what to do with this bot.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
 
 
 
