@@ -106,7 +106,7 @@ class avaPersonalUtils(commands.Cog):
         cursor = 0
 
         emli = []
-        for curp in range(pages):
+        for _ in range(pages):
             myembed = makeembed(currentpage*10-10, currentpage*10, pages, currentpage)
             emli.append(myembed)
             currentpage += 1

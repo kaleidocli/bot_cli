@@ -17,6 +17,9 @@ class avaTools:
         self.client = client
         self.utils = utils
 
+
+    # RESOURCE INTERACTION ==================================================
+
     async def quefe(self, query, args=None, type='one'):
         """args ---> tuple"""
 
@@ -52,6 +55,12 @@ class avaTools:
             if not time: return None, None
             else: return dedict, time
         return dedict
+
+    #Generate random file's name from the path
+    async def file_gen_random(self, path):
+        file_name = ''
+        file_name = await self.client.loop.run_in_executor(None, random.choice, await self.client.loop.run_in_executor(None, listdir, path))
+        return file_name
 
 
 
@@ -113,12 +122,6 @@ class avaTools:
         if x <= 1 and y <= 1: return True
         else: return False
 
-    #Generate random file's name from the path
-    async def file_gen_random(self, path):
-        file_name = ''
-        file_name = await self.client.loop.run_in_executor(None, random.choice, await self.client.loop.run_in_executor(None, listdir, path))
-        return file_name
-
     async def tele_procedure(self, current_place, user_id, desti_x, desti_y):
         """x, y: float"""
         # Assign the user's id to coord / Resign the user's id from the old coord
@@ -126,119 +129,11 @@ class avaTools:
         # Assign the coord to ava
         #self.ava_dict[user_id]['realtime_zone']['current_coord'] = [desti_x, desti_y]
 
-    async def character_generate(self, id, name, dob=[0, 0, 0, 0, 0], player=True, resu=True, info_pack=[]):
-        """
-            YYMMDDHHMM
-            [race, gender, name]    
-        """
-
-        ava = {}
-
-        if not resu:
-            if info_pack[2]: ava['name'] = self.utils.inj_filter(info_pack[2])
-            else: ava['name'] = await self.utils.inj_filter(name[0:20])
-            ava['dob'] = f"{dob[2]} - {dob[1]} - {dob[0]}"
-            ava['age'] = 0
-            if info_pack: ava['gender'] = info_pack[1]
-            else: ava['gender'] = random.choice(['m', 'f'])
-            
-            if info_pack: ava['race'] = info_pack[0]
-            else: ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
-            r_aura, r_min_H, r_max_H, r_min_W, r_max_W, r_size_1, r_size_2, r_size_3 = await self.quefe(f"SELECT aura, min_H, max_H, min_W, max_W, size_1, size_2, size_3 FROM model_race WHERE race_code='{ava['race']}';")
-            if ava['gender'] == 'm':
-                ava['height'] = random.choice(range(r_min_H + 10, r_max_H + 10))
-                ava['weight'] = random.choice(range(r_min_W + 10, r_max_W + 10))
-                ava['size'] = '78 - 80 - 90'
-            else:
-                ava['height'] = random.choice(range(r_min_H - 10, r_max_H - 10))
-                ava['weight'] = random.choice(range(r_min_W - 10, r_max_W - 10))
-                r_size_1 = r_size_1.split(' - '); r_size_2 = r_size_2.split(' - '); r_size_3 = r_size_3.split(' - ')
-                ava['size'] = f'{random.choice(range(int(r_size_1[0]), int(r_size_1[1])))} - {random.choice(range(int(r_size_2[0]), int(r_size_2[1])))} - {random.choice(range(int(r_size_3[0]), int(r_size_3[1])))}'
-
-            # Charm calc
-            ava['charm'] = 10
-            if ava['height'] >= 180: ava['charm'] += 5
-            elif ava['height'] <= 130: ava['charm'] -= 5
-            
-            if ava['weight'] <= 35 or ava['weight'] >= 90: ava['charm'] -= 5
-            else: ava['charm'] += 5
-
-            szl = ava['size'].split(' - ')
-            if int(szl[0]) >= 25: ava['charm'] += 5
-            if int(szl[1]) >= 75: ava['charm'] -= 5
-            if int(szl[2]) >= 115: ava['charm'] += 5
-            
-            ava['partner'] = 'n/a'
-            ava['avatar'] = 'av0'
-            if ava['gender'] == 'female': ava['avatars'] = ['av19', 'av0', 'av1', 'av2']
-            else: ava['avatars'] = ['av33', 'av0', 'av1', 'av2']
-            ava['EVO'] = 0
-            ava['INTT'] = 0
-            ava['STA'] = 100
-            ava['MAX_STA'] = 100
-            ava['STR'] = 0.5
-            ava['LP'] = 1000
-            ava['MAX_LP'] = 1000        
-            ava['kills'] = 0; ava['deaths'] = 0
-            ava['money'] = 100
-            ava['merit'] = 0
-            ava['perks'] = 100
-            auras = {'FLAME': [1.5, 0, 0, 0], 'ICE': [0, 1.5, 0, 0], 'HOLY': [0, 0, 1.5, 0], 'DARK': [0, 0, 0, 1.5]}
-            ava['auras'] = auras[r_aura]
-
-            ava['arts'] = {'sword_art': {'chain_attack': 3}, 'pistol_art': {}}
-
-            ava['cur_PLACE'] = 'region.0'
-            ava['cur_MOB'] = 'n/a'
-            ava['cur_USER'] = 'n/a'
-            ava['cur_X'] = -1
-            ava['cur_Y'] = -1
-            ava['cur_QUEST'] = 'n/a'
-
-            # Last check
-            await asyncio.sleep(0.2)
-            if await self.client._cursor.execute(f"SELECT stats FROM personal_info WHERE id='{id}';") == 0:
-                return 3
-
-            # Inventory     |      Add fist as a default weapon
-            await self.client._cursor.execute(f"SELECT func_it_reward('{id}', 'ar13', 1);")
-            dfFist = await self.quefe(f"SELECT item_id FROM pi_inventory WHERE user_id='{id}';")
-            ava['combat_HANDLING'] = 'both'
-            ava['right_hand'] = dfFist[0]
-            ava['left_hand'] = dfFist[0]
-            # Equipment
-            await self.quefe(f"INSERT INTO pi_equipment VALUES (0, '{id}', 'Untitled', 'belt', 'n/a'); INSERT INTO pi_equipment VALUES (0, '{id}', 'Untitled', 'belt', 'n/a');")
-
-            await self.quefe(f"INSERT INTO personal_info VALUES ('{id}', '{ava['name']}', '{ava['dob']}', {ava['age']}, '{ava['gender']}', '{ava['race']}', {ava['height']}, {ava['weight']}, '{ava['size']}', 'GREEN', {ava['kills']}, {ava['deaths']}, {ava['charm']}, '{ava['partner']}', {ava['money']}, {ava['merit']}, {ava['perks']}, {ava['EVO']}, {ava['STR']}, {ava['INTT']}, {ava['STA']}, {ava['MAX_STA']}, {ava['LP']}, {ava['MAX_LP']}, {ava['auras'][0]}, {ava['auras'][1]}, {ava['auras'][2]}, {ava['auras'][3]}, '{ava['cur_MOB']}', '{ava['cur_USER']}', '{ava['cur_PLACE']}', {ava['cur_X']}, {ava['cur_Y']}, '{ava['cur_QUEST']}', '{ava['combat_HANDLING']}', '{ava['right_hand']}', '{ava['left_hand']}');")
-            await self.quefe(f"INSERT INTO pi_degrees VALUES (0, '{id}', 'Instinct', NULL);")
-            # Guild
-            await self.client._cursor.execute(f"INSERT INTO pi_guild VALUES ('{id}', 'n/a', 'iron', 0, 0);")
-            # Avatars
-            for ava_code in ava['avatars']: await self.client._cursor.execute(f"INSERT INTO pi_avatars VALUES ('{id}', '{ava_code}');")
-            await self.client._cursor.execute(f"INSERT INTO pi_backgrounds VALUES ('{id}', 'bg0');")
-            await self.client._cursor.execute(f"INSERT INTO pi_fonts VALUES ('{id}', 'fnt0');")
-            await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'DEFAULT', '{ava['avatars'][0]}', 'bg0', 'fnt0', 2.6, '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
-            await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'CURRENT', '{ava['avatars'][0]}', 'bg0', 'fnt0', 2.6, '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
-            # Arts
-            await self.client._cursor.execute(f"""SELECT func_aa_reward('{id}', 'aa0', 1);
-                                                    SELECT func_aa_reward('{id}', 'aa1', 1);""")
-
-            if player: return 0
-            else: return 2
-        else:
-            await self.client._cursor.execute(f"UPDATE personal_info SET LP=1, STA=1, stats='GREEN' WHERE id='{id}'; UPDATE pi_inventory SET existence='GOOD' WHERE user_id='{id}' AND item_code='ar13';")
-            return 1
-
-    async def hierarchy_generate(self, child_id, father_id='n/a', mother_id='n/a', guardian_ids=[], chem_value=0):
-        guardian_id = ' ||| '.join(guardian_ids)
-        await self.client._cursor.execute(f"INSERT INTO environ_hierarchy VALUES (0, '{child_id}', '', '{guardian_id}', {chem_value});")
-
     async def division_LP(self, b, mb, time=2):
         "Reduct LP an amount of mb/time. If loss > LP, set LP = 1"
         loss = int(mb / time)
         if loss > b: return 1
         return b - loss
-
 
 
     async def world_built(self):
@@ -369,6 +264,179 @@ class avaTools:
 
 
 
+    # CHARACTER INIT =======================================================
+
+    async def character_generate(self, id, name, dob=[0, 0, 0, 0, 0], player=True, resu=True, info_pack=[]):
+        """
+            YYMMDDHHMM
+            [race, gender, name]    
+        """
+
+        ava = {}
+
+        if not resu:
+            if info_pack[2]: ava['name'] = self.utils.inj_filter(info_pack[2])
+            else: ava['name'] = await self.utils.inj_filter(name[0:20])
+            ava['dob'] = f"{dob[2]} - {dob[1]} - {dob[0]}"
+            ava['age'] = 0
+            if info_pack: ava['gender'] = info_pack[1]
+            else: ava['gender'] = random.choice(['m', 'f'])
+            
+            if info_pack: ava['race'] = info_pack[0]
+            else: ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
+            r_aura, r_min_H, r_max_H, r_min_W, r_max_W, r_size_1, r_size_2, r_size_3 = await self.quefe(f"SELECT aura, min_H, max_H, min_W, max_W, size_1, size_2, size_3 FROM model_race WHERE race_code='{ava['race']}';")
+            if ava['gender'] == 'm':
+                ava['height'] = random.choice(range(r_min_H + 10, r_max_H + 10))
+                ava['weight'] = random.choice(range(r_min_W + 10, r_max_W + 10))
+                ava['size'] = '78 - 80 - 90'
+            else:
+                ava['height'] = random.choice(range(r_min_H - 10, r_max_H - 10))
+                ava['weight'] = random.choice(range(r_min_W - 10, r_max_W - 10))
+                r_size_1 = r_size_1.split(' - '); r_size_2 = r_size_2.split(' - '); r_size_3 = r_size_3.split(' - ')
+                ava['size'] = f'{random.choice(range(int(r_size_1[0]), int(r_size_1[1])))} - {random.choice(range(int(r_size_2[0]), int(r_size_2[1])))} - {random.choice(range(int(r_size_3[0]), int(r_size_3[1])))}'
+
+            # Charm calc
+            ava['charm'] = 10
+            if ava['height'] >= 180: ava['charm'] += 5
+            elif ava['height'] <= 130: ava['charm'] -= 5
+            
+            if ava['weight'] <= 35 or ava['weight'] >= 90: ava['charm'] -= 5
+            else: ava['charm'] += 5
+
+            szl = ava['size'].split(' - ')
+            if int(szl[0]) >= 25: ava['charm'] += 5
+            if int(szl[1]) >= 75: ava['charm'] -= 5
+            if int(szl[2]) >= 115: ava['charm'] += 5
+            
+            ava['partner'] = 'n/a'
+            ava['avatar'] = 'av0'
+            if ava['gender'] == 'female': ava['avatars'] = ['av19', 'av0', 'av1', 'av2']
+            else: ava['avatars'] = ['av33', 'av0', 'av1', 'av2']
+            ava['EVO'] = 0
+            ava['INTT'] = 0
+            ava['STA'] = 100
+            ava['MAX_STA'] = 100
+            ava['STR'] = 0.5
+            ava['LP'] = 1000
+            ava['MAX_LP'] = 1000        
+            ava['kills'] = 0; ava['deaths'] = 0
+            ava['money'] = 100
+            ava['merit'] = 0
+            ava['perks'] = 100
+            auras = {'FLAME': [1.5, 0, 0, 0], 'ICE': [0, 1.5, 0, 0], 'HOLY': [0, 0, 1.5, 0], 'DARK': [0, 0, 0, 1.5]}
+            ava['auras'] = auras[r_aura]
+
+            ava['arts'] = {'sword_art': {'chain_attack': 3}, 'pistol_art': {}}
+
+            ava['cur_PLACE'] = 'region.0'
+            ava['cur_MOB'] = 'n/a'
+            ava['cur_USER'] = 'n/a'
+            ava['cur_X'] = -1
+            ava['cur_Y'] = -1
+            ava['cur_QUEST'] = 'n/a'
+
+            # Last check
+            await asyncio.sleep(0.2)
+            if await self.client._cursor.execute(f"SELECT stats FROM personal_info WHERE id='{id}';") == 0:
+                return 3
+
+            # Inventory     |      Add fist as a default weapon
+            await self.client._cursor.execute(f"SELECT func_it_reward('{id}', 'ar13', 1);")
+            dfFist = await self.quefe(f"SELECT item_id FROM pi_inventory WHERE user_id='{id}';")
+            ava['combat_HANDLING'] = 'both'
+            ava['right_hand'] = dfFist[0]
+            ava['left_hand'] = dfFist[0]
+            # Equipment
+            await self.quefe(f"INSERT INTO pi_equipment VALUES (0, '{id}', 'Untitled', 'belt', 'n/a'); INSERT INTO pi_equipment VALUES (0, '{id}', 'Untitled', 'belt', 'n/a');")
+
+            await self.quefe(f"INSERT INTO personal_info VALUES ('{id}', '{ava['name']}', '{ava['dob']}', {ava['age']}, '{ava['gender']}', '{ava['race']}', {ava['height']}, {ava['weight']}, '{ava['size']}', 'GREEN', {ava['kills']}, {ava['deaths']}, {ava['charm']}, '{ava['partner']}', {ava['money']}, {ava['merit']}, {ava['perks']}, {ava['EVO']}, {ava['STR']}, {ava['INTT']}, {ava['STA']}, {ava['MAX_STA']}, {ava['LP']}, {ava['MAX_LP']}, {ava['auras'][0]}, {ava['auras'][1]}, {ava['auras'][2]}, {ava['auras'][3]}, '{ava['cur_MOB']}', '{ava['cur_USER']}', '{ava['cur_PLACE']}', {ava['cur_X']}, {ava['cur_Y']}, '{ava['cur_QUEST']}', '{ava['combat_HANDLING']}', '{ava['right_hand']}', '{ava['left_hand']}');")
+            await self.quefe(f"INSERT INTO pi_degrees VALUES (0, '{id}', 'Instinct', NULL);")
+            # Guild
+            await self.client._cursor.execute(f"INSERT INTO pi_guild VALUES ('{id}', 'n/a', 'iron', 0, 0);")
+            # Avatars
+            for ava_code in ava['avatars']: await self.client._cursor.execute(f"INSERT INTO pi_avatars VALUES ('{id}', '{ava_code}');")
+            await self.client._cursor.execute(f"INSERT INTO pi_backgrounds VALUES ('{id}', 'bg0');")
+            await self.client._cursor.execute(f"INSERT INTO pi_fonts VALUES ('{id}', 'fnt0');")
+            await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'DEFAULT', '{ava['avatars'][0]}', 'bg0', 'fnt0', 2.6, '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
+            await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'CURRENT', '{ava['avatars'][0]}', 'bg0', 'fnt0', 2.6, '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
+            # Arts
+            await self.client._cursor.execute(f"""SELECT func_aa_reward('{id}', 'aa0', 1);
+                                                    SELECT func_aa_reward('{id}', 'aa1', 1);""")
+
+            if player: return 0
+            else: return 2
+        else:
+            await self.client._cursor.execute(f"UPDATE personal_info SET LP=1, STA=1, stats='GREEN' WHERE id='{id}'; UPDATE pi_inventory SET existence='GOOD' WHERE user_id='{id}' AND item_code='ar13';")
+            return 1
+
+    async def hierarchy_generate(self, child_id, father_id='n/a', mother_id='n/a', guardian_ids=[], chem_value=0):
+        guardian_id = ' ||| '.join(guardian_ids)
+        await self.client._cursor.execute(f"INSERT INTO environ_hierarchy VALUES (0, '{child_id}', '', '{guardian_id}', {chem_value});")
+
+    async def incarnateData_collect(self, ctx, aui):
+        """Gather RACE and GENDER from user"""
+
+        # Get race info ========================================
+        re_race = await self.incarnateRace_collect(ctx, aui)
+        if not re_race: return False
+
+        # Get gender info ========================================
+        re_gender = await self.incarnateGender_collect(ctx)
+        if not re_gender: return False
+
+        # Get name info ========================================
+        re_name = await self.incarnateName_collect(ctx)
+        if not re_name: return False
+
+        return re_race, re_gender, re_name
+
+    async def incarnateRace_collect(self, ctx, aui):
+        """aui: aura icon"""
+
+        # Get race info ========================================
+        rundle = await self.client.quefe("SELECT race_code, name, aura, min_W, max_W, illulink, min_H, max_H FROM model_race ORDER BY race_code ASC;", type='all')
+
+        # Prep
+        def makeembed_race(items, top, least, pages, currentpage):
+            item = items[top:least][0]
+
+            reembed = discord.Embed(title=f"RACE [`{item[0]}`| **{item[1]}**]", description=f"╟ `HEIGHT` · {item[6]}~{item[7]} m\n╟ `WEIGHT` · {item[3]}~{item[4]} kg", colour=0x36393E)
+            reembed.set_thumbnail(url=aui[item[2]])
+            if item[5]: reembed.set_image(url=item[5])
+
+            return reembed, item[0]
+
+        # ROLL race
+        await ctx.send(f"> {ctx.author.mention}, please choose yourself a **race**.")
+        re_race = await self.pagiMainMicro(ctx, rundle, makeembed_race, item_per_page=1, timeout=60)
+        if not re_race: return False
+
+    async def incarnateGender_collect(self, ctx):
+        # Prep =============================================
+        def makeembed_gender(items, top, least, pages, currentpage):
+            """[gender, illulink]"""
+
+            reembed = discord.Embed(colour=0x36393E)
+            reembed.set_image(url=items[top:least][0][1])
+
+            return reembed, items[top:least][0][0]
+
+        # ROLL gender
+        await ctx.send(f"> {ctx.author.mention}, please choose yourself a **gender**.")
+        re_gender = await self.pagiMainMicro(ctx, (('f', 'https://imgur.com/2X1E62g.png'), ('m', 'https://imgur.com/RPQ6cd9.png')), makeembed_gender, item_per_page=1, timeout=60, extra_button=["\U00002b05", '\U0001f44b', "\U000027a1"])
+        if not re_gender: return False
+
+    async def incarnateName_collect(self, ctx):
+        # NAME ==============================================
+        await ctx.send(f"> {ctx.author.mention}, please give yourself a **name**. (Type `default` to use your user name)")
+        raw = await self.client.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60)
+        if not raw: return False
+        re_name = self.utils.inj_filter(raw.content)
+        if re_name == 'default': re_name = ctx.author.namew
+
+
+
+    # PAGINATOR ============================================================
     async def pagiButton(self, timeout=15, check=None):
         try:
             if check:
@@ -482,7 +550,6 @@ class avaTools:
                 return
             # Rate-limit
             await asyncio.sleep(0.35)
-
 
     async def pagiMainMicro(self, ctx, items, makeembed, item_per_page=5, extra_button=["\U000023ee", "\U00002b05", '\U0001f44b', "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0):
         """

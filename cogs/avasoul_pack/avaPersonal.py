@@ -74,7 +74,7 @@ class avaPersonal(commands.Cog):
 
         # Prompt question
         if not resu:
-            try: re_race, re_gender, re_name = await self.incarnateData_collect(ctx)
+            try: re_race, re_gender, re_name = await self.tools.incarnateData_collect(ctx, self.aui)
             except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!")
         else: re_race = None; re_gender = None; re_name = None
 
@@ -679,51 +679,9 @@ class avaPersonal(commands.Cog):
     @commands.command()
     async def test_incarnate(self, ctx):
         try:
-            r, g, n = await self.incarnateData_collect(ctx)
+            r, g, n = await self.tools.incarnateData_collect(ctx, self.aui)
         except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!")
         await ctx.send(f"{r} {g} {n}")
-
-    async def incarnateData_collect(self, ctx):
-        """Gather RACE and GENDER from user"""
-        
-        # Get race info ========================================
-        rundle = await self.client.quefe("SELECT race_code, name, aura, min_W, max_W, illulink, min_H, max_H FROM model_race ORDER BY race_code ASC;", type='all')
-
-        # Prep
-        def makeembed_race(items, top, least, pages, currentpage):
-            item = items[top:least][0]
-
-            reembed = discord.Embed(title=f"RACE [`{item[0]}`| **{item[1]}**]", description=f"╟ `HEIGHT` · {item[6]}~{item[7]} m\n╟ `WEIGHT` · {item[3]}~{item[4]} kg", colour=0x36393E)
-            reembed.set_thumbnail(url=self.aui[item[2]])
-            if item[5]: reembed.set_image(url=item[5])
-
-            return reembed, item[0]
-
-        # ROLL race
-        await ctx.send(f"> {ctx.author.mention}, please choose yourself a **race**.")
-        re_race = await self.tools.pagiMainMicro(ctx, rundle, makeembed_race, item_per_page=1, timeout=60)
-        if not re_race: return False
-
-        # Prep =============================================
-        def makeembed_gender(items, top, least, pages, currentpage):
-            """[gender, illulink]"""
-
-            reembed = discord.Embed(colour=0x36393E)
-            reembed.set_image(url=items[top:least][0][1])
-
-            return reembed, items[top:least][0][0]
-
-        # ROLL race
-        await ctx.send(f"> {ctx.author.mention}, please choose yourself a **gender**.")
-        re_gender = await self.tools.pagiMainMicro(ctx, (('f', 'https://imgur.com/2X1E62g.png'), ('m', 'https://imgur.com/RPQ6cd9.png')), makeembed_gender, item_per_page=1, timeout=60, extra_button=["\U00002b05", '\U0001f44b', "\U000027a1"])
-        if not re_gender: return False
-
-        msg = await ctx.send(f"> {ctx.author.mention}, please give yourself a **name**. (Type `default` to use your user name)")
-        raw = await self.client.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60)
-        re_name = self.utils.inj_filter(raw.content)
-        if re_name == 'default': re_name = ctx.author.namew
-
-        return re_race, re_gender, re_name
 
 
 
