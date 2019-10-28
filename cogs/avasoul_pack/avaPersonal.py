@@ -70,7 +70,7 @@ class avaPersonal(commands.Cog):
         year, month, day, hour, minute = await self.client.loop.run_in_executor(None, self.utils.time_get)
         bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu)
         if not bump:
-            await ctx.send(f"{ctx.author.mention}", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+            await ctx.send(f"{ctx.author.mention}**, you can use `tutorial 1` to start the basic tutorial.* (recommendededed)*", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
         else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
 
     @commands.command(aliases=['p'])
@@ -335,7 +335,7 @@ class avaPersonal(commands.Cog):
 
                         for item in items[top:least]:
                             
-                            line = line + f"""\n`{item[0]}` · **{item[1]}**{item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
+                            line = line + f"""\n`{item[0]}` · **{item[1]}** {item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
 
                         reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
                         reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")

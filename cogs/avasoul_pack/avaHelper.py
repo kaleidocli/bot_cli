@@ -237,8 +237,7 @@ Definition? Mechanism? Lore? Yaaa```
             def makeembed(items, top, least, pages, currentpage):
                 line = ''
                 for item in items[top:least]:
-                    line += f"""<:old_paperroll:636090807136419840> `{item[0]}`| **{items[1]}**\n> ```ini
-    {item[2]}```\n> Tags: ||{item[3]}||"""
+                    line += f"""<:old_paperroll:636090807136419840> `{item[0]}`| **{item[1]}**\n> ```{item[2]}```\n> Tags: ||{item[3]}||"""
 
                 return discord.Embed(description=line, colour=0x527D8F)
 
@@ -250,7 +249,7 @@ Definition? Mechanism? Lore? Yaaa```
         if not bundle: await ctx.send("<:9_:544354429055533068> Tutorial's code not found."); return
 
         # INTRO =======
-        if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me!\n· You can react :white_check_mark: to turn page.\n· Do you want me to *DM* you? <a:wiink:590460293705105418>", t=15):
+        if await self.engine_waitor(ctx, f"Hi there, **{ctx.author.name}**! I'm glad that you take time to learn more about me! <a:wiink:590460293705105418>\n· You can react :white_check_mark: to turn page.\nDo you want me to *DM* you?", t=15, reactions=["\U00002705", '\U0000274c']):
             await ctx.send(f"{ctx.author.mention}, we're moving to DM in 3 secs...")
             await asyncio.sleep(4)
             DM = True
@@ -417,7 +416,7 @@ Definition? Mechanism? Lore? Yaaa```
             try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=60)
             except asyncio.TimeoutError: await box.send("<:osit:544356212846886924> Request timeout!"); return False
 
-    async def engine_waitor(self, ctx, line, t=20, keylist=[], DM=False, illulink=None):
+    async def engine_waitor(self, ctx, line, t=20, reactions=["\U00002705"], true_reaction="\U00002705", DM=False, illulink=None):
 
         if DM:
             if illulink: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
@@ -426,9 +425,14 @@ Definition? Mechanism? Lore? Yaaa```
             if illulink: msg = await ctx.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
             else: msg = await ctx.send(embed=discord.Embed(description=line, colour=0x527D8F))
 
-        await msg.add_reaction("\U00002705")
+        for r in reactions:
+            await msg.add_reaction(r)
 
-        try: await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U00002705' and u == ctx.author, timeout=t); return True
+        try:
+            r, _ = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author and r.message == ctx.message, timeout=t)
+            if str(r.emoji) == true_reaction:
+                return True
+            else: return False
         except asyncio.TimeoutError: return False
 
 
