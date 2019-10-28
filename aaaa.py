@@ -74,6 +74,7 @@ async def get_pref(bot, message):
 client = commands.Bot(command_prefix=get_pref)
 client.myconfig = config
 client.realready = True
+client.ignore_list = []
 client.owner_id = config.owner_id
 client.owner = client.get_user(client.owner_id)
 client.support_server_invite = config.support_server_invite
@@ -104,10 +105,11 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     await client.get_channel(563592973170769922).send(f":x: **LEFT -->** `{guild.id}` | {guild.name}")
 
-# @client.event
-# async def on_message(message):
-#     if not client.realready: return
-#     await client.process_commands(message)
+@client.event
+async def on_message(message):
+    if not client.realready: return
+    if message.author.id in client.ignore_list: return
+    await client.process_commands(message)
 
 
 
