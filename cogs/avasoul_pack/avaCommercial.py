@@ -126,7 +126,7 @@ class avaCommercial(commands.Cog):
                         #line = line + f""" `{item_code}` :small_orange_diamond: **{items[item_code].name}** \n| *"{items[item_code].description}"*\n| **`Price`** <:36pxGold:548661444133126185>{items[item_code].price}\n++ `{'` `'.join(items[item_code].tags)}`\n\n"""
                     elif 'blueprint' in item[3]:
                         icon = '<:blueprint512:557713942508470272>'
-                    line = line + f""" `{item[0]}` {icon} `{item[7]}`| **{item[1]}**\n> *"{item[2]}"*\n╟** `『Weight』{item[4]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[6]}/{item[5]}`**\n**╟╼**`{item[3].replace(' - ', '`·`')}`\n\n"""
+                    line = line + f""" `{item[0]}` {icon} [`{item[7]}`| **{item[1]}**]\n> *"{item[2]}"*\n╟** `『Weight』{item[4]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[6]}/{item[5]}`**\n**╟╼**`{item[3].replace(' - ', '`·`')}`\n\n"""
 
                 line = line + f"**╚═════════╡**`{currentpage}/{pages}`**╞══════════**"
 
@@ -209,7 +209,7 @@ class avaCommercial(commands.Cog):
         # Reconfirm
         price = int(items[ig_code][2]*random.choice([0.1, 0.2, 0.5, 1, 2, 5, 0.75, 10]))
         deposit = (price*quantity)//5
-        msgdeal = await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, please react upon accepting the following deal:\n>>> **<:36pxGold:548661444133126185>{price}** per item `{ig_code}`| **{items[ig_code][0]}**, meaning **<:36pxGold:548661444133126185>{price*quantity}** in total.\nDeposit would be <:36pxGold:548661444133126185>**{deposit}**")
+        msgdeal = await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, please react upon accepting the following deal:\n>>> **<:36pxGold:548661444133126185>{price}** per item [`{ig_code}`| **{items[ig_code][0]}**], meaning **<:36pxGold:548661444133126185>{price*quantity}** in total.\nDeposit would be <:36pxGold:548661444133126185>**{deposit}**")
         await msgdeal.add_reaction('\U0001f44c')
         try: await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f44c' and u == ctx.author, timeout=10)
         except asyncio.TimeoutError:
@@ -236,7 +236,7 @@ class avaCommercial(commands.Cog):
 
         # Greeting, of course :)
         await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'trading', ex=2700, nx=True))
-        await ctx.send(f":white_check_mark: Received **{quantity}** item `{ig_code}`| **{items[ig_code][0]}**. Nice trade!")
+        await ctx.send(f":white_check_mark: Received **{quantity}** item [`{ig_code}`| **{items[ig_code][0]}**]. Nice trade!")
 
     @commands.command(aliases=['b'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -531,7 +531,7 @@ class avaCommercial(commands.Cog):
                     elif 'blueprint' in item[4]:
                         icon = '<:blueprint512:557713942508470272>'
                     else: icon = ':tools:'
-                    line = line + f""" `{item[0]}` {icon} `{item[1]}`| **{item[2]}** [{item[6]}]\n> *"{item[3]}"*\n**╟ `『Weight』{item[5]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[7]}`**\n**╟╼**`{item[4].replace(' - ', '`·`')}`\n\n"""
+                    line = line + f""" `{item[0]}` {icon} [`{item[1]}`| **{item[2]}**] [{item[6]}]\n> *"{item[3]}"*\n**╟ `『Weight』{item[5]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[7]}`**\n**╟╼**`{item[4].replace(' - ', '`·`')}`\n\n"""
                             
                 line = line + f"**╚═══════╡**`{currentpage}/{pages}`**╞═══════**" 
 
@@ -595,10 +595,10 @@ class avaCommercial(commands.Cog):
 
             # Get line
             sw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{sw}';")
-            if sw_name: line_1 = f"`{sw}`| **{sw_name[0]}** ➠ `right_hand`"
+            if sw_name: line_1 = f"[`{sw}`| **{sw_name[0]}**] ➠ `right_hand`"
             else: line_1 = '`right_hand` is left empty'
             mw_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{mw}';")
-            if mw_name: line_2 = f"`{mw}`| **{mw_name[0]}** ➠ `{slots['l']}`"
+            if mw_name: line_2 = f"[`{mw}`| **{mw_name[0]}*]* ➠ `{slots['l']}`"
             else: line_2 = f"`{slots['l']}` is left empty"
             # Inform :)
             await ctx.send(f":twisted_rightwards_arrows: {line_1} \n:twisted_rightwards_arrows: {line_2} "); return
@@ -639,7 +639,7 @@ class avaCommercial(commands.Cog):
                 ## Adjusting things with quantity
                 await self.client._cursor.execute(f"SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity}); " + af_query)
                 await self.tools.ava_scan(ctx.message, type='normalize', target_id=target_id)
-                await ctx.send(f":white_check_mark: Used {quantity} `{item_id}`| **{w_name}** on **{target_name}**")     
+                await ctx.send(f":white_check_mark: Used {quantity} [`{item_id}`| **{w_name}**] on **{target_name}**")     
 
             # INCONSUMABLE ===========================================
             else:
@@ -656,11 +656,11 @@ class avaCommercial(commands.Cog):
                 if item_id != weapon:
                     await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}='{item_id}' WHERE id='{str(ctx.message.author.id)}';")
                     # Inform, of course :)
-                    await ctx.send(f":fist: Equipped `{item_id}`| **{w_name}** to `{slot_name}` slot!"); return
+                    await ctx.send(f":fist: Equipped [`{item_id}`| **{w_name}**] to `{slot_name}` slot!"); return
                 ###Already equip    -----> Unequip
                 else:
                     await self.client._cursor.execute(f"UPDATE personal_info SET {slot_name}=(SELECT item_id FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13') WHERE id='{ctx.author.id}'")
-                    await ctx.send(f":raised_hand: Unequipped item `{w_code}`| **{w_name}** from `{slot_name}` slot!")
+                    await ctx.send(f":raised_hand: Unequipped item [`{w_code}`| **{w_name}**] from `{slot_name}` slot!")
                     return
 
 
@@ -776,7 +776,7 @@ class avaCommercial(commands.Cog):
             # Tradable check
             if 'untradable' in w_tags: await ctx.send(f"<:osit:544356212846886924> You cannot trade this item, **{ctx.message.author.name}**. It's *untradable*, look at its tags."); return
 
-            msg = await ctx.send(f"**{ctx.author.name}** wants to sell you **{quantity}** `{w_code}`| **{w_name}**. Accept, {receiver.mention}?")
+            msg = await ctx.send(f"**{ctx.author.name}** wants to sell you **{quantity}** [`{w_code}`| **{w_name}**]. Accept, {receiver.mention}?")
             await msg.add_reaction('\U0001f6d2')
 
             def RUM_check(reaction, user):
@@ -829,7 +829,7 @@ class avaCommercial(commands.Cog):
                     else: await self.client._cursor.execute(f"SELECT func_it_reward('{receiver.id}', '{w_code}', {quantity}); SELECT func_i_delete('{ctx.author.id}', '{w_code}', {quantity});")
 
             # Inform, of course :>
-            await ctx.send(f":white_check_mark: You've been given `{quantity}` `{w_code}`| **{w_name}**, {receiver.mention}!"); return
+            await ctx.send(f":white_check_mark: You've been given `{quantity}` [`{w_code}`| **{w_name}**], {receiver.mention}!"); return
 
         except commands.CommandError:
             try: quantity = int(raw[1])
@@ -884,7 +884,7 @@ class avaCommercial(commands.Cog):
         # Receiving money/Removing item
         await self.client._cursor.execute(receive_query + quantity_query)
 
-        await ctx.send(f":white_check_mark: You received **<:36pxGold:548661444133126185>{receive}** from selling {quantity} `{item_id}`| **{w_name}**, **{ctx.message.author.name}**!")
+        await ctx.send(f":white_check_mark: You received **<:36pxGold:548661444133126185>{receive}** from selling {quantity} [`{item_id}`| **{w_name}**], **{ctx.message.author.name}**!")
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
