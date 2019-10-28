@@ -643,13 +643,13 @@ class avaCombat(commands.Cog):
 
         # GET Mob info =======================
         try:
-            t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_lockon_max, t_defpy = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, lockon_max, defense_physic FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+            t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_lockon_max, t_defpy, t_branch = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, lockon_max, defense_physic, branch FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
         # If mob not found (either mistyping or outdated lock), set lock to 'n/a'
         except TypeError:
             try:
                 target_id = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))
                 target_id = target_id[0]
-                t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_defpy = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, defense_physic FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
+                t_name, t_speed, t_str, t_chain, t_lp, t_illulink, t_effect, t_defpy, t_branch = await self.client.quefe(f"SELECT name, speed, str, chain, LP, illulink, effect, defense_physic, branch FROM environ_mob WHERE mob_id='{target_id}' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
                 CE['lock'] = target_id
             except IndexError:
                 await MSG.channel.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {MSG.author.mention}!"); return
@@ -671,8 +671,8 @@ class avaCombat(commands.Cog):
 
             if not await self.tools.ava_scan(MSG, type='life_check'):
                 # If query effect zero row
-                if await self.client._cursor.execute(f"UPDATE pi_mobs_collection SET {type}={type}-1 WHERE user_id='{user_id}' AND region='{cur_PLACE}';") == 0:
-                    await self.client._cursor.execute(f"INSERT INTO pi_mobs_collection (user_id, region, {type}) VALUES ('{user_id}', '{cur_PLACE}', -1);")
+                if await self.client._cursor.execute(f"UPDATE pi_mobs_collection SET {t_branch}={t_branch}-1 WHERE user_id='{t_branch}' AND region='{cur_PLACE}';") == 0:
+                    await self.client._cursor.execute(f"INSERT INTO pi_mobs_collection (user_id, region, {t_branch}) VALUES ('{user_id}', '{cur_PLACE}', -1);")
                 return False
             if t_lp <= 0:
                 await MSG.channel.send(f"<:tumbstone:544353849264177172> **{t_name}** is dead.")
@@ -1297,7 +1297,7 @@ class avaCombat(commands.Cog):
 
             temp = []
             for v in value:
-                temp.append(' - '.join(v))
+                temp.append(' - '. join(str(v)))
             return ' || '.join(temp)
 
     async def CE_maker(self, raw_pcm):

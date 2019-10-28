@@ -62,7 +62,6 @@ class avaCommercial(commands.Cog):
                 # Pointer
                 if 'magic' in tags: pointer = ':crystal_ball:'
                 else: pointer = '<:gun_pistol:508213644375621632>'
-                # Aura icon
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n\n```"{description}"```\n"""
                 
