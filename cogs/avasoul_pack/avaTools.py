@@ -431,11 +431,11 @@ class avaTools:
     async def incarnateName_collect(self, ctx):
         # NAME ==============================================
         await ctx.send(f"> {ctx.author.mention}, please give yourself a **name**. (Type `default` to use your user name)")
-        raw = await self.client.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60)
-        if not raw: return False
+        try: raw = await self.client.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60)
+        except asyncio.TimeoutError: return False
         re_name = await self.utils.inj_filter(raw.content)
         if re_name == 'default': re_name = ctx.author.name
-        else: return re_name
+        return re_name
 
 
 
