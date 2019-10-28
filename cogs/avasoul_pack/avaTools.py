@@ -1,3 +1,4 @@
+import discord
 import pymysql.err as mysqlError
 import discord.errors as discordErrors
 
@@ -125,17 +126,24 @@ class avaTools:
         # Assign the coord to ava
         #self.ava_dict[user_id]['realtime_zone']['current_coord'] = [desti_x, desti_y]
 
-    async def character_generate(self, id, name, dob=[0, 0, 0, 0, 0], player=True, resu=True):
-        "YYMMDDHHMM"
+    async def character_generate(self, id, name, dob=[0, 0, 0, 0, 0], player=True, resu=True, info_pack=[]):
+        """
+            YYMMDDHHMM
+            [race, gender, name]    
+        """
 
         ava = {}
 
         if not resu:
-            ava['name'] = await self.utils.inj_filter(name[0:20])
+            if info_pack[2]: ava['name'] = self.utils.inj_filter(info_pack[2])
+            else: ava['name'] = await self.utils.inj_filter(name[0:20])
             ava['dob'] = f"{dob[2]} - {dob[1]} - {dob[0]}"
             ava['age'] = 0
-            ava['gender'] = random.choice(['m', 'f'])
-            ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
+            if info_pack: ava['gender'] = info_pack[1]
+            else: ava['gender'] = random.choice(['m', 'f'])
+            
+            if info_pack: ava['race'] = info_pack[0]
+            else: ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
             r_aura, r_min_H, r_max_H, r_min_W, r_max_W, r_size_1, r_size_2, r_size_3 = await self.quefe(f"SELECT aura, min_H, max_H, min_W, max_W, size_1, size_2, size_3 FROM model_race WHERE race_code='{ava['race']}';")
             if ava['gender'] == 'm':
                 ava['height'] = random.choice(range(r_min_H + 10, r_max_H + 10))
@@ -162,7 +170,8 @@ class avaTools:
             
             ava['partner'] = 'n/a'
             ava['avatar'] = 'av0'
-            ava['avatars'] = ['av0', 'av1', 'av2']
+            if ava['gender'] == 'female': ava['avatars'] = ['av19', 'av0', 'av1', 'av2']
+            else: ava['avatars'] = ['av33', 'av0', 'av1', 'av2']
             ava['EVO'] = 0
             ava['INTT'] = 0
             ava['STA'] = 100
@@ -174,10 +183,10 @@ class avaTools:
             ava['money'] = 100
             ava['merit'] = 0
             ava['perks'] = 100
-            auras = {'FLAME': [0.5, 0, 0, 0], 'ICE': [0, 0.5, 0, 0], 'HOLY': [0, 0, 0.5, 0], 'DARK': [0, 0, 0, 0.5]}
+            auras = {'FLAME': [1.5, 0, 0, 0], 'ICE': [0, 1.5, 0, 0], 'HOLY': [0, 0, 1.5, 0], 'DARK': [0, 0, 0, 1.5]}
             ava['auras'] = auras[r_aura]
 
-            ava['arts'] = {'sword_art': {'chain_attack': 4}, 'pistol_art': {}}
+            ava['arts'] = {'sword_art': {'chain_attack': 3}, 'pistol_art': {}}
 
             ava['cur_PLACE'] = 'region.0'
             ava['cur_MOB'] = 'n/a'
@@ -185,6 +194,11 @@ class avaTools:
             ava['cur_X'] = -1
             ava['cur_Y'] = -1
             ava['cur_QUEST'] = 'n/a'
+
+            # Last check
+            await asyncio.sleep(0.2)
+            if await self.client._cursor.execute(f"SELECT stats FROM personal_info WHERE id='{id}';") == 0:
+                return 3
 
             # Inventory     |      Add fist as a default weapon
             await self.client._cursor.execute(f"SELECT func_it_reward('{id}', 'ar13', 1);")
@@ -203,8 +217,8 @@ class avaTools:
             for ava_code in ava['avatars']: await self.client._cursor.execute(f"INSERT INTO pi_avatars VALUES ('{id}', '{ava_code}');")
             await self.client._cursor.execute(f"INSERT INTO pi_backgrounds VALUES ('{id}', 'bg0');")
             await self.client._cursor.execute(f"INSERT INTO pi_fonts VALUES ('{id}', 'fnt0');")
-            await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'DEFAULT', 'av0', 'bg0', 'fnt0', 2.6, '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
-            await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'CURRENT', 'av0', 'bg0', 'fnt0', 2.6, '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
+            await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'DEFAULT', '{ava['avatars'][0]}', 'bg0', 'fnt0', 2.6, '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
+            await self.client._cursor.execute(f"INSERT INTO cosmetic_preset VALUES (0, '{id}', 'default of {ava['name']}', 'CURRENT', '{ava['avatars'][0]}', 'bg0', 'fnt0', 2.6, '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF', '#FFFFFF')")
             # Arts
             await self.client._cursor.execute(f"""SELECT func_aa_reward('{id}', 'aa0', 1);
                                                     SELECT func_aa_reward('{id}', 'aa1', 1);""")
@@ -503,11 +517,11 @@ class avaTools:
         # Send
         try:
             if pages > 1:
-                if not emli[cursor][0] or not emli[cursor][1]: await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
+                if (not emli[cursor][0] and not isinstance(emli[cursor][0], discord.Embed)) or not emli[cursor][1]: await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
                 msg = await ctx.send(embed=emli[cursor][0])
                 await self.pageButtonAdd(msg, reaction=extra_button)
             else:
-                msg = await ctx.send(embed=emli[0])
+                msg = await ctx.send(embed=emli[0][0])
         # except discordErrors.HTTPException:
         except IndexError:
             await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
@@ -525,7 +539,7 @@ class avaTools:
                     cursor = await self.pageTurner(msg, reaction, user, (cursor, pages, emli))
                 else:
                     cursor = await pageTurner(msg, reaction, user, (cursor, pages, emli))
-                await msg.edit(embed=emli[cursor])
+                await msg.edit(embed=emli[cursor][0])
 
             except concurrent.futures.TimeoutError:
                 if delete_on_exit:

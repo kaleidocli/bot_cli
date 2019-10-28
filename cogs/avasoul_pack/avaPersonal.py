@@ -36,7 +36,7 @@ class avaPersonal(commands.Cog):
             'charm': self.charm_calc
             }
 
-        self.aui = aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
+        self.aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
 
         print("|| Personal --- READY!")
 
@@ -53,7 +53,8 @@ class avaPersonal(commands.Cog):
 # ================== INFO/AVATAR ==================
 
     @commands.command()
-    async def incarnate(self, ctx):
+    @commands.cooldown(1, 30, type=BucketType.user)
+    async def incarnate(self, ctx, *args):
         id = str(ctx.author.id); name = ctx.author.name
 
         # Create a living entity (creator-only)
@@ -66,13 +67,22 @@ class avaPersonal(commands.Cog):
         resu = await self.client.quefe(f"SELECT stats FROM personal_info WHERE id='{id}'")
         try:
             if resu[0] != 'DEAD':
-                await ctx.send(f"<:osit:544356212846886924> You've already incarnate!"); return
+                await ctx.send(f"<:osit:544356212846886924> You've already incarnated!"); return
         except TypeError: pass
         
         year, month, day, hour, minute = await self.client.loop.run_in_executor(None, self.utils.time_get)
-        bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu)
+
+        # Prompt question
+        if not resu:
+            try: re_race, re_gender, re_name = await self.incarnateData_collect(ctx)
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!")
+        else: re_race = None; re_gender = None; re_name = None
+
+        bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
         if not bump:
-            await ctx.send(f"{ctx.author.mention}**, you can use `tutorial 1` to start the basic tutorial.* (recommendededed)*", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+            await ctx.send(f">>> {ctx.author.mention}**, welcome to Pralayer!\nYou're a Remnant, wielding an incomprehensible power. However this world isn't a joke, so before you write your own journey, you might (really really) need some basic instructions.\nYou can use `tutorial 1`.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+        elif bump == 3:
+            await ctx.send(f"<:osit:544356212846886924> You've already incarnated!"); return
         else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
 
     @commands.command(aliases=['p'])
@@ -667,46 +677,53 @@ class avaPersonal(commands.Cog):
         return 1
 
     @commands.command()
-    async def testinca(self, ctx):
+    async def test_incarnate(self, ctx):
         try:
-            r, g = await self.incarnateData_collect(ctx)
+            r, g, n = await self.incarnateData_collect(ctx)
         except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!")
+        await ctx.send(f"{r} {g} {n}")
 
     async def incarnateData_collect(self, ctx):
         """Gather RACE and GENDER from user"""
         
-        # Get race info
-        rundle = await self.client.quefe("SELECT race_code, name, aura, min_W, max_W, illulink FROM model_race ORDER BY race_code ASC;", type='all')
+        # Get race info ========================================
+        rundle = await self.client.quefe("SELECT race_code, name, aura, min_W, max_W, illulink, min_H, max_H FROM model_race ORDER BY race_code ASC;", type='all')
 
         # Prep
         def makeembed_race(items, top, least, pages, currentpage):
-            item = items[top:least]
+            item = items[top:least][0]
 
-            reembed = discord.Embed(title=f"(`{item[0]}`) **{item[1]}**", description=f"`WEIGHT` · {item[3]}~{item[4]} kg")
+            reembed = discord.Embed(title=f"RACE [`{item[0]}`| **{item[1]}**]", description=f"╟ `HEIGHT` · {item[6]}~{item[7]} m\n╟ `WEIGHT` · {item[3]}~{item[4]} kg", colour=0x36393E)
             reembed.set_thumbnail(url=self.aui[item[2]])
             if item[5]: reembed.set_image(url=item[5])
 
             return reembed, item[0]
 
         # ROLL race
-        await ctx.send(f"{ctx.author.mention}, please choose your **race**!", colour=0x36393E)
+        await ctx.send(f"> {ctx.author.mention}, please choose yourself a **race**.")
         re_race = await self.tools.pagiMainMicro(ctx, rundle, makeembed_race, item_per_page=1, timeout=60)
         if not re_race: return False
 
-        # Prep
+        # Prep =============================================
         def makeembed_gender(items, top, least, pages, currentpage):
             """[gender, illulink]"""
 
-            reembed = discord.Embed(colour=0x36393E).set_image(url=items[top:least][1])
+            reembed = discord.Embed(colour=0x36393E)
+            reembed.set_image(url=items[top:least][0][1])
 
-            return reembed, items[top:least][0]
+            return reembed, items[top:least][0][0]
 
         # ROLL race
-        await ctx.send(f"{ctx.author.mention}, please choose your **gender**!", colour=0x36393E)
-        re_gender = await self.tools.pagiMainMicro(ctx, [['f', 'https://imgur.com/2X1E62g.png'], ['m', 'https://imgur.com/RPQ6cd9.png']], makeembed_gender, item_per_page=1, timeout=60, extra_button=["\U00002b05", '\U0001f44b', "\U000027a1"])
+        await ctx.send(f"> {ctx.author.mention}, please choose yourself a **gender**.")
+        re_gender = await self.tools.pagiMainMicro(ctx, (('f', 'https://imgur.com/2X1E62g.png'), ('m', 'https://imgur.com/RPQ6cd9.png')), makeembed_gender, item_per_page=1, timeout=60, extra_button=["\U00002b05", '\U0001f44b', "\U000027a1"])
         if not re_gender: return False
 
-        return re_race, re_gender
+        msg = await ctx.send(f"> {ctx.author.mention}, please give yourself a **name**. (Type `default` to use your user name)")
+        raw = await self.client.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=60)
+        re_name = self.utils.inj_filter(raw.content)
+        if re_name == 'default': re_name = ctx.author.namew
+
+        return re_race, re_gender, re_name
 
 
 
