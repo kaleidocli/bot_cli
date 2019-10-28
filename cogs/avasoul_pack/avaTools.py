@@ -398,25 +398,24 @@ class avaTools:
         if reaction.emoji == "\U000027a1":
             if cursor < pages - 1: cursor += 1
             else: cursor = 0
-            await msg.edit(embed=emli[cursor])
         elif reaction.emoji == "\U00002b05":
             if cursor > 0: cursor -= 1
             else: cursor = pages - 1
-            await msg.edit(embed=emli[cursor])
+        
         elif reaction.emoji == "\U000023ee" and cursor != 0:
             cursor = 0
-            await msg.edit(embed=emli[cursor])
         elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
             cursor = pages - 1
-            await msg.edit(embed=emli[cursor])
         
         return cursor
 
-    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=[], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0):
+    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=["\U000023ee", "\U00002b05", "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0):
         """
+            This function is for makeembed() function that return single embed
+
             cursor:       (Int)  Starting cursor in the embeds list
             makembed:     (Func/Coro) Generator for one page with specific format.  
-            extra_button: (List) Extra buttons for the paginator.
+            extra_button: (List) Replacing buttons for the paginator.
             pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor.
             pair:         (Bool) Check if items is given more than one package (e.g. cmd quest, quests)
             pair_sample:  (Int)  Index number of the element in <items> to check for length of pages"""
@@ -445,7 +444,7 @@ class avaTools:
             if pages > 1:
                 if not emli[cursor]: await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
                 msg = await ctx.send(embed=emli[cursor])
-                await self.pageButtonAdd(msg, extra=extra_button)
+                await self.pageButtonAdd(msg, reaction=extra_button)
             else:
                 msg = await ctx.send(embed=emli[0])
         # except discordErrors.HTTPException:
@@ -460,6 +459,7 @@ class avaTools:
                     cursor = await self.pageTurner(msg, reaction, user, (cursor, pages, emli))
                 else:
                     cursor = await pageTurner(msg, reaction, user, (cursor, pages, emli))
+                await msg.edit(embed=emli[cursor])
 
             except concurrent.futures.TimeoutError:
                 if delete_on_exit:
@@ -469,6 +469,71 @@ class avaTools:
             # Rate-limit
             await asyncio.sleep(0.35)
 
+
+    async def pagiMainMicro(self, ctx, items, makeembed, item_per_page=5, extra_button=["\U000023ee", "\U00002b05", '\U0001f44b', "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0):
+        """
+            This function is for makeembed() function that return micro_embed --> [embed, value]
+
+            cursor:       (Int)  Starting cursor in the embeds list
+            makembed:     (Func/Coro) Generator for one page with specific format.  
+            extra_button: (List) Replacing buttons for the paginator.
+            pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor.
+            pair:         (Bool) Check if items is given more than one package (e.g. cmd quest, quests)
+            pair_sample:  (Int)  Index number of the element in <items> to check for length of pages"""
+
+        if not pair:
+            pages = int(len(items)/item_per_page)
+            if len(items)%item_per_page != 0: pages += 1
+        else:
+            pages = int(len(items[pair_sample])/item_per_page)
+            if len(items[pair_sample])%item_per_page != 0: pages += 1
+        currentpage = 1
+        if not delete_on_exit: timeout = None
+
+        # Embedding items ============
+        emli = []
+        for _ in range(pages):
+            if inspect.iscoroutinefunction(makeembed):
+                micro_embed = await makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+            else:
+                micro_embed = makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+            emli.append(micro_embed)
+            currentpage += 1
+
+        # Send
+        try:
+            if pages > 1:
+                if not emli[cursor][0] or not emli[cursor][1]: await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
+                msg = await ctx.send(embed=emli[cursor][0])
+                await self.pageButtonAdd(msg, reaction=extra_button)
+            else:
+                msg = await ctx.send(embed=emli[0])
+        # except discordErrors.HTTPException:
+        except IndexError:
+            await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
+
+        # Button-ing
+        while True:
+            try:
+                reaction, user = await self.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=timeout)
+
+                # Choose
+                if reaction.emoji == '\U0001f44b':
+                    return emli[cursor][1]
+
+                if not pageTurner:
+                    cursor = await self.pageTurner(msg, reaction, user, (cursor, pages, emli))
+                else:
+                    cursor = await pageTurner(msg, reaction, user, (cursor, pages, emli))
+                await msg.edit(embed=emli[cursor])
+
+            except concurrent.futures.TimeoutError:
+                if delete_on_exit:
+                    try: await msg.delete()
+                    except discordErrors.NotFound: pass
+                return
+            # Rate-limit
+            await asyncio.sleep(0.35)
 
 
 

@@ -36,6 +36,8 @@ class avaPersonal(commands.Cog):
             'charm': self.charm_calc
             }
 
+        self.aui = aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
+
         print("|| Personal --- READY!")
 
 
@@ -51,7 +53,7 @@ class avaPersonal(commands.Cog):
 # ================== INFO/AVATAR ==================
 
     @commands.command()
-    async def incarnate(self, ctx, *args):
+    async def incarnate(self, ctx):
         id = str(ctx.author.id); name = ctx.author.name
 
         # Create a living entity (creator-only)
@@ -74,6 +76,7 @@ class avaPersonal(commands.Cog):
         else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
 
     @commands.command(aliases=['p'])
+    @commands.cooldown(1, 4, type=BucketType.user)
     async def profile(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
         await self.tools.ava_scan(ctx.message, type='all')
@@ -663,7 +666,47 @@ class avaPersonal(commands.Cog):
     def charm_calc(self, value):
         return 1
 
+    @commands.command()
+    async def testinca(self, ctx):
+        try:
+            r, g = await self.incarnateData_collect(ctx)
+        except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!")
 
+    async def incarnateData_collect(self, ctx):
+        """Gather RACE and GENDER from user"""
+        
+        # Get race info
+        rundle = await self.client.quefe("SELECT race_code, name, aura, min_W, max_W, illulink FROM model_race ORDER BY race_code ASC;", type='all')
+
+        # Prep
+        def makeembed_race(items, top, least, pages, currentpage):
+            item = items[top:least]
+
+            reembed = discord.Embed(title=f"(`{item[0]}`) **{item[1]}**", description=f"`WEIGHT` · {item[3]}~{item[4]} kg")
+            reembed.set_thumbnail(url=self.aui[item[2]])
+            if item[5]: reembed.set_image(url=item[5])
+
+            return reembed, item[0]
+
+        # ROLL race
+        await ctx.send(f"{ctx.author.mention}, please choose your **race**!", colour=0x36393E)
+        re_race = await self.tools.pagiMainMicro(ctx, rundle, makeembed_race, item_per_page=1, timeout=60)
+        if not re_race: return False
+
+        # Prep
+        def makeembed_gender(items, top, least, pages, currentpage):
+            """[gender, illulink]"""
+
+            reembed = discord.Embed(colour=0x36393E).set_image(url=items[top:least][1])
+
+            return reembed, items[top:least][0]
+
+        # ROLL race
+        await ctx.send(f"{ctx.author.mention}, please choose your **gender**!", colour=0x36393E)
+        re_gender = await self.tools.pagiMainMicro(ctx, [['f', 'https://imgur.com/2X1E62g.png'], ['m', 'https://imgur.com/RPQ6cd9.png']], makeembed_gender, item_per_page=1, timeout=60, extra_button=["\U00002b05", '\U0001f44b', "\U000027a1"])
+        if not re_gender: return False
+
+        return re_race, re_gender
 
 
 

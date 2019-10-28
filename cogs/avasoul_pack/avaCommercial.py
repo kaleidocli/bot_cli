@@ -19,6 +19,7 @@ class avaCommercial(commands.Cog):
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
+        self.aui = aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
 
         print("|| Commercial --- READY!")
 
@@ -62,7 +63,6 @@ class avaCommercial(commands.Cog):
                 if 'magic' in tags: pointer = ':crystal_ball:'
                 else: pointer = '<:gun_pistol:508213644375621632>'
                 # Aura icon
-                aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n\n```"{description}"```\n"""
                 
@@ -73,7 +73,7 @@ class avaCommercial(commands.Cog):
                 except ZeroDivisionError: acc_per = 0
                 reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**-------------------**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
 
-                reembed.set_thumbnail(url=aui[aura])
+                reembed.set_thumbnail(url=self.aui[aura])
                 if illulink != 'n/a': reembed.set_image(url=illulink)
 
                 await ctx.send(embed=reembed); return
@@ -434,8 +434,6 @@ class avaCommercial(commands.Cog):
                 # Pointer
                 if 'magic' in tags: pointer = ':crystal_ball:'
                 else: pointer = '<:gun_pistol:508213644375621632>'
-                # Aura icon
-                aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n```"{description}"```\n"""
                 
@@ -446,7 +444,7 @@ class avaCommercial(commands.Cog):
                 except ZeroDivisionError: acc_per = 0
                 reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**-------------------**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
 
-                reembed.set_thumbnail(url=aui[aura])
+                reembed.set_thumbnail(url=self.aui[aura])
                 if illulink != 'n/a': reembed.set_image(url=illulink)
 
                 await ctx.send(embed=reembed, delete_after=30); return

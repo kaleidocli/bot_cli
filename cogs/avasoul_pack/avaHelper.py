@@ -237,7 +237,7 @@ Definition? Mechanism? Lore? Yaaa```
             def makeembed(items, top, least, pages, currentpage):
                 line = ''
                 for item in items[top:least]:
-                    line += f"""<:old_paperroll:636090807136419840> `{item[0]}`| **{item[1]}**\n> ```{item[2]}```\n> Tags: ||{item[3]}||"""
+                    line += f"""<:old_paperroll:636090807136419840> `{item[0]}`| **{item[1]}**\n> ```{item[2]}```\n> Tags: ||{item[3]}||\n"""
 
                 return discord.Embed(description=line, colour=0x527D8F)
 
@@ -416,7 +416,7 @@ Definition? Mechanism? Lore? Yaaa```
             try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=60)
             except asyncio.TimeoutError: await box.send("<:osit:544356212846886924> Request timeout!"); return False
 
-    async def engine_waitor(self, ctx, line, t=20, reactions=["\U00002705"], true_reaction="\U00002705", DM=False, illulink=None):
+    async def engine_waitor(self, ctx, line, t=20, reactions=["\U00002705"], true_reaction="\U00002705", DM=False, illulink=None, keylist=[]):
 
         if DM:
             if illulink: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
