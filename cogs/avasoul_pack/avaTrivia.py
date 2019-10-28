@@ -503,7 +503,7 @@ class avaTrivia(commands.Cog):
         swears = {'vn': ['địt', 'đĩ', 'đụ', 'cặc', 'cằc', 'đéo', 'cứt', 'lồn', 'nứng', 'vãi', 'lồn má', 'đĩ lồn', 'tét lồn', 'dí lồn', 'địt mẹ', 'lồn trâu', 'lồn voi', 'lồn ngựa', 'con mẹ', 'bú', 'mút cặc'],
                 'en': ['fucking', 'cunt', 'shit', 'motherfucker', 'faggot', 'retard', 'goddamn', 'jerk']}
         subj = ['fucking', 'faggot', 'goddamn', 'jerk', 'asshole', 'freaking', 'son of the bitch']
-        endp = [', you fucking hear me?', ' faggot', ', you fucking gay', ' fucking retard', ' motherfucker', ' bitch', ' faggot', ' asshole', ', dickkk', ', and fuck you', ', fucking idiots', ' you shitty head']
+        endp = [', you fucking hear me?', ', you fucking duck', ' fucking retard', ' motherfucker', ' bitch', ' asshole', ', dickkk', ', and fuck you', ', fucking idiots', ' you shitty head']
         expp = ['sucking', 'orally fucking', 'killing', 'fucking', 'jerking']
         fl_fuck = ['your mom', 'the whole world just to', 'sick little bastard', 'the hell outa', 'my ass']
 
