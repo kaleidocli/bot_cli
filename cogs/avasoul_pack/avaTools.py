@@ -337,7 +337,7 @@ class avaTools:
 
             # Last check
             await asyncio.sleep(0.2)
-            if await self.client._cursor.execute(f"SELECT stats FROM personal_info WHERE id='{id}';") == 0:
+            if await self.client._cursor.execute(f"SELECT stats FROM personal_info WHERE id='{id}';") != 0:
                 return 3
 
             # Inventory     |      Add fist as a default weapon
