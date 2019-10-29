@@ -242,13 +242,28 @@ class avaCommercial(commands.Cog):
     async def bank(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
+        target = ctx.author
+        key = ''
+        value = []
+
+        # GET thing
+        for a in args:
+            if a.startswith('<@'):
+                try:
+                    target = ctx.message.mentions[0]
+                except IndexError: continue
+            elif not a.isdigit() and not key:
+                key = a
+            else:
+                value.append(a)
+        args = value
+
         # TARGET ==============================
         # Partner
-        try:
-            target = ctx.message.mentions[0]
+        if target != ctx.author and key != 'transfer':
 
             # Info get / Partner check
-            try: money, cur_X, cur_Y, age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, (SELECT age FROM personal_info WHERE id='{target.id}'), stats FROM personal_info WHERE id='{ctx.author.id}' AND partner='{target.id}';")
+            try: money, cur_X, cur_Y, age, t_age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, age, (SELECT age FROM personal_info WHERE id='{target.id}'), stats FROM personal_info WHERE id='{ctx.author.id}' AND partner='{target.id}';")
             except TypeError: await ctx.send(f"<:osit:544356212846886924> You're not **{target.name}**'s partner!"); return
 
             # Coord check
@@ -259,11 +274,13 @@ class avaCommercial(commands.Cog):
             # E: User does not have account
             except TypeError: await ctx.send(f"<:osit:544356212846886924> Your partner does not have a bank account!"); return
         # Player
-        except IndexError:
+        else:
             target = ctx.author
 
             # Status check
-            try: money, cur_X, cur_Y, age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, age, stats FROM personal_info WHERE id='{ctx.author.id}' AND stats NOT IN ('ORANGE', 'RED');")
+            try:
+                money, cur_X, cur_Y, age, stats = await self.client.quefe(f"SELECT money, cur_X, cur_Y, age, stats FROM personal_info WHERE id='{ctx.author.id}' AND stats NOT IN ('ORANGE', 'RED');")
+                t_age = age
             except TypeError: await ctx.send(f"<:osit:544356212846886924> You need a **GREEN** or **YELLOW** status to perform this command, **{ctx.author.name}**."); return
 
             # Coord check
@@ -273,32 +290,26 @@ class avaCommercial(commands.Cog):
             try: invs, invs_interst, invest_age, tier = await self.client.quefe(f"SELECT investment, interest, invest_age, tier FROM pi_bank WHERE user_id='{target.id}';")
             # E: User does not have account
             except TypeError:
-                # Get confirmation
-                def UMCc_check(m):
-                    return m.channel == ctx.channel and m.content == 'account confirm' and m.author == ctx.author
 
-                await ctx.send(f":bank: Greeting, {ctx.message.author.mention}. It seems that there's no account has your id on it. Perhaps, would you like to open one?\n<a:RingingBell:559282950190006282> *Proceed?* (Key: `account confirm` | Timeout=10s)")
-                try: await self.client.wait_for('message', timeout=10, check=UMCc_check)
+                await ctx.send(f":bank: Greeting, {ctx.author.mention}. It seems that there's no account has your id on it. Perhaps, would you like to open one?\n<a:RingingBell:559282950190006282> *Proceed?* (Key: `account confirm` | Timeout=10s)")
+                try: await self.client.wait_for('message', timeout=10, check=lambda m: m.channel == ctx.channel and m.content == 'account confirm' and m.author == ctx.author)
                 except asyncio.TimeoutError: await ctx.send(f":bank: Indeed. Why would mongrels need a bank account..."); return
                 
                 # Create account
-                await self.client._cursor.execute(f"INSERT INTO pi_bank VALUES ('{str(ctx.message.author.id)}', 0, 0, 0.01, '1');")
+                await self.client._cursor.execute(f"INSERT INTO pi_bank VALUES ('{ctx.author.id}', 0, 0, 0.01, '1');")
                 await ctx.send(f":white_check_mark: Your account has been successfully created!"); return
 
 
-        try:
-            # PARTNER
-            if args[0].startswith('<@'): raise IndexError
-
+        if key:
             # INVEST
-            if args[0] == 'invest':
+            if key == 'invest':
                 try:
-                    quantity = int(args[1])
+                    quantity = int(args[0])
                     if quantity >= money: quantity = money
                     elif quantity < 0: await ctx.send("Don't be stupid <:fufu:605255050289348620>"); return
 
                     # Update prev investment, then the investment, then the invest_age
-                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})+{quantity}, invest_age={age} WHERE user_id='{target.id}';")
+                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{t_age - invest_age})+{quantity}, invest_age={t_age} WHERE user_id='{target.id}';")
                     await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{quantity}, stats=IF(money>=0, 'GREEN', 'YELLOW') WHERE id='{target.id}';")
 
                     await ctx.send(f":white_check_mark: Added **<:36pxGold:548661444133126185>{quantity:,}** to {target.name}'s account!"); return
@@ -307,23 +318,23 @@ class avaCommercial(commands.Cog):
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to invest."); return
 
             # WITHDRAW
-            elif args[0] == 'withdraw':
+            elif key == 'withdraw':
                 try:
                     if stats == 'YELLOW': await ctx.send("<:osit:544356212846886924> You need a **GREEN** status to withdraw money."); return
 
-                    quantity = int(args[1])
+                    quantity = int(args[0])
                     if quantity >= invs: quantity = invs
                     elif quantity < 0: await ctx.send("Don't be stupid <:fufu:605255050289348620>"); return
 
                     # Update prev investment, then the investment, then the invest_age
-                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})-{quantity}, invest_age={age} WHERE user_id='{target.id}'; UPDATE personal_info SET money=money+{quantity} WHERE id='{target.id}';")
+                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{t_age - invest_age})-{quantity}, invest_age={t_age} WHERE user_id='{target.id}'; UPDATE personal_info SET money=money+{quantity} WHERE id='{target.id}';")
 
                     await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{quantity:,}** has just been withdrawn from {target.name}'s account!"); return
                 # E: Quantity not given
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to withdraw."); return
 
             # TRANSFER
-            elif args[0] == 'transfer':
+            elif key == 'transfer':
                 try:
                     if stats == 'YELLOW': await ctx.send("<:osit:544356212846886924> You need a **GREEN** status to transfer money."); return
                     
@@ -352,7 +363,7 @@ class avaCommercial(commands.Cog):
                     def UMCc_check2(m):
                         return m.channel == ctx.channel and m.content == 'transfer confirm' and m.author == ctx.author
 
-                    await ctx.send(f":credit_card: | **{ctx.message.author.name}**⠀⠀>>>⠀⠀**{target.name}**\n{line}<a:RingingBell:559282950190006282> Proceed? (Key: `transfer confirm` | Timeout=15s)")
+                    await ctx.send(f":credit_card: | **{ctx.author.name}**⠀⠀>>>⠀⠀**{target.name}**\n{line}<a:RingingBell:559282950190006282> Proceed? (Key: `transfer confirm` | Timeout=15s)")
                     try: await self.client.wait_for('message', timeout=15, check=UMCc_check2)
                     except asyncio.TimeoutError: await ctx.send(f":credit_card: Aborted!"); return
 
@@ -360,7 +371,7 @@ class avaCommercial(commands.Cog):
                     if await self.client._cursor.execute(f"UPDATE pi_bank SET investment=investment+{q_atx} WHERE id='{target.id}';") == 0:
                         await ctx.send(f"<:osit:544356212846886924> User does not have a bank account!"); return
                     # Update prev investment, then the investment, then the invest_age
-                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})-{quantity}, invest_age={age} WHERE user_id='{str(ctx.message.author.id)}';")
+                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})-{quantity}, invest_age={age} WHERE user_id='{ctx.author.id}';")
 
                     await ctx.send(f":credit_card: **<:36pxGold:548661444133126185>{q_atx:,}** has been successfully added to **{target.name}**'s bank account."); return
 
@@ -368,7 +379,7 @@ class avaCommercial(commands.Cog):
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to withdraw."); return
 
             # UPGRADE
-            elif args[0] == 'upgrade':
+            elif key == 'upgrade':
                 tier_dict = {'2': [('elementary', 'international_bussiness'), 0.02], 
                             '3': [('middleschool', 'international_bussiness'), 0.03], 
                             '4': [('highschool', 'international_bussiness'), 0.04], 
@@ -380,14 +391,14 @@ class avaCommercial(commands.Cog):
                 next_tier = str(int(tier) + 1)
                 try:
                     # Update the tier, if the check is True
-                    if await self.client._cursor.execute(f"UPDATE pi_bank SET tier='{next_tier}', interest={tier_dict[next_tier][1]} WHERE user_id='{str(ctx.message.author.id)}' AND EXISTS (SELECT * FROM pi_degrees WHERE user_id='{str(ctx.message.author.id)}' AND degree='{tier_dict[next_tier][0][0]}' AND major='{tier_dict[next_tier][0][1]}');") == 0:
+                    if await self.client._cursor.execute(f"UPDATE pi_bank SET tier='{next_tier}', interest={tier_dict[next_tier][1]} WHERE user_id='{ctx.author.id}' AND EXISTS (SELECT * FROM pi_degrees WHERE user_id='{ctx.author.id}' AND degree='{tier_dict[next_tier][0][0]}' AND major='{tier_dict[next_tier][0][1]}');") == 0:
                         await ctx.send(f":bank: Sorry. Your request to upgrade to tier `{next_tier}` does not meet the criteria."); return
                 except KeyError: await ctx.send(f":bank: Your current tier is `{tier}`, which is the highest."); return
 
                 await ctx.send(f":white_check_mark: Upgraded to tier `{next_tier}`!"); return
 
             # DOWNGRADE
-            elif args[0] == 'downgrade':
+            elif key == 'downgrade':
                 tier_dict = {'2': [('elementary', 'international_bussiness'), 0.02], 
                             '3': [('middleschool', 'international_bussiness'), 0.03], 
                             '4': [('highschool', 'international_bussiness'), 0.04], 
@@ -399,13 +410,12 @@ class avaCommercial(commands.Cog):
                 next_tier = str(int(tier) - 1)
                 try:
                     # Update the tier, if the check is True
-                    await self.client._cursor.execute(f"UPDATE pi_bank SET tier='{next_tier}', interest={tier_dict[next_tier][1]} WHERE user_id='{str(ctx.message.author.id)}';")
+                    await self.client._cursor.execute(f"UPDATE pi_bank SET tier='{next_tier}', interest={tier_dict[next_tier][1]} WHERE user_id='{ctx.author.id}';")
                 except KeyError: await ctx.send(f":bank: Your current tier is `{tier}`, which is the lowest to be able to downgrade."); return
 
                 await ctx.send(f":white_check_mark: Downgraded to tier `{next_tier}`!"); return
 
-        # E: args not given
-        except IndexError:
+        else:
 
             line = f""":bank: `『TIER』` **· `{tier}`** ⠀⠀ ⠀:bank: `『INTEREST』` **· `{invs_interst}`** \n```http
 $ {invs:,}```"""
