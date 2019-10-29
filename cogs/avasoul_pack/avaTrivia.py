@@ -226,6 +226,13 @@ class avaTrivia(commands.Cog):
             bundle = items
             descr = ''
 
+            note = ''
+            if 'alre' in region[10]: note += """· ALL regions are connected to this area."""
+            if 'alar' in region[10]: note += """· ALL areas are connected to this area."""
+            if note:
+                descr += f"""```http
+{note}```"""
+
             # Mapping
             if bundle:
                 for b in bundle[top:least]:
@@ -237,26 +244,16 @@ class avaTrivia(commands.Cog):
 
             return reembed
 
-        pages = len(bundle)
-        if not pages: pages = 1
         item_per_page = 4
+        pages = int(len(bundle)/item_per_page)
+        if not pages: pages = 1
         currentpage = 1
         cursor = 0
 
         emli = []
         emli.append(await makeembed_2())
         for _ in range(pages):
-            pemb = makeembed(bundle, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)  # Plus one because pages is counted by bundle not regions
-            note = ''
-            if 'allre' in region[10]: note += """· [All regions] are connected to this area."""
-            if 'allar' in region[10]: note += """· [All areas] are connected to this area."""
-            if note:
-                if pemb.description:
-                    pemb.description = f"""apache
-    {note}""" + pemb.description
-                else:
-                    pemb.description = f"""apache
-    {note}"""
+            pemb = makeembed(bundle, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
             emli.append(pemb)
             currentpage += 1
 
@@ -267,7 +264,7 @@ class avaTrivia(commands.Cog):
         while True:
             try:
                 reaction, user = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
-                cursor = await self.tools.pageTurner(msg, reaction, user, (cursor, pages+1, emli))
+                cursor = await self.tools.pageTurner(msg, reaction, user, (cursor, pages+1, emli)) # Plus one because pages is counted by bundle not regions
                 await msg.edit(embed=emli[cursor])
             except concurrent.futures.TimeoutError:
                 pass
@@ -369,7 +366,7 @@ class avaTrivia(commands.Cog):
         line = ''; count = 0
         for u in ret:
             count += 1
-            line = line + f"{count} | **{u[0]}** ({u[1]}) with <:36pxGold:548661444133126185> **{u[2]}**\n"
+            line = line + f"{count} | **{u[0]}** ({u[1]}) with <:36pxGold:548661444133126185> **{u[2]:,}**\n"
 
         await ctx.send(embed=discord.Embed(title=":military_medal: Top 10 richest Remnants!", description=line, colour=0xFFC26F))
 

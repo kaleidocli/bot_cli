@@ -125,7 +125,7 @@ class avaCommercial(commands.Cog):
                         #line = line + f""" `{item_code}` :small_orange_diamond: **{items[item_code].name}** \n| *"{items[item_code].description}"*\n| **`Price`** <:36pxGold:548661444133126185>{items[item_code].price}\n++ `{'` `'.join(items[item_code].tags)}`\n\n"""
                     elif 'blueprint' in item[3]:
                         icon = '<:blueprint512:557713942508470272>'
-                    line = line + f""" `{item[0]}` {icon} [`{item[7]}`| **{item[1]}**]\n> *"{item[2]}"*\n╟** `『Weight』{item[4]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[6]}/{item[5]}`**\n**╟╼**`{item[3].replace(' - ', '`·`')}`\n\n"""
+                    line = line + f""" `{item[0]}` {icon} [`{item[7]}`| **{item[1]}**]\n> *"{item[2]}"*\n╟** `『Weight』{item[4]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[6]:,}/{item[5]}`**\n**╟╼**`{item[3].replace(' - ', '`·`')}`\n\n"""
 
                 line = line + f"**╚═════════╡**`{currentpage}/{pages}`**╞══════════**"
 
@@ -301,7 +301,7 @@ class avaCommercial(commands.Cog):
                     await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})+{quantity}, invest_age={age} WHERE user_id='{target.id}';")
                     await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{quantity}, stats=IF(money>=0, 'GREEN', 'YELLOW') WHERE id='{target.id}';")
 
-                    await ctx.send(f":white_check_mark: Added **<:36pxGold:548661444133126185>{quantity}** to {target.name}'s account!"); return
+                    await ctx.send(f":white_check_mark: Added **<:36pxGold:548661444133126185>{quantity:,}** to {target.name}'s account!"); return
 
                 # E: Quantity not given
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to invest."); return
@@ -318,7 +318,7 @@ class avaCommercial(commands.Cog):
                     # Update prev investment, then the investment, then the invest_age
                     await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})-{quantity}, invest_age={age} WHERE user_id='{target.id}'; UPDATE personal_info SET money=money+{quantity} WHERE id='{target.id}';")
 
-                    await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{quantity}** has just been withdrawn from {target.name}'s account!"); return
+                    await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{quantity:,}** has just been withdrawn from {target.name}'s account!"); return
                 # E: Quantity not given
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to withdraw."); return
 
@@ -344,10 +344,10 @@ class avaCommercial(commands.Cog):
                     except NameError: await ctx.send("<:osit:544356212846886924> Please provide the amount of money"); return
 
                     line = f"""```clean
-        BEFORE Tax:⠀⠀⠀⠀⠀⠀⠀$ {quantity}
+        BEFORE Tax:⠀⠀⠀⠀⠀⠀⠀$ {quantity:,}
         TAX:⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀x⠀  {tax} %
         -----------------------------
-        AFTER Tax:⠀⠀⠀⠀⠀⠀⠀⠀$ {q_atx}```"""
+        AFTER Tax:⠀⠀⠀⠀⠀⠀⠀⠀$ {q_atx:,}```"""
 
                     def UMCc_check2(m):
                         return m.channel == ctx.channel and m.content == 'transfer confirm' and m.author == ctx.author
@@ -362,7 +362,7 @@ class avaCommercial(commands.Cog):
                     # Update prev investment, then the investment, then the invest_age
                     await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})-{quantity}, invest_age={age} WHERE user_id='{str(ctx.message.author.id)}';")
 
-                    await ctx.send(f":credit_card: **<:36pxGold:548661444133126185>{q_atx}** has been successfully added to **{target.name}**'s bank account."); return
+                    await ctx.send(f":credit_card: **<:36pxGold:548661444133126185>{q_atx:,}** has been successfully added to **{target.name}**'s bank account."); return
 
                 # E: Quantity not given
                 except (IndexError, ValueError): await ctx.send("<:osit:544356212846886924> Please provide the amount you want to withdraw."); return
@@ -407,7 +407,8 @@ class avaCommercial(commands.Cog):
         # E: args not given
         except IndexError:
 
-            line = f""":bank: `『TIER』` **· `{tier}`** ⠀⠀ ⠀:bank: `『INTEREST』` **· `{invs_interst}`** \n```$ {invs}```"""
+            line = f""":bank: `『TIER』` **· `{tier}`** ⠀⠀ ⠀:bank: `『INTEREST』` **· `{invs_interst}`** \n```http
+$ {invs:,}```"""
 
             reembed = discord.Embed(title = f"{target.name.upper()}", colour = discord.Colour(0x011C3A), description=line)
             reembed.set_thumbnail(url=target.avatar_url)
@@ -530,7 +531,7 @@ class avaCommercial(commands.Cog):
                     elif 'blueprint' in item[4]:
                         icon = '<:blueprint512:557713942508470272>'
                     else: icon = ':tools:'
-                    line = line + f""" `{item[0]}` {icon} [`{item[1]}`| **{item[2]}**] [{item[6]}]\n> *"{item[3]}"*\n**╟ `『Weight』{item[5]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[7]}`**\n**╟╼**`{item[4].replace(' - ', '`·`')}`\n\n"""
+                    line = line + f""" `{item[0]}` {icon} [`{item[1]}`| **{item[2]}**] [{item[6]}]\n> *"{item[3]}"*\n**╟ `『Weight』{item[5]}`** · **`『Price』`<:36pxGold:548661444133126185>`{item[7]:,}`**\n**╟╼**`{item[4].replace(' - ', '`·`')}`\n\n"""
                             
                 line = line + f"**╚═══════╡**`{currentpage}/{pages}`**╞═══════**" 
 
@@ -775,7 +776,7 @@ class avaCommercial(commands.Cog):
             # Tradable check
             if 'untradable' in w_tags: await ctx.send(f"<:osit:544356212846886924> You cannot trade this item, **{ctx.message.author.name}**. It's *untradable*, look at its tags."); return
 
-            msg = await ctx.send(f"**{ctx.author.name}** wants to sell you **{quantity}** [`{w_code}`| **{w_name}**]. Accept, {receiver.mention}?")
+            msg = await ctx.send(f"**{ctx.author.name}** wants to sell you **{quantity}** [`{w_code}`| **{w_name}**] for <:36pxGold:548661444133126185>{price:,}. Accept, {receiver.mention}?")
             await msg.add_reaction('\U0001f6d2')
 
             def RUM_check(reaction, user):
@@ -883,7 +884,7 @@ class avaCommercial(commands.Cog):
         # Receiving money/Removing item
         await self.client._cursor.execute(receive_query + quantity_query)
 
-        await ctx.send(f":white_check_mark: You received **<:36pxGold:548661444133126185>{receive}** from selling {quantity} [`{item_id}`| **{w_name}**], **{ctx.message.author.name}**!")
+        await ctx.send(f":white_check_mark: You received **<:36pxGold:548661444133126185>{receive:,}** from selling {quantity} [`{item_id}`| **{w_name}**], **{ctx.message.author.name}**!")
 
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -921,7 +922,7 @@ class avaCommercial(commands.Cog):
             
         # Transfer
         await self.client._cursor.execute(f"UPDATE personal_info SET money=money+IF(id='{ctx.author.id}', -{package}, {package}) WHERE id IN ('{ctx.author.id}', '{receiver.id}');")
-        await ctx.send(f":white_check_mark: You've been given **<:36pxGold:548661444133126185>{raw[0]}**, {receiver.mention}!")
+        await ctx.send(f":white_check_mark: You've been given **<:36pxGold:548661444133126185>{raw[0]:,}**, {receiver.mention}!")
 
 
 

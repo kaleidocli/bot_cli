@@ -175,8 +175,8 @@ class avaPersonal(commands.Cog):
 
         #box = f"\n░░░░ **{name}** | {lmao[gender].capitalize()}, {age} ░░░░\n╟**`Money`** · <:36pxGold:548661444133126185>{money}\n╟**`Merit`** · {merit}\n╟**`Degrees`** · `{degrees}`\n━━━━━╾ {combat_HANDLING.capitalize()} hand ╼━━━━\n╟**`RIGHT`** · {right_hand}\n╟**`LEFT`** · {left_hand}\n━━━━━╾ **`EVO`** {evo} ╼━━━━━━\n**·** `STA` {STA}/{MAX_STA}\n**·** `LP` {LP}/{MAX_LP}\n**·** `STR` {STR}\n**·** `INT` {INTT}"
         box = discord.Embed(title = f"{age} {lmao[gender].capitalize()} | **{name}** ||<:merit_badge:620137704662761512>`{merit}` <:perk:632340885996044298>`{perks}`||", colour = discord.Colour(0x36393F))
-        box.add_field(name=f"`LP` · **{LP}**/{MAX_LP}", value=f"""{LP_line}""", inline=True)
-        box.add_field(name=f"`STA` · **{STA}**/{MAX_STA}", value=f"""{STA_line}""", inline=True)
+        box.add_field(name=f"`LP` · **{LP:,}**/{MAX_LP:,}", value=f"""{LP_line}""", inline=True)
+        box.add_field(name=f"`STA` · **{STA:,}**/{MAX_STA:,}", value=f"""{STA_line}""", inline=True)
         box.add_field(name=f'>>> **`EVO`** · {evo}\n**`STR`** · {STR}\n**`INT`** · {INTT}\n**`CHARM`** · {charm}', value=f"<:right_hand:521197677346553861>{right_hand}")
         box.add_field(name=f'>>> **`FLAME`** · {au_FLAME}\n**`ICE`** · {au_ICE}\n**`HOLY`** · {au_HOLY}\n**`DARK`** · {au_DARK}', value=f"<:left_hand:521197732162043922>{left_hand}")
         # box.add_field(name=f'>>> **`merit`** · {merit}{pocket_line}', value=f"{handling[combat_HANDLING]}", inline=True)
@@ -507,10 +507,10 @@ class avaPersonal(commands.Cog):
             p_DARK = self.compound_calc(evos, self.evo_func['dark'], au_DARK)
             p_charm = self.compound_calc(evos, self.evo_func['charm'], charm)
 
-            left_collumn = f"""**`LP`**⠀⠀⠀{max_LP} ▸ **{max_LP + p_max_LP}** (+{p_max_LP})
-                **`STA`**⠀⠀{max_STA} ▸ **{max_STA + p_max_STA}** (+{p_max_STA})
-                **`STR`**⠀⠀{strr} ▸ **{strr + p_strr}** (+{p_strr})
-                **`INT`**⠀⠀{intt} ▸ **{intt + p_intt}** (+{p_intt})
+            left_collumn = f"""**`LP`**⠀⠀⠀{max_LP:,} ▸ **{(max_LP + p_max_LP):,}** (+{p_max_LP:,})
+                **`STA`**⠀⠀{max_STA:,} ▸ **{(max_STA + p_max_STA):,}** (+{p_max_STA:,})
+                **`STR`**⠀⠀{strr:,} ▸ **{(strr + p_strr):,}** (+{p_strr:,})
+                **`INT`**⠀⠀{intt:,} ▸ **{(intt + p_intt)}** (+{p_intt:,})
             """
 
             right_collumn = f"""**`FLAME`**⠀{au_FLAME} ▸ **{au_FLAME + p_FLAME}** (+{p_FLAME})
@@ -521,10 +521,10 @@ class avaPersonal(commands.Cog):
             """
 
             vemb = discord.Embed(colour=0x011C3A)
-            vemb.add_field(name=f"<:zapp:524893958115950603> **Evolution:** {evo} ▸ **{evo+evos}**", value=f">>> {left_collumn}", inline=True)
+            vemb.add_field(name=f"<:zapp:524893958115950603> **Evolution:** {evo:,} ▸ **{(evo+evos):,}**", value=f">>> {left_collumn}", inline=True)
             perk_cost = self.perk_calc(evo, addition=evos)
-            if perks >= perk_cost: temp = f"**{perks}**/**{perk_cost}**"
-            else: temp = f"{perks}/**{perk_cost}**"
+            if perks >= perk_cost: temp = f"**{perks:,}**/**{perk_cost:,}**"
+            else: temp = f"{perks:,}/**{perk_cost:,}**"
             vemb.add_field(name=f"<:perk:632340885996044298> **Perk cost:** {temp}", value=f">>> {right_collumn}", inline=True)
             # vemb.set_thumbnail(url=ctx.author.avatar_url)
             vemb.set_footer(text="Use <evolve [attribute] {times}> to upgrade an attribute", icon_url=ctx.author.avatar_url)

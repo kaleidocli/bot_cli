@@ -252,7 +252,7 @@ class avaAvatar(commands.Cog):
             evo = str(evo).upper()
             kill = str(kill).upper()
             death = str(death).upper()
-            money = str(money).upper()
+            money = f"{money:,}".upper()
             guild = f"{guild_code} | {guild_name}"
             rank = rank.upper()
             # Get text canvas
