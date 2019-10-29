@@ -111,28 +111,28 @@ class avaPersonal(commands.Cog):
 
         if right_hand != 'n/a':
             rh_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{str(ctx.message.author.id)}';")
-            try: right_hand = f"`{right_hand}`|**{rh_name[0]}**"
+            try: right_hand = f"[`{right_hand}`| **{rh_name[0]}**]"
             except TypeError:
                 if right_hand == 'ar13': await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'ar13', 1);"); rh_name = "Fist"
                 else:
                     right_hand, rh_name = await self.client.quefe(f"SELECT item_id, name FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13'")
                     await self.client._cursor.execute(f"UPDATE personal_info SET right_hand='{right_hand}' WHERE id='{ctx.author.id}';")
-                right_hand = f"`{right_hand}`|**{rh_name[0]}**"
+                right_hand = f"[`{right_hand}`| **{rh_name[0]}**]"
         if left_hand != 'n/a': 
             lh_name = await self.client.quefe(f"SELECT name FROM pi_inventory WHERE existence='GOOD' AND (item_code='{left_hand}' OR item_id='{left_hand}') AND user_id='{str(ctx.message.author.id)}';")
-            try: left_hand = f"`{left_hand}`|**{lh_name[0]}**"
+            try: left_hand = f"[`{left_hand}`| **{lh_name[0]}**]"
             except TypeError:
                 if left_hand == 'ar13': await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'ar13', 1);"); lh_name = "Fist"
                 else:
                     left_hand, lh_name = await self.client.quefe(f"SELECT item_id, name FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='ar13'")
                     await self.client._cursor.execute(f"UPDATE personal_info SET left_hand='ar13' WHERE id='{ctx.author.id}';"); lh_name = "ar13"
-                left_hand = f"`{left_hand}`|**{lh_name[0]}**"
+                left_hand = f"`[{left_hand}`| **{lh_name[0]}**]"
         if combat_HANDLING == 'right':
             right_hand = f"__{right_hand}__"
         elif combat_HANDLING == 'left':
             left_hand = f"__{left_hand}__"
         else:
-            right_hand = f"**__{right_hand}__"
+            right_hand = f"__{right_hand}__"
             left_hand = f"__{left_hand}__"
 
         lmao = {'f': '<:Offgirl_Heart:620029339148484611>', 'm': '<:Offboy_Heart:620029339194490912>'}
@@ -545,7 +545,7 @@ class avaPersonal(commands.Cog):
                     line = '' 
 
                     for item in items[top:least]:
-                        line = line + f"""\n`{item[0]}`|**{item[1]}** == `{item[2]}`"""
+                        line = line + f"""\n[`{item[0]}`| **{item[1]}**] == `{item[2]}`"""
 
                     reembed = discord.Embed(title = f"<:armor_p:619743809286438929> Pocket of **{ctx.author.name}**", colour = discord.Colour(0x011C3A), description=line)
                     reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")

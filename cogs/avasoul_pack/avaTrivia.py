@@ -152,8 +152,6 @@ class avaTrivia(commands.Cog):
                 elif reaction.emoji == "\U00002b05" and cursor > 0:
                     cursor -= 1
                     await msg.edit(embed=emli[cursor][0])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
                 elif reaction.emoji == "\U0001f50e":
                     temsg = await ctx.send(":mag_right: Please provide region's code (e.g. `region.0`)")
 
@@ -165,23 +163,18 @@ class avaTrivia(commands.Cog):
                     await temsg.delete()
                     try: await msg.edit(embed=tembed)
                     except NameError: await ctx.send("<:osit:544356212846886924> Region not found :<"); continue
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
                 elif reaction.emoji == '\U0001f44b':
                     for r in regions:
                         if r[0] == emli[cursor][1]:
+                            print(r, emli)
                             await self.map_engine(ctx, pack=(r[0], r[1], r[3], r[10]))
                             return
                 elif reaction.emoji == "\U000023ee" and cursor != 0:
                     cursor = 0
                     await msg.edit(embed=emli[cursor][0])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
                 elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
                     cursor = pages - 1
                     await msg.edit(embed=emli[cursor][0])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
             except asyncio.TimeoutError:
                 await msg.delete(); return
 
@@ -240,7 +233,7 @@ class avaTrivia(commands.Cog):
                     else: pass_note = f"||{self.utils.smalltext(b[2])}||"
                     descr += f"<:wooden_door:636068648985034753> `{b[0]}`| **{b[1]}**\n> {pass_note}\n"
 
-            reembed = discord.Embed(title=f"""{len(bundle)} portals in this map:""", description=descr, colour = discord.Colour(0x011C3A))
+            reembed = discord.Embed(title=f"""{len(bundle)} PORTALS""", description=descr, colour = discord.Colour(0x011C3A))
 
             return reembed
 
@@ -253,7 +246,18 @@ class avaTrivia(commands.Cog):
         emli = []
         emli.append(await makeembed_2())
         for _ in range(pages):
-            emli.append(makeembed(bundle, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage))
+            pemb = makeembed(bundle, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)  # Plus one because pages is counted by bundle not regions
+            note = ''
+            if 'allre' in region[10]: note += """· [All regions] are connected to this area."""
+            if 'allar' in region[10]: note += """· [All areas] are connected to this area."""
+            if note:
+                if pemb.description:
+                    pemb.description = f"""apache
+    {note}""" + pemb.description
+                else:
+                    pemb.description = f"""apache
+    {note}"""
+            emli.append(pemb)
             currentpage += 1
 
         msg = await ctx.send(embed=emli[cursor])
@@ -263,7 +267,8 @@ class avaTrivia(commands.Cog):
         while True:
             try:
                 reaction, user = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
-                cursor = await self.tools.pageTurner(msg, reaction, user, (cursor, pages, emli))
+                cursor = await self.tools.pageTurner(msg, reaction, user, (cursor, pages+1, emli))
+                await msg.edit(embed=emli[cursor])
             except concurrent.futures.TimeoutError:
                 pass
 
@@ -601,7 +606,7 @@ class avaTrivia(commands.Cog):
                 for b in bundle[top:least]:
                     if not b[2]: pass_note = ''
                     else: pass_note = f"||{self.utils.smalltext(b[2])}||"
-                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`| **{b[1]}** {pass_note}\n"
+                    descr += f"<:wooden_door:636068648985034753> `{b[0]}`| **{b[1]}**\n> {pass_note}\n"
 
             reembed = discord.Embed(description=f"""```ini
 [{pack[0]}] {pack[1]}```{descr}""", colour = discord.Colour(0x011C3A))
