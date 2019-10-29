@@ -275,7 +275,7 @@ class avaTools:
         ava = {}
 
         if not resu:
-            if info_pack[2]: ava['name'] = self.utils.inj_filter(info_pack[2])
+            if info_pack[2]: ava['name'] = await self.utils.inj_filter(info_pack[2])
             else: ava['name'] = await self.utils.inj_filter(name[0:20])
             ava['dob'] = f"{dob[2]} - {dob[1]} - {dob[0]}"
             ava['age'] = 0
