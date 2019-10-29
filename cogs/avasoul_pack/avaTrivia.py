@@ -227,8 +227,8 @@ class avaTrivia(commands.Cog):
             descr = ''
 
             note = ''
-            if 'alre' in region[10]: note += """· ALL regions are connected to this area."""
-            if 'alar' in region[10]: note += """· ALL areas are connected to this area."""
+            if 'alre' in region[10]: note += """· ALL unlocked regions are connected to this map."""
+            if 'alar' in region[10]: note += """· ALL unlocked areas are connected to this map."""
             if note:
                 descr += f"""```http
 {note}```"""

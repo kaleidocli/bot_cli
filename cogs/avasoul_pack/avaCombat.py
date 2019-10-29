@@ -756,7 +756,7 @@ class avaCombat(commands.Cog):
             await self.client._cursor.execute(f"DELETE FROM environ_mob WHERE mob_id='{target_id}';")
 
             # Insert the mob to DB
-            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, {attack_type}, {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, '{lockon_max}', "{illulink}", '');""")
+            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, '{attack_type}', {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, '{lockon_max}', "{illulink}", '');""")
             counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
             await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
 
@@ -1296,8 +1296,13 @@ class avaCombat(commands.Cog):
             # except ValueError: pass
 
             temp = []
+            # print(f"Value into decoder --- {value}")
             for v in value:
-                temp.append(' - '. join(str(v)))
+                # STR convert (since there are int in v)
+                try:
+                    temp.append(' - '. join(v))
+                except TypeError:
+                    temp.append(' - '. join([str(i) for i in v]))
             return ' || '.join(temp)
 
     async def CE_maker(self, raw_pcm):
