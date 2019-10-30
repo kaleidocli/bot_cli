@@ -64,22 +64,22 @@ extensions = [  'jishaku',
 
 # client = commands.Bot(command_prefix=get_pref)
 
-async def get_pref(bot, message):
-   return commands.when_mentioned_or(config.prefix[0])(bot, message)
+# async def get_pref(bot, message):
+#    return commands.when_mentioned_or(config.prefix[0])(bot, message)
 
 
 
 # ================== INITIAL ==================
 
-client = commands.Bot(command_prefix=get_pref)
+# client = commands.Bot(command_prefix=get_pref)
+client = commands.Bot(command_prefix=config.prefix[0])
 client.myconfig = config
-client.realready = True
+client.realready = False
 client.ignore_list = []
 client.owner_id = config.owner_id
 client.owner = client.get_user(client.owner_id)
 client.support_server_invite = config.support_server_invite
 
-# client = commands.Bot(command_prefix='cli ')
 client.remove_command('help')
 
 def check_id():
@@ -108,6 +108,9 @@ async def on_guild_remove(guild):
 @client.event
 async def on_message(message):
     if not client.realready: return
+    if message.mentions:
+        if message.mentions[0] == client.user:
+            await message.channel.send(f"> {message.author.mention}, my prefix is **`{config.prefix[0]}`**!"); return
     if message.author.id in client.ignore_list: return
     await client.process_commands(message)
 

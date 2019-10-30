@@ -7,14 +7,15 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
 from utils import checks
-from .avaTools import avaTools
-from .avaUtils import avaUtils
 
 
 
 class avaHelper(commands.Cog):
 
     def __init__(self, client):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
@@ -416,7 +417,8 @@ Definition? Mechanism? Lore? Yaaa```
             try: await self.client.wait_for('reaction_add', check=RUM_check, timeout=60)
             except asyncio.TimeoutError: await box.send("<:osit:544356212846886924> Request timeout!"); return False
 
-    async def engine_waitor(self, ctx, line, t=20, reactions=["\U00002705"], true_reaction="\U00002705", DM=False, illulink=None, keylist=[]):
+    async def engine_waitor(self, ctx, line, t=20, reactions=["\U00002705"], DM=False, illulink=None, keylist=[]):
+        """True reaction is the first reaction in reactions"""
 
         if DM:
             if illulink: msg = await ctx.author.send(embed=discord.Embed(description=line, colour=0x527D8F).set_image(url=illulink))
@@ -430,7 +432,7 @@ Definition? Mechanism? Lore? Yaaa```
 
         try:
             r, _ = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author and r.message == ctx.message, timeout=t)
-            if str(r.emoji) == true_reaction:
+            if r.emoji == reactions[0]:
                 return True
             else: return False
         except asyncio.TimeoutError: return False
