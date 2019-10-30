@@ -431,7 +431,7 @@ Definition? Mechanism? Lore? Yaaa```
             await msg.add_reaction(r)
 
         try:
-            r, _ = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author and r.message == msg.id, timeout=t)
+            r, _ = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author and r.message == msg, timeout=t)
             if r.emoji == reactions[0]:
                 return True
             else: return False
