@@ -147,11 +147,14 @@ class avaGuild(commands.Cog):
                     sample = {'iron': 3, 'bronze': 4, 'silver': 5, 'gold': 6, 'adamantite': 8, 'mithryl': 10}
                     if await self.client._cursor.execute(f"SELECT * FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_code='{raw[1]}';") >= 1:
                         await ctx.send("<:osit:544356212846886924> Quest has already been taken"); return
-                    done_quests = await self.client.quefe(f"SELECT finished_quests FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
-                    try:
-                        if raw[1] in done_quests[0].split(' - '): await ctx.send("<:osit:544356212846886924> Quest has already been done"); return
-                    # No finished quests
-                    except TypeError: pass
+                    done_quests, qpool, qpool_guild = await self.client.quefe(f"SELECT pi_quest.`finished_quests`, pi_quest.`quest_pool`, model_guild.`quest_pool` FROM pi_quest, model_guild, pi_guild WHERE pi_quest.`user_id`='{ctx.author.id}' AND pi_guild.`user_id`=pi_quest.`user_id` AND model_guild.`guild_code`=pi_guild.`guild_code`;")
+                    done_quests = self.finQuest_coder(done_quests)
+                    try: qpool = qpool.split(' - ')
+                    except AttributeError: qpool = []
+                    try: qpool_guild = qpool_guild.split(' - ')
+                    except AttributeError: qpool_guild = []
+                    if raw[1] in done_quests: await ctx.send("<:osit:544356212846886924> Quest has already been finished."); return
+                    elif raw[1] not in qpool or raw[1] not in qpool_guild: await ctx.send("<:osit:544356212846886924> Quest not found."); return
                     if await self.client._cursor.execute(f"SELECT user_id FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats in ('ONGOING', 'FULL')") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> Your rank isn't high enough to handle more than **{sample[rank]}** quests at a time"); return
 
                     # QUEST info get
@@ -256,8 +259,17 @@ class avaGuild(commands.Cog):
                 # Remove quest
                 await self.client._cursor.execute(f"UPDATE pi_guild SET total_quests=total_quests+1 WHERE user_id='{ctx.author.id}'; DELETE FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
                 # Update finished_quest in pi_quest. If not exist, create one
-                if await self.client._cursor.execute(f"UPDATE pi_quest SET finished_quests=CONCAT(finished_quests, ' - {quest_code}') WHERE user_id='{ctx.author.id}' AND region='{current_place}';") == 0:
-                    await self.client._cursor.execute(f"INSERT INTO pi_quest VALUE (0, '{ctx.author.id}', '{current_place}', '{quest_code}');")
+                fnqs = await self.client.quefe(f"SELECT finished_quests FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
+                try:
+                    fnqs = self.finQuest_coder(fnqs)
+                    try:
+                        fnqs[quest_code] = int(fnqs[quest_code]) + 1
+                    except KeyError:
+                        fnqs[quest_code] = 1
+                    await self.client._cursor.execute(f"UPDATE pi_quest SET finished_quests='{self.finQuest_coder(fnqs ,decode=False)}' WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
+                except AttributeError:
+                    await self.client._cursor.execute(f"INSERT INTO pi_quest VALUE (0, '{ctx.author.id}', '{current_place}', '', '{quest_code} | 1');")
+
 
                 """
                 # Remove if daily, else keep
@@ -281,7 +293,7 @@ class avaGuild(commands.Cog):
 
             async def makeembed(bbb, top, least, pages, currentpage):
                 bundle, bundle2 = bbb
-                temb = discord.Embed(title = f"**ACTIVE QUESTS** || {ctx.author.name}", colour = discord.Colour(0x011C3A), description=f'═════════╡**`{currentpage}/{len(bundle)}`**╞═════════')
+                temb = discord.Embed(colour = discord.Colour(0x011C3A))
                 for pack, pack2 in zip(bundle[top:least], bundle2[top:least]):
                     # Get current snapshot
                     eval_meth = pack[5]
@@ -347,14 +359,26 @@ class avaGuild(commands.Cog):
                     if pack[6]:
                         if len(pack2[3]) > 100:
                             pack2 = list(pack2)
-                            pack2[3] = pack2[3][:151] + '...'
+                            pack2[3] = pack2[3][:400] + '...'   # prev=151
                         if datetime.now() > pack[6]:
-                            temb.add_field(name=f"`{pack[0]}`:fire:~~『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest~~\n\n> {pack2[3]}\n", value=line)
+                            temb.add_field(
+                                            name=f"═ `{pack[0]}` \🔥 {pack2[2].upper()} quest \🔥 ══════════\n", 
+                                            value=f""">>> 🔥 ~~『`{pack[1]}`| **{pack2[0]}**』~~ 🔥```http
+{pack2[3]}```{line}""")
+                            # temb.add_field(name=f"`{pack[0]}`:fire: ~~『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest~~\n\n> {pack2[3]}\n", value=line)
                         else:
                             delta = relativedelta(pack[6], datetime.now())
-                            temb.add_field(name=f"`{pack[0]}` :scroll:『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest [`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`]\n\n> {pack2[3]}\n", value=line)
+                            temb.add_field(
+                                            name=f"═ `{pack[0]}` \📜 {pack2[2].upper()} quest \⏱ [`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`]\n", 
+                                            value=f""">>> 『`{pack[1]}`| **{pack2[0]}**』```http
+{pack2[3]}```{line}""")
+                            # temb.add_field(name=f"`{pack[0]}` :scroll:『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest [`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`]\n\n> {pack2[3]}\n", value=line)
                     else:
-                        temb.add_field(name=f"`{pack[0]}` :scroll:『`{pack[1]}`|**{pack2[0]}**』{pack2[2]} quest\n\n> {pack2[3]}\n", value=line)
+                        temb.add_field(
+                                        name=f"═ `{pack[0]}` \📜 {pack2[2].upper()} quest \📜 ══════════\n", 
+                                        value=f""">>> 『`{pack[1]}`| **{pack2[0]}**』 ```http
+{pack2[3]}```{line}""")
+                temb.set_footer(text=f'Quest {currentpage} of {len(bundle)}', icon_url=ctx.author.avatar_url)
                 return temb
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
@@ -377,29 +401,47 @@ class avaGuild(commands.Cog):
 
         current_place = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'"); current_place = current_place[0]
 
-        bundle = await self.client.quefe(f"SELECT quest_code, name, description, quest_line FROM model_quest WHERE region='{current_place}' AND quest_line IN ('main', 'side');", type='all')
         #completed_bundle = await self.client.quefe(f"SELECT quest_code FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='DONE' AND EXISTS (SELECT * FROM model_quest WHERE model_quest.quest_code=pi_quests.quest_code AND region='{current_place}');")
-        completed_bundle = await self.client.quefe(f"SELECT finished_quests FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
-        try: completed_bundle = completed_bundle[0].split(' - ')
-        except (TypeError, AttributeError): completed_bundle = []
+        # completed_bundle, qpool = await self.client.quefe(f"SELECT finished_quests, quest_pool FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
+        completed_bundle, qpool, qpool_guild = await self.client.quefe(f"SELECT pi_quest.`finished_quests`, pi_quest.`quest_pool`, model_guild.`quest_pool` FROM pi_quest, model_guild, pi_guild WHERE pi_quest.`user_id`='{ctx.author.id}' AND pi_guild.`user_id`=pi_quest.`user_id` AND model_guild.`guild_code`=pi_guild.`guild_code`;")
+        try:
+            # completed_bundle = completed_bundle.split(' - ')
+            completed_bundle = self.finQuest_coder(completed_bundle)
+        except AttributeError: completed_bundle = {}
+        try: qpool = qpool.split(' - ')
+        except AttributeError: qpool = []
+        try: qpool_guild = qpool_guild.split(' - ')
+        except AttributeError: qpool_guild = []
+        full_qpool = list(set(qpool + qpool_guild))
+        bundle = await self.client.quefe(f"""SELECT quest_code, name, description, quest_line FROM model_quest WHERE region='{current_place}' AND quest_line IN ('main', 'side') AND quest_code IN ('{"' - '".join(full_qpool)}');""", type='all')
+        bundle = self.bundleQuest_sort(bundle, completed_bundle)
 
         def makeembed(items, top, least, pages, currentpage):
             line = ''
             bundle, completed_bundle = items
+            completed_quantity = 0
+            for _, v in completed_bundle.items():
+                completed_quantity += int(v)
 
-            line = f"\n```『Total』{len(bundle)}⠀⠀⠀⠀『Done』{len(completed_bundle)}```"
+            line = f"""```css
+[Total].{len(bundle)}⠀⠀⠀⠀[Available].{completed_quantity}```"""
+            reembed = discord.Embed(title = f"<:guild_p:619743808959283201> `{current_place}`|**QUEST BULLETTIN**", colour = discord.Colour(0x011C3A), description=f"{line}")
+
             for pack in bundle[top:least]:
-                if pack[0] in completed_bundle: marker = ':page_with_curl:'
-                else: marker = ':scroll:'
-                line += f"""\n{marker} **`{pack[0]}`**|`{pack[3].capitalize()} quest`\n⠀⠀⠀|**"{pack[1]}"**\n⠀⠀⠀|*"{pack[2]}"*\n"""
+                if pack[0] in completed_bundle: marker = '📃'
+                else: marker = '📜'
 
-            reembed = discord.Embed(title = f"<:guild_p:619743808959283201> `{current_place}`|**Quest Bulletin**", colour = discord.Colour(0x011C3A), description=f"{line}\n⠀⠀⠀⠀")
+                reembed.add_field(name=f'═ \{marker} `{pack[3].upper()} quest` \{marker} ══════════', value=f""">>> **`{pack[0]}`**| **『{pack[1]}"』**\n```http
+{pack[2]}```
+                """)
+
+
             reembed.set_footer(text=f"Board {currentpage} of {pages}")
             return reembed
             #else:
             #    await ctx.send("*Nothing but dust here...*")
 
-        await self.tools.pagiMain(ctx, (bundle, completed_bundle), makeembed, timeout=60, item_per_page=3, pair=True)
+        await self.tools.pagiMain(ctx, (bundle, completed_bundle), makeembed, timeout=60, item_per_page=2, pair=True)
 
     @commands.command(aliases=['pp'])
     @commands.cooldown(1, 5, type=BucketType.user)
@@ -710,6 +752,55 @@ class avaGuild(commands.Cog):
 
         except IndexError: pass
 
+
+
+# ================== TOOLS ==================
+
+    def finQuest_coder(self, value, decode=True):
+        """
+            decode: {'quest': 'quantity', ..}
+            encode: 'qs1 | 1 - qs3 | 4'    
+        """
+
+        # DECODE
+        if decode:
+            out = {}
+            for q in value.split(' - '):
+                q = q.split(' | ')
+                # Increase from a duplicate
+                try:
+                    out[q[0]] = str(int(out[q[0]]) + int(q[1]))
+                # Value doesn't have ' | '
+                except IndexError:
+                    try:
+                        out[q[0]] = str(int(out[q[0]]) + 1)
+                    except KeyError:
+                        out[q[0]] = '1'
+                # No duplicate --> create new
+                except KeyError:
+                    try:
+                        out[q[0]] = q[1]
+                    except IndexError: out[q[0]] = '1'
+            return out
+
+        # ENCODE
+        else:
+            temp = []
+            for k, v in value.items():
+                temp.append(f"{k} | {v}")
+            return ' - '.join(temp)
+
+    def bundleQuest_sort(self, bundle, finQuests, cursor=0):
+
+        # Keep two types splitted, in order to retain the order after sort
+        done = []
+        notdone = []
+
+        for qc in bundle:
+            if qc[cursor] in finQuests: done.append(qc)
+            else: notdone.append(qc)
+
+        return notdone + done
 
 
 

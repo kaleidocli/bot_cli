@@ -223,7 +223,7 @@ class avaActivity(commands.Cog):
             if reward_query:
                 tem_que = reward_query
                 reward_query = reward_query.replace('user_id_here', f"{ctx.author.id}")
-                comrades = await self.client.quefe(f"SELECT user_id FROM pi_party WHERE party_id=(SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}');", type='all')
+                comrades = await self.client.quefe(f"SELECT user_id FROM pi_party WHERE party_id=(SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}') AND user_id <> '{ctx.author.id}';", type='all')
                 for comrade in comrades:
                     reward_query = reward_query + tem_que.replace('user_id_here', f"{comrade[0]}")
                 if comrades: rewards = rewards + f"And **{len(comrades)}** comrades of yours will receive the same."

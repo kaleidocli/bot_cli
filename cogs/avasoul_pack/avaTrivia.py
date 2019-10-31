@@ -442,10 +442,10 @@ class avaTrivia(commands.Cog):
                     off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`{cmd}`**")
                 # Off cooldown
                 else:
-                    on_cd.append(f"\n:stopwatch: Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
+                    on_cd.append(f"\n\⏱ Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
             # Off cooldown
             except TypeError:
-                on_cd.append(f"\n:stopwatch: Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
+                on_cd.append(f"\n\⏱ Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
 
         # INTERACTIONs
         tee = await self.client.quefe(f"SELECT target_code, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND flag<>'n/a'", type='all')
