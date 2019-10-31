@@ -447,8 +447,8 @@ def prepformain():
         if client.load_count == client.extension_count: break
         client.load_extension(extension)
         client.load_count += 1
-    client.load_extension('cogs.avasoul_pack.avaAvatar')
     client.load_extension('cogs.avasoul_pack.avaDungeon')
+    client.load_extension('cogs.avasoul_pack.avaAvatar')
     client.run(TOKEN, bot=True, reconnect=True)
 
 def exitest():
