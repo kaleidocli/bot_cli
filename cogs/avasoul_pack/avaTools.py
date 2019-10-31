@@ -23,7 +23,6 @@ class avaTools:
     async def quefe(self, query, args=None, type='one'):
         """args ---> tuple"""
 
-        await asyncio.sleep(0)
         if not self.client: return
 
         try: await self.client._cursor.execute(query, args=args)
