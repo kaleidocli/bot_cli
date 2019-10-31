@@ -66,7 +66,8 @@ class avaGuild(commands.Cog):
             # GE guild's info
             guild_name, description, region = await self.client.quefe(f"SELECT guild_name, description, region FROM model_guild WHERE guild_code='{guild_code}';")
 
-            temb = discord.Embed(description=f"```{description}```", colour=0x36393E)
+            temb = discord.Embed(description=f"""```http
+    {description}```""", colour=0x36393E)
             temb.set_author(name="―――――――――――――――――――――――――――――――――――", icon_url=ctx.author.avatar_url)
             temb.add_field(name=f"<:guild_p:619743808959283201> `{guild_code}`|**{guild_name}**", value=f"╟`Region` · **{region}**", inline=True)
             temb.add_field(name=f":bookmark: {ctx.author.name}'s info", value=f"╟`Quests done` · **{total_quests}**", inline=True)
@@ -293,7 +294,7 @@ class avaGuild(commands.Cog):
 
             async def makeembed(bbb, top, least, pages, currentpage):
                 bundle, bundle2 = bbb
-                temb = discord.Embed(colour = discord.Colour(0x011C3A))
+                temb = discord.Embed(colour = discord.Colour(0xA37C05))
                 for pack, pack2 in zip(bundle[top:least], bundle2[top:least]):
                     # Get current snapshot
                     eval_meth = pack[5]
@@ -425,7 +426,7 @@ class avaGuild(commands.Cog):
 
             line = f"""```css
 [Total].{len(bundle)}⠀⠀⠀⠀[Available].{completed_quantity}```"""
-            reembed = discord.Embed(title = f"<:guild_p:619743808959283201> `{current_place}`|**QUEST BULLETTIN**", colour = discord.Colour(0x011C3A), description=f"{line}")
+            reembed = discord.Embed(title = f"<:guild_p:619743808959283201> `{current_place}`|**QUEST BULLETTIN**", colour = discord.Colour(0xA37C05), description=f"{line}")
 
             for pack in bundle[top:least]:
                 if pack[0] in completed_bundle: marker = '📃'
