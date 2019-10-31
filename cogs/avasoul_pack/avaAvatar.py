@@ -109,7 +109,7 @@ class avaAvatar(commands.Cog):
 # ================== EVENTS ==================
 
     async def prepLoad(self):
-        await asyncio.sleep(35)  #prev=15    # Do not remove, or else the data stream would mix with WORLD_BUILDING or avaDungeon
+        await asyncio.sleep(60)  #prev=15    # Do not remove, or else the data stream would mix with WORLD_BUILDING or avaDungeon
         await self.prote_plugin()
 
     def intoLoop(self, coro):
