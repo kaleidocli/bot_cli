@@ -33,7 +33,7 @@ class dan(commands.Cog):
             #REACTION LOOP
             while True:
                 #Wait for reaction
-                try: reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
+                try: reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author and r.message.id == msg.id, timeout=60)
                 except asyncio.TimeoutError: check = '1'; break
                 #Check if reac is not None. If None, check's set to '1', hence quit the REACTION LOOP and return True to the outside loop
                 if not reac: check = '1'; break
@@ -44,7 +44,7 @@ class dan(commands.Cog):
                     await self.client.send_message(ctx.message.channel, tags)
                 elif str(reac[0].emoji) == '\U0001f512':
                     await msg.add_reaction('\U0001f513')
-                    try: a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
+                    try: a = await self.client.wait_for('reaction_add', check=lambda r, u: r.emoji == '\U0001f513' and u == ctx.author and r.message.id == msg.id, timeout=420)
                     except asyncio.TimeoutError: check = '1'; break
                     if not a: break
                     await msg.add_reaction('\U0001f512')
@@ -124,7 +124,7 @@ class dan(commands.Cog):
             #REACTION LOOP
             while True:
                 #Wait for reaction
-                try: reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author, timeout=60)
+                try: reac = await self.client.wait_for('reaction_add', check=lambda r, u: u == ctx.author and r.message.id == msg.id, timeout=60)
                 except asyncio.TimeoutError: check = '1'; break
                 #Check if reac is not None. If None, check's set to '1', hence quit the REACTION LOOP and return True to the outside loop
                 if not reac: check = '1'; break
@@ -135,7 +135,7 @@ class dan(commands.Cog):
                     await ctx.send(tags)
                 elif str(reac[0].emoji) == '\U0001f512':
                     await msg.add_reaction('\U0001f513')
-                    try: a = await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f513' and u == ctx.author, timeout=420)
+                    try: a = await self.client.wait_for('reaction_add', check=lambda r, u: r.emoji == '\U0001f513' and u == ctx.author and r.message.id == msg.id, timeout=420)
                     except asyncio.TimeoutError: check = '1'; break
                     if not a: break
                     await msg.add_reaction('\U0001f512')
