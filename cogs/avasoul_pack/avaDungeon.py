@@ -438,6 +438,7 @@ class avaDungeon(commands.Cog):
     async def mobdictLoad(self):
         mobdict = {}
         packs = await self.client.quefe(f"SELECT mob_code, mob_name, description, lp, attack, defense, merit, reward FROM model_dungeonmob;", type='all')
+        packs = await self.client.quefe(f"SELECT mob_code, mob_name, description, lp, attack, defense, merit, reward FROM model_dungeonmob;", type='all')
 
         for pack in packs:
             mobdict[pack[0]] = dMob(pack)
@@ -446,6 +447,7 @@ class avaDungeon(commands.Cog):
 
     async def dungeondictLoad(self):
         dungeondict = {}
+        packs = await self.client.quefe(f"SELECT dungeon_code, dungeon_name, description, length, merit_per_meter, price, region, illulink FROM model_dungeon;", type='all')
         packs = await self.client.quefe(f"SELECT dungeon_code, dungeon_name, description, length, merit_per_meter, price, region, illulink FROM model_dungeon;", type='all')
 
         for pack in packs:
@@ -456,6 +458,7 @@ class avaDungeon(commands.Cog):
     async def checkpointdictLoad(self):
         checkpointdict = {}
         packs = await self.client.quefe(f"SELECT cp_code, cp_name, cp_description, cp_tier, cp_shop, cp_tax_money, cp_tax_merit, cp_line FROM model_dungeoncheckpoint;", type='all')
+        packs = await self.client.quefe(f"SELECT cp_code, cp_name, cp_description, cp_tier, cp_shop, cp_tax_money, cp_tax_merit, cp_line FROM model_dungeoncheckpoint;", type='all')
 
         for pack in packs:
             checkpointdict[pack[0]] = dCheckpoint(pack)
@@ -464,6 +467,7 @@ class avaDungeon(commands.Cog):
 
     async def itemdictLoad(self):
         itemdict = {}
+        packs = await self.client.quefe(f"SELECT di_code, di_name, description, di_lp, di_attack, di_defense, di_money, di_merit, di_line FROM model_dungeonitem;", type='all')
         packs = await self.client.quefe(f"SELECT di_code, di_name, description, di_lp, di_attack, di_defense, di_money, di_merit, di_line FROM model_dungeonitem;", type='all')
 
         for pack in packs:

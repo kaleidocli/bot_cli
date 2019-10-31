@@ -811,8 +811,10 @@ class avaAvatar(commands.Cog):
 
         # Fonts get
         self.prote_lib['font'] = {}
-        # fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
-        for font in await self.client.quefe(f"SELECT font_id FROM model_font;", type='all'):
+        fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
+        fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
+        fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
+        for font in fonts:
             print(font)
             await asyncio.sleep(0)
             assdir_font = path.join('data', 'profile', 'font', self.font_dict[font[0]])
