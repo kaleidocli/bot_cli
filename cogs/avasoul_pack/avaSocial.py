@@ -285,6 +285,7 @@ class avaSocial(commands.Cog):
         try:
             child_id, name = await self.client.quefe(f"SELECT child_id, (SELECT name FROM personal_info WHERE id='{args[0]}') FROM environ_hierarchy WHERE child_id='{args[0]}' AND guardians LIKE '%{ctx.author.id}%';")
         except TypeError: await ctx.send("<:osit:544356212846886924> Unable to find *your child's* id"); return
+        except IndexError: await ctx.send("<:osit:544356212846886924> Please provide your child's ID."); return
 
         # Get command
         try: cmd = self.client.get_command(args[1])
