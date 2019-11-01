@@ -829,12 +829,12 @@ class avaCombat(commands.Cog):
                     dmg_q = 0
                     m_art = 0
                     icon_sequence = ''
-                    ttl_plus = int(ttl_plus) + int(effect[4])
+                    ttl_plus = float(ttl_plus) + float(effect[4])
                     return dmg, dmg_q, m_art, bonus, icon_sequence, ttl_plus
                 # BLEED
                 elif effect[0] == 'bleed':
-                    effect[2] = int(effect[2])*m_burst
-                    ttl_plus = int(ttl_plus) + int(effect[4])
+                    effect[2] = float(effect[2])*m_burst
+                    ttl_plus = float(ttl_plus) + float(effect[4])
                     return dmg, dmg_q, m_art, bonus, icon_sequence, ttl_plus
                 # SLEEP
                 elif effect[0] == 'sleep':
@@ -842,12 +842,12 @@ class avaCombat(commands.Cog):
                     dmg_q = 0
                     m_art = 0
                     icon_sequence = ''
-                    ttl_plus = int(ttl_plus) + int(effect[4])
+                    ttl_plus = float(ttl_plus) + float(effect[4])
                     CE['ultimate'] = 0
                     return dmg, dmg_q, m_art, bonus, icon_sequence, ttl_plus
 
 
-            return dmg, dmg_q, m_art, bonus, icon_sequence, int(ttl_plus)
+            return dmg, dmg_q, m_art, bonus, icon_sequence, float(ttl_plus)
 
         async def t_dmg_calc(t_move, w_defend):
             bonus = []

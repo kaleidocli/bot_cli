@@ -382,8 +382,8 @@ class avaActivity(commands.Cog):
         reco = MAX_LP - LP
         if reco == 0: await ctx.send(f"<:osit:544356212846886924> **{ctx.author.name}**, your current LP is at max!"); return
 
-        reco_scale = reco//(MAX_LP/100)
-        if reco_scale == 0: reco_scale = 1
+        reco_scale = reco/(MAX_LP/25)
+        if reco_scale == 0: reco_scale = 0.1
         
         cost = int(reco*reco_scale)
 
