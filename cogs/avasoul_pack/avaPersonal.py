@@ -75,7 +75,7 @@ class avaPersonal(commands.Cog):
         # Prompt question
         if not resu:
             try: re_race, re_gender, re_name = await self.tools.incarnateData_collect(ctx, self.aui)
-            except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!")
+            except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!"); return
         else: re_race = None; re_gender = None; re_name = None
 
         bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
