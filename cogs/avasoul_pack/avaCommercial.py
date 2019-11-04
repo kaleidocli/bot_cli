@@ -932,7 +932,7 @@ $ {invs:,}```"""
             
         # Transfer
         await self.client._cursor.execute(f"UPDATE personal_info SET money=money+IF(id='{ctx.author.id}', -{package}, {package}) WHERE id IN ('{ctx.author.id}', '{receiver.id}');")
-        await ctx.send(f":white_check_mark: You've been given **<:36pxGold:548661444133126185>{raw[0]:,}**, {receiver.mention}!")
+        await ctx.send(f":white_check_mark: You've been given **<:36pxGold:548661444133126185>{raw[0]}**, {receiver.mention}!")
 
 
 
