@@ -327,7 +327,7 @@ class avaCommercial(commands.Cog):
                     elif quantity < 0: await ctx.send("Don't be stupid <:fufu:605255050289348620>"); return
 
                     # Update prev investment, then the investment, then the invest_age
-                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{t_age - invest_age})-{quantity}, invest_age={t_age} WHERE user_id='{target.id}'; UPDATE personal_info SET money=money+{quantity} WHERE id='{target.id}';")
+                    await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{t_age - invest_age})-{quantity}, invest_age={t_age} WHERE user_id='{target.id}'; UPDATE personal_info SET money=money+{quantity} WHERE id='{ctx.author.id}';")
 
                     await ctx.send(f":white_check_mark: **<:36pxGold:548661444133126185>{quantity:,}** has just been withdrawn from {target.name}'s account!"); return
                 # E: Quantity not given
