@@ -309,7 +309,7 @@ class avaTools:
             
             ava['partner'] = 'n/a'
             ava['avatar'] = 'av0'
-            if ava['gender'] == 'female': ava['avatars'] = ['av19', 'av0', 'av1', 'av2']
+            if ava['gender'] == 'f': ava['avatars'] = ['av19', 'av0', 'av1', 'av2']
             else: ava['avatars'] = ['av33', 'av0', 'av1', 'av2']
             ava['EVO'] = 0
             ava['INTT'] = 0
