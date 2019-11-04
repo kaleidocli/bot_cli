@@ -365,7 +365,7 @@ class avaPersonalUtils(commands.Cog):
                     DELETE FROM cosmetic_preset WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_arts WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_avatars WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_background WHERE user_id='{ctx.author.id}';|||
+                    DELETE FROM pi_backgrounds WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_fonts WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_bank WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_deck WHERE user_id='{ctx.author.id}';|||
