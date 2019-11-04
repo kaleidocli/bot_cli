@@ -11,14 +11,15 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import pymysql.err as mysqlError
 
-from .avaTools import avaTools
-from .avaUtils import avaUtils
-
 
 
 class avaPersonal(commands.Cog):
 
     def __init__(self, client):
+
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
