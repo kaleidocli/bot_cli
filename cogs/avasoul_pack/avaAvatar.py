@@ -138,10 +138,10 @@ class avaAvatar(commands.Cog):
         mode = 'single'
         try:
             if args[0] == 'all': mode = 'all'
-            elif ctx.author.mentions: target = ctx.author.mentions[0]
+            elif ctx.message.mentions: target = ctx.message.mentions[0]
             else: target = ctx.author
         except IndexError:
-            if ctx.author.mentions: target = ctx.author.mentions[0]
+            if ctx.message.mentions: target = ctx.message.mentions[0]
             else: target = ctx.author
 
         # AVATARs
