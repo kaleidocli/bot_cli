@@ -147,10 +147,10 @@ class avaAvatar(commands.Cog):
         # AVATARs
         temp = await self.client.quefe(f"SELECT avatar_id FROM model_avatar", type='all')
         avas = [i[0] for i in temp]
+        master_que = ''
 
         if mode == 'all':
             user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
-            master_que = ''
             for pack in user_ids:
                 await asyncio.sleep(0)
                 que = ''
@@ -165,10 +165,10 @@ class avaAvatar(commands.Cog):
         # BACKGROUNDs
         temp = await self.client.quefe(f"SELECT bg_code FROM model_background", type='all')
         avas = [i[0] for i in temp]
+        master_que = ''
 
         if mode == 'all':
             user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
-            master_que = ''
             for pack in user_ids:
                 await asyncio.sleep(0)
                 que = ''
@@ -183,10 +183,10 @@ class avaAvatar(commands.Cog):
         # FONTs
         temp = await self.client.quefe(f"SELECT font_id FROM model_font", type='all')
         avas = [i[0] for i in temp]
+        master_que = ''
 
         if mode == 'all':
             user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
-            master_que = ''
             for pack in user_ids:
                 await asyncio.sleep(0)
                 que = ''
