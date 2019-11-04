@@ -151,7 +151,7 @@ class dan(commands.Cog):
 
         raw = list(args)
         if len(raw) > 2: await self.client.send_message(ctx.message.channel, "No more than 2 tags!"); return
-        if raw:    
+        if raw:
             tag_string = ' '.join(raw)
         else: tag_string = ' '.join(self.default_tags)
 
@@ -169,7 +169,7 @@ class dan(commands.Cog):
                 hen_box.set_image(url=posts_list[0]['file_url'])
             except KeyError: print(f"KEY_ERROR========================\n{posts_list[0]}")
             except IndexError: await ctx.channel.send(f":warning: {ctx.message.author.mention}, tags `{tag_string}` not found!"); return
-            print(posts_list[0])                
+            print(f"DHEN -------------- {ctx.author.name} in {ctx.guild.name}")
             return hen_box, posts_list
 
         try: hen_box, posts_list = await generate()
@@ -186,6 +186,7 @@ class dan(commands.Cog):
             hen_box, posts_list = await generate()
             #Wait for the emo loop. If return True, break, else, continue
             check_out = await a(msg_console, posts_list)
+            if check_out == '1': break
             # if check_out: await self.client.delete_message(msg); break
             await msg.edit(embed=hen_box)
 
