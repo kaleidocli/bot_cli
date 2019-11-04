@@ -310,7 +310,7 @@ class avaCommercial(commands.Cog):
 
                     # Update prev investment, then the investment, then the invest_age
                     await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{t_age - invest_age})+{quantity}, invest_age={t_age} WHERE user_id='{target.id}';")
-                    await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{quantity}, stats=IF(money>=0, 'GREEN', 'YELLOW') WHERE id='{target.id}';")
+                    await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{quantity}, stats=IF(money>=0, 'GREEN', 'YELLOW') WHERE id='{ctx.author.id}';")
 
                     await ctx.send(f":white_check_mark: Added **<:36pxGold:548661444133126185>{quantity:,}** to {target.name}'s account!"); return
 
