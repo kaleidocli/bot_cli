@@ -39,7 +39,8 @@ class avaAvatar(commands.Cog):
                     'bg9': 'rocha_green', 
                     'bg10': 'pengzhen_zhang',
                     'bg11': 'persona5',
-                    'bg12': 'adrien_girod'}
+                    'bg12': 'adrien_girod',
+                    'bg13': 'sg_akihabara'}
         self.char_dict = {'av0': 'Iris',
                         'av1': 'Zoey',
                         'av2': 'Ardena',
@@ -73,7 +74,8 @@ class avaAvatar(commands.Cog):
                         'av30': 'atelier_male',
                         'av31': 'atelier_female',
                         'av32': 'FGO_Artoria',
-                        'av33': 'Gran'}
+                        'av33': 'Gran',
+                        'av34': 'SG_Kurisu'}
         self.font_dict = {'fnt0': 'ERASLGHT.ttf',
                         'fnt1': 'Persona_Non_Grata.ttf',
                         'fnt2': 'Phorssa.ttf',
@@ -131,48 +133,69 @@ class avaAvatar(commands.Cog):
 
     @commands.command()
     @checks.check_author()
-    async def avauda(self, ctx):
+    async def avauda(self, ctx, *args):
+
+        mode = 'single'
+        try:
+            if args[0] == 'all': mode = 'all'
+            elif ctx.author.mentions: target = ctx.author.mentions[0]
+            else: target = ctx.author
+        except IndexError:
+            if ctx.author.mentions: target = ctx.author.mentions[0]
+            else: target = ctx.author
 
         # AVATARs
         temp = await self.client.quefe(f"SELECT avatar_id FROM model_avatar", type='all')
         avas = [i[0] for i in temp]
 
-        user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
-        master_que = ''
-        for pack in user_ids:
-            await asyncio.sleep(0)
-            que = ''
+        if mode == 'all':
+            user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
+            master_que = ''
+            for pack in user_ids:
+                await asyncio.sleep(0)
+                que = ''
+                for ava in avas:
+                    que = que + f"INSERT INTO pi_avatars (user_id, avatar_id) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_avatars WHERE user_id='{pack[0]}' AND avatar_id='{ava}'); "
+                master_que = master_que + que
+        else:
             for ava in avas:
-                que = que + f"INSERT INTO pi_avatars (user_id, avatar_id) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_avatars WHERE user_id='{pack[0]}' AND avatar_id='{ava}'); "
-            master_que = master_que + que
+                master_que = master_que + f"INSERT INTO pi_avatars (user_id, avatar_id) SELECT '{target.id}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_avatars WHERE user_id='{target.id}' AND avatar_id='{ava}'); "
         await self.client._cursor.execute(master_que)
 
         # BACKGROUNDs
         temp = await self.client.quefe(f"SELECT bg_code FROM model_background", type='all')
         avas = [i[0] for i in temp]
 
-        user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
-        master_que = ''
-        for pack in user_ids:
-            await asyncio.sleep(0)
-            que = ''
+        if mode == 'all':
+            user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
+            master_que = ''
+            for pack in user_ids:
+                await asyncio.sleep(0)
+                que = ''
+                for ava in avas:
+                    que = que + f"INSERT INTO pi_backgrounds (user_id, bg_code) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_backgrounds WHERE user_id='{pack[0]}' AND bg_code='{ava}'); "
+                master_que = master_que + que
+        else:
             for ava in avas:
-                que = que + f"INSERT INTO pi_backgrounds (user_id, bg_code) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_backgrounds WHERE user_id='{pack[0]}' AND bg_code='{ava}'); "
-            master_que = master_que + que
+                master_que = master_que + f"INSERT INTO pi_backgrounds (user_id, bg_code) SELECT '{target.id}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_backgrounds WHERE user_id='{target.id}' AND bg_code='{ava}'); "
         await self.client._cursor.execute(master_que)
 
         # FONTs
         temp = await self.client.quefe(f"SELECT font_id FROM model_font", type='all')
         avas = [i[0] for i in temp]
 
-        user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
-        master_que = ''
-        for pack in user_ids:
-            await asyncio.sleep(0)
-            que = ''
+        if mode == 'all':
+            user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
+            master_que = ''
+            for pack in user_ids:
+                await asyncio.sleep(0)
+                que = ''
+                for ava in avas:
+                    que = que + f"INSERT INTO pi_fonts (user_id, font_id) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_fonts WHERE user_id='{pack[0]}' AND font_id='{ava}'); "
+                master_que = master_que + que
+        else:
             for ava in avas:
-                que = que + f"INSERT INTO pi_fonts (user_id, font_id) SELECT '{pack[0]}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_fonts WHERE user_id='{pack[0]}' AND font_id='{ava}'); "
-            master_que = master_que + que
+                master_que = master_que + f"INSERT INTO pi_fonts (user_id, font_id) SELECT '{target.id}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_fonts WHERE user_id='{target.id}' AND font_id='{ava}'); "
         await self.client._cursor.execute(master_que)
 
         await ctx.send(":white_check_mark:")
