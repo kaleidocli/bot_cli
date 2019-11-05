@@ -136,31 +136,6 @@ class avaAvatar(commands.Cog):
     @checks.check_author()
     async def avauda(self, ctx, *args):
 
-        mode = 'single'
-        # Get target        ||      Everyone, one, self
-        try:
-            if args[0] == 'all': mode = 'all'
-            if ctx.message.mentions: target = ctx.message.mentions[0]
-            else: target = ctx.author
-        except IndexError: target = ctx.author
-        # Get ava
-        try:
-            if args[0].startswith('av'):
-                if not await uA(target, v=args[0]):
-                    await ctx.send(":x: Invalid argument")
-            elif args[0].startswith('bg'):
-                if not await uB(target, v=args[0]):
-                    await ctx.send(":x: Invalid argument")
-            elif args[0].startswith('fnt'):
-                if not await uF(target, v=args[0]):
-                    await ctx.send(":x: Invalid argument")
-        except IndexError:
-            await uA(target)
-            await uB(target)
-            await uF(target)
-
-        await ctx.send(":white_check_mark:")
-
         # AVATARs
         async def uA(target, v='full'):
             if v == 'full':
@@ -236,6 +211,32 @@ class avaAvatar(commands.Cog):
                     master_que = master_que + f"INSERT INTO pi_fonts (user_id, font_id) SELECT '{target.id}', '{ava}' WHERE NOT EXISTS (SELECT * FROM pi_fonts WHERE user_id='{target.id}' AND font_id='{ava}'); "
             await self.client._cursor.execute(master_que)
             return True
+
+
+        mode = 'single'
+        # Get target        ||      Everyone, one, self
+        try:
+            if args[0] == 'all': mode = 'all'
+            if ctx.message.mentions: target = ctx.message.mentions[0]
+            else: target = ctx.author
+        except IndexError: target = ctx.author
+        # Get ava
+        try:
+            if args[0].startswith('av'):
+                if not await uA(target, v=args[0]):
+                    await ctx.send(":x: Invalid argument")
+            elif args[0].startswith('bg'):
+                if not await uB(target, v=args[0]):
+                    await ctx.send(":x: Invalid argument")
+            elif args[0].startswith('fnt'):
+                if not await uF(target, v=args[0]):
+                    await ctx.send(":x: Invalid argument")
+        except IndexError:
+            await uA(target)
+            await uB(target)
+            await uF(target)
+
+        await ctx.send(":white_check_mark:")
 
     @commands.command(aliases=['a'])
     @commands.cooldown(1, 5, type=BucketType.user)
