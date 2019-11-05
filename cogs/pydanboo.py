@@ -186,7 +186,7 @@ class dan(commands.Cog):
             hen_box, posts_list = await generate()
             #Wait for the emo loop. If return True, break, else, continue
             check_out = await a(msg_console, posts_list)
-            if check_out == '1': break
+            if check_out: break
             # if check_out: await self.client.delete_message(msg); break
             await msg.edit(embed=hen_box)
 
