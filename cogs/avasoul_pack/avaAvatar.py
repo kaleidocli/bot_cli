@@ -27,7 +27,8 @@ class avaAvatar(commands.Cog):
         self.client = client
         self.prote_lib = {}
         self.thepoof = 0
-        self.bg_dict = {'bg0': 'medieval_indoor',
+        self.bg_dict = {
+                    'bg0': 'medieval_indoor',
                     'bg1': 'medieval_outdoor',
                     'bg2': 'modern_indoor',
                     'bg3': 'modern_outdoor',
@@ -40,8 +41,13 @@ class avaAvatar(commands.Cog):
                     'bg10': 'pengzhen_zhang',
                     'bg11': 'persona5',
                     'bg12': 'adrien_girod',
-                    'bg13': 'sg_akihabara'}
-        self.char_dict = {'av0': 'Iris',
+                    'bg13': 'sg_akihabara',
+                    'bg14': 'sg_indoor',
+                    'bg15': 'sg_outdoor_am',
+                    'bg16': 'sg_outdoor_pm'
+                    }
+        self.char_dict = {
+                        'av0': 'Iris',
                         'av1': 'Zoey',
                         'av2': 'Ardena',
                         'av3': 'Yamabuki',
@@ -76,13 +82,17 @@ class avaAvatar(commands.Cog):
                         'av32': 'FGO_Artoria',
                         'av33': 'Gran',
                         'av34': 'SG_Kurisu',
-                        'av35': 'SG_Mayuri'}
-        self.font_dict = {'fnt0': 'ERASLGHT.ttf',
+                        'av35': 'SG_Mayuri',
+                        'av36': 'SG_Luka'
+                        }
+        self.font_dict = {
+                        'fnt0': 'ERASLGHT.ttf',
                         'fnt1': 'Persona_Non_Grata.ttf',
                         'fnt2': 'Phorssa.ttf',
                         'fnt3': 'DalekPinpointBold.ttf',
                         'fnt4': 'the_unseen.ttf',
-                        'fnt5': 'MARSNEVENEKSK_Regular.otf'}
+                        'fnt5': 'MARSNEVENEKSK_Regular.otf'
+                        }
 
         self.char_dir = {}
         self.client.chardict_meta = {}
@@ -135,6 +145,7 @@ class avaAvatar(commands.Cog):
     @commands.command()
     @checks.check_author()
     async def avauda(self, ctx, *args):
+        """Split multiple ava by '-' """
 
         # AVATARs
         async def uA(target, v='full'):
@@ -144,7 +155,7 @@ class avaAvatar(commands.Cog):
             else:
                 temp = await self.client.quefe(f"SELECT avatar_id FROM model_avatar WHERE avatar_id='{v}'", type='all')
                 if not temp: return False
-                avas = [v]
+                avas = [v.split('-')]
             master_que = ''
 
             if mode == 'all':
@@ -169,7 +180,7 @@ class avaAvatar(commands.Cog):
             else:
                 temp = await self.client.quefe(f"SELECT bg_code FROM model_background WHERE bg_code='{v}'", type='all')
                 if not v: return False
-                avas = [v]
+                avas = [v.split('-')]
             master_que = ''
 
             if mode == 'all':
@@ -194,7 +205,7 @@ class avaAvatar(commands.Cog):
             else:
                 temp = await self.client.quefe(f"SELECT font_id FROM model_font WHERE font_id='{v}';", type='all')
                 if not temp: return False
-                avas = [v]
+                avas = [v.split('-')]
 
             master_que = ''
 
