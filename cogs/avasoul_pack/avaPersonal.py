@@ -300,7 +300,11 @@ class avaPersonal(commands.Cog):
                         except mysqlError.IntegrityError: await ctx.send(f"<:osit:544356212846886924> Font not found!"); return 
                     else:
                         try: 
+                            a = await self.client.quefe(f"SELECT * FROM pi_backgrounds WHERE user_id='{ctx.author.id}' AND bg_code='{raw[0]}';")
+                            print(raw[0])
+                            print(a)
                             if await self.client._cursor.execute(f"UPDATE cosmetic_preset SET bg_code='{raw[0]}' WHERE user_id='{ctx.author.id}' AND stats='CURRENT' AND EXISTS (SELECT * FROM pi_backgrounds WHERE user_id='{ctx.author.id}' AND bg_code='{raw[0]}');") == 0:
+
                                 await ctx.send(f"<:osit:544356212846886924> You don't own this background, **{ctx.author.name}**!"); return
                             await ctx.send(f":white_check_mark: Changed to `{raw[0]}`"); return
                         except mysqlError.IntegrityError: await ctx.send(f"<:osit:544356212846886924> Background not found!"); return

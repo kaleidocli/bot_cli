@@ -360,7 +360,13 @@ class avaPersonalUtils(commands.Cog):
             await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'dailyquest', ex=duration, nx=True))
 
     @commands.command()
+    @commands.cooldown(1, 360, type=BucketType.user)
     async def delete(self, ctx, *args):
+        # Get party_id
+        my_party = await self.client.quefe(f"SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}' AND role='LEADER';", type='all')
+        if my_party: my_party = [a[0] for a in my_party]
+        else: my_party = ['ansna']
+
         query = f"""
                     DELETE FROM cosmetic_preset WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_arts WHERE user_id='{ctx.author.id}';|||
@@ -371,9 +377,9 @@ class avaPersonalUtils(commands.Cog):
                     DELETE FROM pi_deck WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_degrees WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_equip WHERE user_id='{ctx.author.id}';|||
+                    DELETE FROM pi_equipment WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM environ_party WHERE party_id = (SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}' AND role='LEADER');|||
-                    DELETE FROM pi_party WHERE party_id IN (SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}' AND role='LEADER') OR (user_id='{ctx.author.id}' AND role='MEMBER');|||
+                    DELETE FROM pi_party WHERE party_id IN ('{"' '".join(my_party[0])}') OR (user_id='{ctx.author.id}' AND role='MEMBER');|||
                     DELETE FROM pi_guild WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_hero WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_hunt WHERE user_id='{ctx.author.id}';|||
@@ -386,8 +392,7 @@ class avaPersonalUtils(commands.Cog):
                     DELETE FROM pi_quest WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_quests WHERE user_id='{ctx.author.id}';|||
                     DELETE FROM pi_relationship WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_rest WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_order WHERE user_id='{ctx.author.id}';
+                    DELETE FROM pi_rest WHERE user_id='{ctx.author.id}';
                 """
         
         await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.author.name}, lease type `deletion confirm` to proceed.")

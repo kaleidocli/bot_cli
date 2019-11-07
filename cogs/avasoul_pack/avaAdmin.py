@@ -13,13 +13,14 @@ import pymysql.err as mysqlError
 import psutil
 
 from utils import checks
-from .avaTools import avaTools
-from .avaUtils import avaUtils
 
 
 
 class avaAdmin(commands.Cog):
     def __init__(self, client):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
         self.client = client
 
         self.utils = avaUtils(self.client)
@@ -209,6 +210,13 @@ class avaAdmin(commands.Cog):
     @commands.command()
     @checks.check_author()
     async def megareload(self, ctx, name):
+        temp = []
+        for n in name.split('.'):
+            if n == 'c': n = 'cogs'
+            elif n == 'a': n = 'avasoul_pack'
+            temp.append(n)
+        name = '.'.join(temp)
+
         self.client.reload_extension(name)
         await ctx.send(":white_check_mark:")
 
