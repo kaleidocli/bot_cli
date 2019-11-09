@@ -85,8 +85,8 @@ class avaAvatar(commands.Cog):
                         'av35': 'SG_Mayuri',
                         'av36': 'SG_Luka',
                         'av37': 'SG_Moeka',
-                        'av37': 'SG_Moeka_2',
-                        'av37': 'SG_Suzuha'
+                        'av38': 'SG_Moeka_2',
+                        'av39': 'SG_Suzuha'
                         }
         self.font_dict = {
                         'fnt0': 'ERASLGHT.ttf',
