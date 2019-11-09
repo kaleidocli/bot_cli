@@ -63,7 +63,12 @@ class avaTools:
 
 
 
-    async def ava_scan(self, MSG, type='all', target_id='n/a'):
+    async def ava_scan(self, MSG, type='all', target_id='n/a', target_coord=(), pb_coord=[]):
+        """
+            target_coord:    (x, y, cur_PLACE)
+            pb_coord:        [[x, y, x, y], [x, y, x, y],..]
+        """
+
         # Get target
         #try: target = await self.client.get_user_info(int(target_id))
         #except discordErrors.NotFound:
@@ -80,13 +85,28 @@ class avaTools:
             try: await self.client._cursor.execute(f"UPDATE personal_info SET LP=IF(LP>MAX_LP, MAX_LP, LP), STA=IF(STA>MAX_STA, MAX_STA, STA) WHERE id='{target_id}';")
             except mysqlError.InternalError: pass
             return True
+        elif type == 'pb':
+            # Check info. If not exist, get info.
+            if not target_coord:
+                target_coord = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE FROM personal_info WHERE id='{target_id}';")
+                if not target_coord: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. Use `incarnate` to create one, then `tutorial` for... tutorial <:yeee:636045188153868309>"); return
+            if not pb_coord:
+                pb_coord_temp = await self.client.quefe(f"SELECT PB FROM personal_info WHERE environ_code='{target_coord[2]}';")
+                pb_coord_temp2 = pb_coord_temp[0].split(' | ')
+                pb_coord = []
+                for p in pb_coord_temp2:
+                    pb_coord.append(p.split(' - '))
+            # Check PB
+            for p in pb_coord:
+                if float(p[0]) <= float(target_coord[0]) and float(p[1]) <= float(target_coord[1]) and float(p[2]) >= float(target_coord[2]) and float(p[3]) >= float(target_coord[3]):
+                    return True
+            return False
+
 
         # Status check
         try:
-            # pylint: disable=unused-variable
             LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'")
             #LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'")
-            # pylint: enable=unused-variable
         except TypeError: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. Use `incarnate` to create one, then `tutorial` for... tutorial <:yeee:636045188153868309>"); return
         if stats == 'DEAD': 
             #if target_id == MSG.author.id: await MSG.channel.say(f"<:tumbstone:544353849264177172> You. Are. Dead, **{target.mention}**. Have a nice day!"); return

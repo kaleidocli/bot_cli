@@ -1,5 +1,6 @@
 import random
 import asyncio
+import math
 from functools import partial
 
 import discord
@@ -8,8 +9,6 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import redis.exceptions as redisErrors
 
-from .avaTools import avaTools
-from .avaUtils import avaUtils
 from utils import checks
 
 
@@ -17,6 +16,9 @@ from utils import checks
 class avaCombat(commands.Cog):
 
     def __init__(self, client):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
         self.client = client
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
@@ -72,9 +74,11 @@ class avaCombat(commands.Cog):
         #if not raw: await ctx.send(f"<:osit:544356212846886924> **{ctx.author.name}**, please make your moves!"); return
 
         # Get user's info (always put last, for the sake of efficience)         |        as well as checking coord
-        try: name, cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT name, cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND cur_X>1 AND cur_Y>1;")
-        # E: User in PB
-        except TypeError: await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
+        name, cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT name, cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
+        # Check PB
+        if not await self.tools.ava_scan(ctx.message, type='pb', target_coord=(cur_X, cur_Y, cur_PLACE)):
+            await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
+        
 
         # CE - IN
         CE, CE_ttl = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get', getttl=True)
@@ -216,9 +220,10 @@ class avaCombat(commands.Cog):
         # USER's info/weapon GET ==============================================
 
         # Get info     |      as well as checking coord
-        try: user_id, INTT, cur_PLACE, cur_X, cur_Y, cur_MOB, main_weapon, combat_HANDLING, STA, LP, AFlame, AIce, ADark, AHoly = await self.client.quefe(f"SELECT id, INTT, cur_PLACE, cur_X, cur_Y, cur_MOB, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand), combat_HANDLING, STA, LP, au_FLAME, au_ICE, au_DARK, au_HOLY FROM personal_info WHERE id='{str(ctx.message.author.id)}' AND cur_X>1 AND cur_Y>1;")
-        # E: User in PB
-        except TypeError: await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
+        user_id, INTT, cur_PLACE, cur_X, cur_Y, cur_MOB, main_weapon, combat_HANDLING, STA, LP, AFlame, AIce, ADark, AHoly = await self.client.quefe(f"SELECT id, INTT, cur_PLACE, cur_X, cur_Y, cur_MOB, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand), combat_HANDLING, STA, LP, au_FLAME, au_ICE, au_DARK, au_HOLY FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
+        # Check PB
+        if not await self.tools.ava_scan(ctx.message, type='pb', target_coord=(cur_X, cur_Y, cur_PLACE)):
+            await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
 
         # Get weapon's info
         w_round, w_firing_rate, w_sta, w_rmin, w_rmax, w_accu_randomness, w_accu_range, w_stealth, w_aura, w_tags, w_dmg, w_speed, w_int = await self.client.quefe(f"SELECT round, firing_rate, sta, range_min, range_max, accuracy_randomness, accuracy_range, stealth, aura, tags, dmg, speed, intt FROM pi_inventory WHERE existence='GOOD' AND item_id='{main_weapon}';")
@@ -497,9 +502,18 @@ class avaCombat(commands.Cog):
 
         
         # SHOOTING =======================================================
+        # min_range and max_range will absolutely deny all shots if out of range.
+        # The probability is calc by shots/denominator*numerator. (aka. percentage method)
+        # But denominator is the deciding variable, decided by how many time distance exceeds w_accu_range
+        # Higher denominator means lower proportion of hit bullets.
+        # Numerator is the random factor.
+        # Numerator's probability can be increased by high w_accu_randomness.
+
         # RANDOMNESS | Take HANDLING into account, then re-calc
-        if combat_HANDLING != 'both':
-            w_accu_randomness = w_accu_randomness//2 + (INTT*4+w_int)//5
+        if combat_HANDLING == 'both':
+            w_accu_randomness = w_accu_randomness*2 + (INTT*4+w_int)//5
+        else:
+            w_accu_randomness = w_accu_randomness + (INTT*4+w_int)//5
         if w_accu_randomness < 1: w_accu_randomness = 1 + (INTT*4+w_int)//5
 
         # CE - Processing
@@ -509,12 +523,21 @@ class avaCombat(commands.Cog):
         # E: Temporary CE ('lockon' only)
         except KeyError: pass
 
+        # NUME calc
         numerator = random.choice(range(100+int(w_accu_randomness)))
+
+        # DENO calc
+        if not accuracy_range: accuracy_range = 1
         if distance > w_accu_range: denominator = 100*(distance/w_accu_range)
         else: denominator = 100*(distance/w_accu_range)
+
+        # Optimal point
+        optimal_point = (w_rmax - w_rmin)/5*2 - distance
+        if optimal_point > 0: numerator += optimal_point*1.7
+
         # Check if numerator > denominator
         if numerator > denominator: shots = shots
-        else: shots = int(shots/denominator*numerator)
+        else: shots = round(shots/denominator*numerator)
 
         # tCE - Processing
         # SHOTS are evaluated with probability and user's CE (PCM:Attack) (More attack -> Less accuracy)
