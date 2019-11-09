@@ -44,6 +44,15 @@ class avaAdmin(commands.Cog):
 
 
 
+    # ================== SYSTEM WIDE ==================
+    @commands.command()
+    @checks.check_author()
+    async def user_block(self, ctx):
+        try: self.client.ignore_list.append(ctx.message.mentions[0])
+        except IndexError: return
+
+
+
     # ================== GAME MANAGER ==================
     # MEGA
     @commands.command()
