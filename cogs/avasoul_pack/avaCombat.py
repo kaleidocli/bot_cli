@@ -76,9 +76,10 @@ class avaCombat(commands.Cog):
         # Get user's info (always put last, for the sake of efficience)         |        as well as checking coord
         name, cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT name, cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
         # Check PB
-        if not await self.tools.ava_scan(ctx.message, type='pb', target_coord=(cur_X, cur_Y, cur_PLACE)):
+        pb_check, pb_pack = await self.tools.ava_scan(ctx.message, type='pb', target_coord=(cur_X, cur_Y, cur_PLACE))
+        if pb_check:
             await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
-        
+
 
         # CE - IN
         CE, CE_ttl = await self.tools.redio_map(f"CE{ctx.author.id}", mode='get', getttl=True)
@@ -222,7 +223,9 @@ class avaCombat(commands.Cog):
         # Get info     |      as well as checking coord
         user_id, INTT, cur_PLACE, cur_X, cur_Y, cur_MOB, main_weapon, combat_HANDLING, STA, LP, AFlame, AIce, ADark, AHoly = await self.client.quefe(f"SELECT id, INTT, cur_PLACE, cur_X, cur_Y, cur_MOB, IF(combat_HANDLING IN ('both', 'right'), right_hand, left_hand), combat_HANDLING, STA, LP, au_FLAME, au_ICE, au_DARK, au_HOLY FROM personal_info WHERE id='{str(ctx.message.author.id)}';")
         # Check PB
-        if not await self.tools.ava_scan(ctx.message, type='pb', target_coord=(cur_X, cur_Y, cur_PLACE)):
+        pb_check, pb_pack = await self.tools.ava_scan(ctx.message, type='pb', target_coord=(cur_X, cur_Y, cur_PLACE))
+        cur_biome = pb_pack[1].split(' - ')
+        if pb_check:
             await ctx.send("<:osit:544356212846886924> You can't fight inside **Peace Belt**!"); return
 
         # Get weapon's info
@@ -443,7 +446,7 @@ class avaCombat(commands.Cog):
             except TypeError: await ctx.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {ctx.author.mention}!"); return
 
         # DISTANCE get/check
-        if __mode == 'PVP': 
+        if __mode == 'PVP':
             distance = await self.utils.distance_tools(cur_X, cur_Y, t_cur_X, t_cur_Y)
             if distance > w_rmax or distance < w_rmin: await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, the target is out of your weapon's range!"); return
         elif __mode == 'PVE':
@@ -466,29 +469,30 @@ class avaCombat(commands.Cog):
 
 
         # SHOTS pre-processed calc  ||  Reload ====================================================
-        ################## MAGIC
-        if w_round == 'am5':                    # LP -------------------- If kamikaze, halt them
-            if LP <= shots*w_dmg:
-                await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, please don't kill yourself..."); return
+        if 'DIS_AMMO' not in cur_biome:
+            ################## MAGIC
+            if w_round == 'am5':                    # LP -------------------- If kamikaze, halt them
+                if LP <= shots*w_dmg:
+                    await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, please don't kill yourself..."); return
+                else:
+                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
+                    await self.client._cursor.execute(a_rlquery)
+            elif w_round == 'am6':                  # STA -------------------- If kamikaze, take the rest of the STA, split it into shots. Then decrease STA
+                if STA <= shots*w_dmg:
+                    w_dmg = STA//shots
+                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
+                    await self.client._cursor.execute(a_rlquery)
+                else:
+                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
+                    await self.client._cursor.execute(a_rlquery)            
+            ################## PHYSIC
             else:
-                a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
-                await self.client._cursor.execute(a_rlquery)
-        elif w_round == 'am6':                  # STA -------------------- If kamikaze, take the rest of the STA, split it into shots. Then decrease STA
-            if STA <= shots*w_dmg:
-                w_dmg = STA//shots
-                a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
-                await self.client._cursor.execute(a_rlquery)
-            else:
-                a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
-                await self.client._cursor.execute(a_rlquery)            
-        ################## PHYSIC
-        else:
-            if a_quantity <= shots:
-                shots = a_quantity
-                await self.client._cursor.execute(f"UPDATE pi_inventory SET existence='BAD' WHERE item_code='{w_round}' AND user_id='{user_id}';")
-            else:
-                a_rlquery = a_rlquery.replace('quantity_here', str(shots)).replace('user_id_here', user_id)
-                await self.client._cursor.execute(a_rlquery)
+                if a_quantity <= shots:
+                    shots = a_quantity
+                    await self.client._cursor.execute(f"UPDATE pi_inventory SET existence='BAD' WHERE item_code='{w_round}' AND user_id='{user_id}';")
+                else:
+                    a_rlquery = a_rlquery.replace('quantity_here', str(shots)).replace('user_id_here', user_id)
+                    await self.client._cursor.execute(a_rlquery)
 
         # STAMINA damaging for Physic W
         if _style == 'PHYSIC':

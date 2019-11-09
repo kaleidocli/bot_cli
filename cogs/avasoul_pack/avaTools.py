@@ -67,6 +67,9 @@ class avaTools:
         """
             target_coord:    (x, y, cur_PLACE)
             pb_coord:        [[x, y, x, y], [x, y, x, y],..]
+
+            <pb>    if pb_coord is provided, return (bool, (type, biome))
+                    else return bool only
         """
 
         # Get target
@@ -86,21 +89,30 @@ class avaTools:
             except mysqlError.InternalError: pass
             return True
         elif type == 'pb':
+            pb_in = False
             # Check info. If not exist, get info.
             if not target_coord:
                 target_coord = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE FROM personal_info WHERE id='{target_id}';")
                 if not target_coord: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. Use `incarnate` to create one, then `tutorial` for... tutorial <:yeee:636045188153868309>"); return
             if not pb_coord:
-                pb_coord_temp = await self.client.quefe(f"SELECT PB FROM personal_info WHERE environ_code='{target_coord[2]}';")
+                pb_coord_temp = await self.client.quefe(f"SELECT PB, type, biome FROM environ WHERE environ_code='{target_coord[2]}';")
                 pb_coord_temp2 = pb_coord_temp[0].split(' | ')
                 pb_coord = []
                 for p in pb_coord_temp2:
                     pb_coord.append(p.split(' - '))
+            else:
+                pb_in = True
             # Check PB
             for p in pb_coord:
                 if float(p[0]) <= float(target_coord[0]) and float(p[1]) <= float(target_coord[1]) and float(p[2]) >= float(target_coord[2]) and float(p[3]) >= float(target_coord[3]):
-                    return True
-            return False
+                    if pb_in:
+                        return True
+                    else:
+                        return True, (pb_coord_temp[1], pb_coord_temp[2])
+            if pb_in:
+                return False
+            else:
+                return False, (pb_coord_temp[1], pb_coord_temp[2])
 
 
         # Status check
