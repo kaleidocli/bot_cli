@@ -33,7 +33,7 @@ char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U00
 
 extensions = [  'jishaku',
                 # 'cogs.audio',
-                'cogs.pydanboo',
+                # 'cogs.pydanboo',
                 'cogs.tictactoe', 
                 'cogs.hen',
                 'cogs.guess',
