@@ -200,6 +200,7 @@ class avaTools:
                         for reward in rewards:
                             stuff = reward.split(' - ')
                             if await self.utils.percenter(int(stuff[2])):
+                                await asyncio.sleep(0)
 
                                 # Stats reward
                                 if stuff[0] in ['money', 'perks']:
@@ -239,6 +240,8 @@ class avaTools:
                             # Generating rewards
                             status = []; objecto = []; bingo_list = []
                             for reward in rewards:
+                                await asyncio.sleep(0)
+
                                 stuff = reward.split(' - ')
                                 if random.choice(range(int(stuff[2]))) == 0:
                                     if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")

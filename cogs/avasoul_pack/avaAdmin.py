@@ -51,6 +51,8 @@ class avaAdmin(commands.Cog):
         try: self.client.ignore_list.append(ctx.message.mentions[0])
         except IndexError: return
 
+        await ctx.send(":white_check_mark:")
+
 
 
     # ================== GAME MANAGER ==================
@@ -165,7 +167,7 @@ class avaAdmin(commands.Cog):
     @commands.command()
     @commands.cooldown(1, 5, type=BucketType.user)
     @checks.check_author()
-    async def worldrebuild(self, ctx, *args):
+    async def world_rebuild(self, ctx, *args):
         try:
             if args[0] == 'truncate': truncate = True
             else: truncate = False
@@ -178,12 +180,18 @@ class avaAdmin(commands.Cog):
 
         await ctx.send(":white_check_mark:")
 
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    @checks.check_author()
+    async def world_build(self, ctx, *args):
+        await self.tools.world_built()
+
     # MISC
     @commands.command()
     @checks.check_author()
-    async def viewitem(self, ctx, *args):
+    async def view_item(self, ctx, *args):
 
-        item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price FROM model_item WHERE item_code='{args[0]}';""")
+        item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price FROM pi_inventory WHERE item_id='{args[0]}';""")
 
         # Pointer
         if 'magic' in tags: pointer = ':crystal_ball:'
@@ -366,7 +374,7 @@ class avaAdmin(commands.Cog):
     @commands.cooldown(1, 5, type=BucketType.guild)
     async def countline(self, ctx, *args):
         dir_main = os.path.dirname(os.path.realpath(__file__))
-        dirs = ['C:/Users/DELL/Desktop/bot_cli/cogs', dir_main]
+        dirs = ['cogs', dir_main]
         length=0
         for dir_path in dirs:
             for f in os.listdir(dir_path):
