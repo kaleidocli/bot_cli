@@ -240,11 +240,12 @@ class avaAdmin(commands.Cog):
 
     @commands.command()
     @checks.check_author()
-    async def megareload(self, ctx, name):
+    async def megareload(self, ctx, *args):
         temp = []
-        for n in name.split('.'):
-            if n == 'c': n = 'cogs'
-            elif n == 'a': n = 'avasoul_pack'
+        name = ''
+        for n in args[0].split('.'):
+            if n == 'c': temp.append('cogs'); continue
+            elif n == 'a': temp.append('avasoul_pack'); continue
             temp.append(n)
         name = '.'.join(temp)
 
