@@ -61,7 +61,7 @@ class avaPersonal(commands.Cog):
         # Create a living entity (creator-only)
         if args:
             if str(ctx.author.id) == '214128381762076672':
-                try: id = str(ctx.mentions[0].id); name = ctx.mentions[0].name
+                try: id = str(ctx.message.mentions[0].id); name = ctx.mentions[0].name
                 except IndexError: id = ' '.join(args); name = id
             else: await ctx.send(":no_entry_sign: You wish :>"); return
             
