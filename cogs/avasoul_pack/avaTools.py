@@ -169,8 +169,10 @@ class avaTools:
 
     async def world_built(self):
         regions = await self.client.quefe("SELECT environ_code FROM environ", type='all')
+        print(regions)
 
         for region in regions:
+            print(region)
             await asyncio.sleep(0.2)
             region = region[0]
             
