@@ -178,6 +178,7 @@ class avaTools:
             mobs = await self.client.quefe(f"SELECT mob_code, quantity, limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_diversity WHERE environ_code='{region}';", type='all')
 
             for mob in mobs:
+                print(mob)
                 mob = list(mob)
                 # MOB
                 if mob[0].startswith('mb'):
@@ -189,7 +190,8 @@ class avaTools:
                     
                     # Get the <mob> prototype
                     name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink = await self.client.quefe(f"SELECT name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink FROM model_mob WHERE mob_code='{mob[0]}';")
-                    rewards = rewards.split(' | ')
+                    try: rewards = rewards.split(' | ')
+                    except AttributeError: rewards = []
                     
                     # Mass production
                     for _ in range(mob[1]):

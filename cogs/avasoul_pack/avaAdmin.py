@@ -185,6 +185,7 @@ class avaAdmin(commands.Cog):
     @checks.check_author()
     async def world_build(self, ctx, *args):
         await self.tools.world_built()
+        await ctx.send(":white_check_mark:")
 
     # MISC
     @commands.command()
