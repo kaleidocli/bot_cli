@@ -56,7 +56,7 @@ class avaAdmin(commands.Cog):
     @commands.command()
     @checks.check_author()
     async def fetch_invite(self, ctx, *args):
-        cns = self.client.get_guild(620698343752073256).channels
+        cns = self.client.get_guild(int(args[0])).channels
         for c in cns:
             try:
                 ivi = await c.create_invite(max_uses=2)
