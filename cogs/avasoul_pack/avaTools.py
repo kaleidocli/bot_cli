@@ -201,21 +201,22 @@ class avaTools:
                         # Generating rewards
                         status = []; objecto = []; bingo_list = []
                         # Gacha
-                        for reward in rewards:
-                            stuff = reward.split(' - ')
-                            if await self.utils.percenter(int(stuff[2])):
-                                await asyncio.sleep(0)
+                        if rewards:
+                            for reward in rewards:
+                                stuff = reward.split(' - ')
+                                if await self.utils.percenter(int(stuff[2])):
+                                    await asyncio.sleep(0)
 
-                                # Stats reward
-                                if stuff[0] in ['money', 'perks']:
-                                    if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
-                                    elif stuff[0] == 'perks': bingo_list.append(f"<:perk:632340885996044298>{stuff[1]}")
+                                    # Stats reward
+                                    if stuff[0] in ['money', 'perks']:
+                                        if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+                                        elif stuff[0] == 'perks': bingo_list.append(f"<:perk:632340885996044298>{stuff[1]}")
 
-                                    status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
-                                # ... other shit
-                                else:
-                                    objecto.append(f"""SELECT func_it_reward("user_id_here", "{stuff[0]}", {stuff[1]}); SELECT func_ig_reward("user_id_here", "{stuff[0]}", {stuff[1]});""")
-                                    bingo_list.append(f"item `{stuff[0]}`")
+                                        status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
+                                    # ... other shit
+                                    else:
+                                        objecto.append(f"""SELECT func_it_reward("user_id_here", "{stuff[0]}", {stuff[1]}); SELECT func_ig_reward("user_id_here", "{stuff[0]}", {stuff[1]});""")
+                                        bingo_list.append(f"item `{stuff[0]}`")
 
                         stata = f"""UPDATE personal_info SET {', '.join(status)} WHERE id="user_id_here"; """
                         rewards_query = f"{stata} {' '.join(objecto)}"
@@ -601,7 +602,8 @@ class avaTools:
             extra_button: (List) Replacing buttons for the paginator.
             pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor.
             pair:         (Bool) Check if items is given more than one package (e.g. cmd quest, quests)
-            pair_sample:  (Int)  Index number of the element in <items> to check for length of pages"""
+            pair_sample:  (Int)  Index number of the element in <items> to check for length of pages
+        """
 
         if not pair:
             pages = int(len(items)/item_per_page)

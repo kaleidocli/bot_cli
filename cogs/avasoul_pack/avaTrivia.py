@@ -269,7 +269,7 @@ class avaTrivia(commands.Cog):
             except concurrent.futures.TimeoutError:
                 pass
 
-    @commands.command()
+    @commands.command(aliases=['mob'])
     @commands.cooldown(1, 2, type=BucketType.user)
     async def mobs(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
@@ -280,70 +280,29 @@ class avaTrivia(commands.Cog):
             mobs.sort(key=lambda v: v[3], reverse=True)
         except IndexError: await ctx.send(f":x: There's no mob in this region it seems..."); return
 
-        async def makeembed(curp, pages, currentpage):
-            mob = mobs[curp]
+        def makeembed(items, top, least, pages, current_page):
+            """Unique"""
+
+            items, effect_icon, mob_icon = items
+            mob = items[top:least][0]
 
             # Visualize effects
             try:
                 effect = '> '
                 for ep in mob[14].split(' || '):
                     ep = ep.split(' - ')
-                    effect += f"{self.effect_icon[ep[0]]}`{ep[2]}%` "
+                    effect += f"{effect_icon[ep[0]]}`{ep[2]}%` "
             except (IndexError, KeyError):
                 effect = '----------------------'
 
-            box = discord.Embed(title=f"{self.mob_icon[mob[3]]} `{mob[0]}`| **{mob[1]}**", description=f"```{mob[2]}```", colour = discord.Colour(0x36393F))
+            box = discord.Embed(title=f"{mob_icon[mob[3]]} `{mob[0]}`| **{mob[1]}**", description=f"```{mob[2]}```", colour = discord.Colour(0x36393F))
             box.add_field(name=f'>>> **`LP`** · {mob[5]}\n**`STR`** · {mob[6]}\n**`CHAIN`** · {mob[7]}\n**`SPEED`** · {mob[8]}\n**`DEFPY`** · {mob[16]}', value=effect)
             box.add_field(name=f'>>> **`FLAME`** · {mob[9]}\n**`ICE`** · {mob[10]}\n**`HOLY`** · {mob[11]}\n**`DARK`** · {mob[12]}\n**`DEFMA`** · {mob[17]}', value=f"> `EVO.{mob[4]}`")
 
             if mob[12]: box.set_thumbnail(url=mob[13])
             return box
-        
-        async def attachreaction(msg):
-            await msg.add_reaction("\U000023ee")    #Top-left
-            await msg.add_reaction("\U00002b05")    #Left
-            await msg.add_reaction("\U000027a1")    #Right
-            await msg.add_reaction("\U000023ed")    #Top-right
 
-        pages = len(mobs)
-        currentpage = 1
-        cursor = 0
-
-        emli = []
-        for curp in range(pages):
-            myembed = await makeembed(curp, pages, currentpage)
-            emli.append(myembed)
-            currentpage += 1
-
-        msg = await ctx.send(embed=emli[cursor])
-        if pages > 1: await attachreaction(msg)
-        else: return
-
-        while True:
-            try:
-                reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=lambda reaction, user: user.id == ctx.author.id and reaction.message.id == msg.id)
-                if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                    cursor += 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U00002b05" and cursor > 0:
-                    cursor -= 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ee" and cursor != 0:
-                    cursor = 0
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-                elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                    cursor = pages - 1
-                    await msg.edit(embed=emli[cursor])
-                    try: await msg.remove_reaction(reaction.emoji, user)
-                    except discordErrors.Forbidden: pass
-            except asyncio.TimeoutError: 
-                await msg.delete(); return
+        await self.tools.pagiMain(ctx, (mobs, self.effect_icon, self.mob_icon), makeembed, item_per_page=1, delete_on_exit=False, pair=True)
 
 
 

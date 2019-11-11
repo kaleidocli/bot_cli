@@ -33,7 +33,7 @@ char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U00
 
 extensions = [  'jishaku',
                 # 'cogs.audio',
-                # 'cogs.pydanboo',
+                'cogs.pydanboo',
                 'cogs.tictactoe', 
                 'cogs.hen',
                 'cogs.guess',
@@ -109,7 +109,7 @@ async def on_message(message):
     if not client.realready: return
     if message.mentions:
         if message.mentions[0] == client.user:
-            await message.channel.send(f"> {message.author.mention}, my prefix is **`{config.prefix[0]}`**!"); return
+            await message.channel.send(f"> {message.author.mention}, my prefix is **`{config.prefix[0]} `** (remember, `cli help`, not `Cli help`)"); return
     if message.author.id in client.ignore_list: return
     await client.process_commands(message)
 

@@ -13,6 +13,10 @@ from utils import checks
 class avaHelper(commands.Cog):
 
     def __init__(self, client):
+# >>>                               ⠀⠀ You - a *Remnant* as many others - woke up in the middle of an unreal world, where reality mixed with fantasy, where space and time were torn apart into *regions*.
+#                                 ⠀⠀Since the Seraph, human have fought their way to reunite their race and pointed their swords at the pit and summit of Pralaeyr.
+#                                 ⠀⠀"To fight the darkness of the fantasy and to free the human race from the Pralaeyr", firsts of the Remnants have sworn.
+    
         from .avaTools import avaTools
         from .avaUtils import avaUtils
 
@@ -24,17 +28,23 @@ class avaHelper(commands.Cog):
         self.helper_title = '**G U I D E**⠀⠀|⠀⠀**R P G  C O M M A N D S**'
         self.helper_description = f"""
                                  ```ini
-[help <cmd>] to inspect a command.
-[tutorial] to begin your journey.```
-                                ╟ **Confuse?** Use **`concept`** for conceptual questions!
-                                ╟ **Still confuse?** Join [our support camp!]({self.client.support_server_invite})
+[faq] for basic understandings.
+[tutorial] to learn how to play.```
+                                ╟ **For advanced understanding**, use **`concept`**.
+                                ╟ **Not enough?** Join [our support camp!]({self.client.support_server_invite})
 
-                                ╟ **『LORE』**
->>>                               ⠀⠀ You - a *Remnant* as many others - woke up in the middle of an unreal world, where reality mixed with fantasy, where space and time were torn apart into *regions*.
-                                ⠀⠀Since the Seraph, human have fought their way to reunite their race and pointed their swords at the pit and summit of Pralaeyr.
-                                ⠀⠀"To fight the darkness of the fantasy and to free the human race from the Pralaeyr", firsts of the Remnants have sworn.
+                                ╟ **『USAGE』**
+>>>                               ↱ How to use a command?
+                                ⤷ ·· ||Use `faq 1`: "How to use commands?"||.
+                                ↱ List of available commands:
+                                ⤷ ·· ||Use `help` alone, and use the arrows below||.
+                                ↱ Full explanation of a single command:
+                                ⤷ ·· ||Use `help [insert_command_name_here]`||.
+                                ↱ How to read an explanation:
+                                ⤷ ·· ||Use `help help`||.
+                                
                                 """
-        self.helper_thumbnail = ['https://imgur.com/EQsptpa.png', 'https://imgur.com/KBOW82t.png']
+        self.helper_thumbnail = ['https://imgur.com/KBOW82t.png'] # 'https://imgur.com/EQsptpa.png'
         self.helper_banners = ["https://imgur.com/D1Ld5A7.gif", "https://imgur.com/e8cIazx.gif"]
         self.helper_preface = None
         self.helper_prefaceEmbs = None
@@ -57,7 +67,7 @@ Definition? Mechanism? Lore? Yaaa```
         self.concept_preface = None
         self.concept_prefaceEmbs = None
 
-        self.helper_preface = ''; self.helper_prefaceEmbs = ''; self.concept_preface = ''; self.concept_prefaceEmbs = ''
+        self.helper_preface = ''; self.helper_prefaceEmbs = ''; self.concept_preface = ''; self.concept_prefaceEmbs = ''; self.faqDict = {}
         self.intoLoop(self.prepLoad())
 
         print("|| Helper --- READY!")
@@ -67,6 +77,7 @@ Definition? Mechanism? Lore? Yaaa```
         self.helper_prefaceEmbs = await self.helper_ember()
         self.concept_preface = await self.conceptPerface_load()
         self.concept_prefaceEmbs = await self.concept_ember()
+        self.faqDict = await self.faqLoad()
 
     def intoLoop(self, coro):
         self.client.loop.create_task(coro)
@@ -275,6 +286,37 @@ Definition? Mechanism? Lore? Yaaa```
             await ctx.send(f"**Thank you for your time,** {ctx.author.mention}**!**\nIf you want, you can always receive more intuitive helps from our support server!")
             await ctx.send(self.client.support_server_invite)
 
+    @commands.command()
+    @commands.cooldown(1, 3, type=BucketType.user)
+    async def faq(self, ctx, *args):
+        
+        # Inspect
+        try:
+            if args[0].isdigit():
+                try:
+                    await ctx.send(f"> <a:question_spinning:643263711833882655> **{self.faqDict[args[0]]['question']}** ||{ctx.author.mention}|| \n{self.faqDict[args[0]]['answer']}")
+                    return
+                except KeyError: await ctx.send(f"<:osit:544356212846886924> Question not found!"); return
+
+        # List
+        except IndexError:
+            faqs = [v for k, v in self.faqDict.items()]
+
+            def makeembed(items, top, least, pages, currentpage):
+                line = '' 
+
+                for item in items[top:least]:
+                    
+                    line = line + f"""\n`{item['id']}`| **[**"{item['question']}"**]**"""
+
+                reembed = discord.Embed(title = f"<a:question_spinning:643263711833882655><a:question_spinning:643263711833882655> Frequently Asked Questions <a:question_spinning:643263711833882655><a:question_spinning:643263711833882655>", colour = discord.Colour(0xA37C05), description=line)
+                reembed.set_footer(text=f"{currentpage} of {pages}")
+                return reembed
+
+            await self.tools.pagiMain(ctx, faqs, makeembed, item_per_page=10, timeout=25)
+
+
+
 
 # ================== MISC ==================
 
@@ -437,6 +479,20 @@ Definition? Mechanism? Lore? Yaaa```
             else: return False
         except asyncio.TimeoutError: return False
 
+    async def faqLoad(self):
+        faqs = await self.client.quefe(f"SELECT id, user_id, question, answer, tag FROM sys_faq;", type='all')
+        temp = {}
+
+        for faq in faqs:
+            temp[str(faq[0])] = {
+                'id': str(faq[0]),
+                'user_id': faq[1],
+                'question': faq[2],
+                'answer': faq[3],
+                'tag': faq[4].split(' - ')
+            }
+        
+        return temp
 
 
 
