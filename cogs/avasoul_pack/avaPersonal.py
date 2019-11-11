@@ -335,7 +335,7 @@ class avaPersonal(commands.Cog):
                     temp.append(f" (tag LIKE '{k} %' OR tag LIKE '% {k}' OR tag LIKE '% {k} %') ")
                     count += 1
                     if count == 3: break    # limited to 3 keywords
-                if temp: search_q = f"{' AND '.join(temp)}"
+                if temp: search_q = f"AND {' AND '.join(temp)}"
             except IndexError: pass
 
             if mode == 'av':
@@ -403,7 +403,7 @@ class avaPersonal(commands.Cog):
                     temp.append(f" (tag LIKE '{k} %' OR tag LIKE '% {k}' OR tag LIKE '% {k} %') ")
                     count += 1
                     if count == 3: break    # limited to 3 keywords
-                if temp: search_q = f"{' AND '.join(temp)}"
+                if temp: search_q = f"AND {' AND '.join(temp)}"
             except IndexError: pass
 
             items2 = await self.client.quefe(f"SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}' {search_q};", type='all')
