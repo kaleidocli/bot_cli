@@ -326,6 +326,8 @@ class avaPersonal(commands.Cog):
                 temp = []
                 count = 0
                 for k in raw[1:]:
+                    k = k.lower()
+
                     # Light inject-filter
                     k = k.replace("'", '_')
                     k = k.replace('"', '_')
@@ -392,6 +394,8 @@ class avaPersonal(commands.Cog):
                 temp = []
                 count = 0
                 for k in raw[1:]:
+                    k = k.lower()
+
                     # Light inject-filter
                     k = k.replace("'", '_')
                     k = k.replace('"', '_')
