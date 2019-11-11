@@ -339,13 +339,12 @@ class avaPersonal(commands.Cog):
             except IndexError: pass
 
             if mode == 'av':
-                items2 = await self.client.quefe(f"SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}';", type='all')
+                items2 = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id IN (SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}') {search_q};", type='all')
                 if not items2: await ctx.send(f":x: No result..."); return
 
                 items = []
                 for item in items2:
-                    ava_id, name, description = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id='{item[0]}' {search_q};")
-                    items.append([ava_id, name, description, self.client.chardict_meta[ava_id], self.utils.smalltext])
+                    items.append(item + (self.client.chardict_meta[item[0]], self.utils.smalltext))
 
                 def makeembed(items, top, least, pages, currentpage):
                     line = '' 
@@ -363,13 +362,12 @@ class avaPersonal(commands.Cog):
                 await self.tools.pagiMain(ctx, items, makeembed)
 
             else:
-                items2 = await self.client.quefe(f"SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}';", type='all')
+                items2 = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code IN (SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}') {search_q};", type='all')
                 if not items2: await ctx.send(f":x: No result..."); return
 
                 items = []
                 for item in items2:
-                    bg_code, name, description = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code='{item[0]}' {search_q};")
-                    items.append([bg_code, name, description, self.client.bgdict_meta[bg_code], self.utils.smalltext])
+                    items.append(item + (self.client.bgdict_meta[item[0]], self.utils.smalltext))
 
                 def makeembed(items, top, least, pages, currentpage):
                     line = '' 
@@ -406,13 +404,12 @@ class avaPersonal(commands.Cog):
                 if temp: search_q = f"AND {' AND '.join(temp)}"
             except IndexError: pass
 
-            items2 = await self.client.quefe(f"SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}' {search_q};", type='all')
+            items2 = await self.client.quefe(f"SELECT font_id, name, description FROM model_font WHERE font_id IN (SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}') {search_q};", type='all')
             if not items2: await ctx.send(f":x: No result..."); return
 
             items = []
             for item in items2:
-                ava_id, name, description = await self.client.quefe(f"SELECT font_id, name, description FROM model_font WHERE font_id='{item[0]}';")
-                items.append([ava_id, name, description])
+                items.append(item)
 
             def makeembed(items, top, least, pages, currentpage):
                 line = '' 
