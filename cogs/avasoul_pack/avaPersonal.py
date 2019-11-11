@@ -332,14 +332,14 @@ class avaPersonal(commands.Cog):
                     k = k.replace("'", '_')
                     k = k.replace('"', '_')
 
-                    temp.append(f" (tag LIKE '{k} %' OR tag LIKE '% {k}' OR tag LIKE '% {k} %') ")
+                    temp.append(f" (tag LIKE '{k}%' OR tag LIKE '%{k}' OR tag LIKE '% {k} %') ")
                     count += 1
                     if count == 3: break    # limited to 3 keywords
                 if temp: search_q = f"AND {' AND '.join(temp)}"
             except IndexError: pass
 
             if mode == 'av':
-                items2 = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id IN (SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}') {search_q};", type='all')
+                items2 = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id IN (SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
                 if not items2: await ctx.send(f":x: No result..."); return
 
                 items = []
@@ -362,7 +362,7 @@ class avaPersonal(commands.Cog):
                 await self.tools.pagiMain(ctx, items, makeembed)
 
             else:
-                items2 = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code IN (SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}') {search_q};", type='all')
+                items2 = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code IN (SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
                 if not items2: await ctx.send(f":x: No result..."); return
 
                 items = []
@@ -398,13 +398,13 @@ class avaPersonal(commands.Cog):
                     k = k.replace("'", '_')
                     k = k.replace('"', '_')
 
-                    temp.append(f" (tag LIKE '{k} %' OR tag LIKE '% {k}' OR tag LIKE '% {k} %') ")
+                    temp.append(f" (tag LIKE '{k}%' OR tag LIKE '%{k}' OR tag LIKE '% {k} %') ")
                     count += 1
                     if count == 3: break    # limited to 3 keywords
                 if temp: search_q = f"AND {' AND '.join(temp)}"
             except IndexError: pass
 
-            items2 = await self.client.quefe(f"SELECT font_id, name, description FROM model_font WHERE font_id IN (SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}') {search_q};", type='all')
+            items2 = await self.client.quefe(f"SELECT font_id, name, description FROM model_font WHERE font_id IN (SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
             if not items2: await ctx.send(f":x: No result..."); return
 
             items = []
