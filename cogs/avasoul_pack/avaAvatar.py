@@ -95,7 +95,8 @@ class avaAvatar(commands.Cog):
                         'fnt3': 'DalekPinpointBold.ttf',
                         'fnt4': 'the_unseen.ttf',
                         'fnt5': 'MARSNEVENEKSK_Regular.otf',
-                        'fnt6': 'nixie_one.ttf'
+                        'fnt6': 'nixie_one.ttf',
+                        'fnt7': 'Montserrat-Light.ttf'
                         }
 
         self.char_dir = {}
