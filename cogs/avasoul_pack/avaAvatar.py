@@ -44,7 +44,8 @@ class avaAvatar(commands.Cog):
                     'bg13': 'sg_akihabara',
                     'bg14': 'sg_indoor',
                     'bg15': 'sg_outdoor_am',
-                    'bg16': 'sg_outdoor_pm'
+                    'bg16': 'sg_outdoor_pm',
+                    'bg17': 'rwby'
                     }
         self.char_dict = {
                         'av0': 'Iris',
@@ -86,7 +87,8 @@ class avaAvatar(commands.Cog):
                         'av36': 'SG_Luka',
                         'av37': 'SG_Moeka',
                         'av38': 'SG_Moeka_2',
-                        'av39': 'SG_Suzuha'
+                        'av39': 'SG_Suzuha',
+                        'av40': 'rwby'
                         }
         self.font_dict = {
                         'fnt0': 'ERASLGHT.ttf',

@@ -194,6 +194,7 @@ class avaPersonal(commands.Cog):
     async def wardrobe(self, ctx, *args):
 
         raw = list(args)
+        mode = 'av'
 
         try:
             if raw[0] == 'save':
@@ -243,9 +244,16 @@ class avaPersonal(commands.Cog):
 
                 await ctx.send(f":gear: Your list of presets, {ctx.message.author.mention}\n----------------------{line}"); return
 
-            elif raw[0] in ['background', 'bg']: raise IndexError
+            elif raw[0] in ['av', 'avatar']:
+                raise IndexError
 
-            elif raw[0] in ['font', 'fnt']: raise ZeroDivisionError
+            elif raw[0] in ['background', 'bg']:
+                mode = 'bg'
+                raise IndexError
+
+            elif raw[0] in ['font', 'fnt']:
+                mode = 'fnt'
+                raise ZeroDivisionError
 
             else:
                 # COLOUR / BLUR
@@ -312,61 +320,89 @@ class avaPersonal(commands.Cog):
         # AVATARs
         # E: No avatar given
         except IndexError:
-            line = ''
+            # Search query
+            search_q = ''
+            try:
+                temp = []
+                count = 0
+                for k in raw[1:]:
+                    # Light inject-filter
+                    k = k.replace("'", '_')
+                    k = k.replace('"', '_')
 
-            async def browse():
-                if not args:
-                    items2 = await self.client.quefe(f"SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}';", type='all')
-                    if not items2: await ctx.send(f":x: No result..."); return
+                    temp.append(f" (tag LIKE '{k} %' OR tag LIKE '% {k}' OR tag LIKE '% {k} %') ")
+                    count += 1
+                    if count == 3: break    # limited to 3 keywords
+                if temp: search_q = f"{' AND '.join(temp)}"
+            except IndexError: pass
 
-                    items = []
-                    for item in items2:
-                        ava_id, name, description = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id='{item[0]}';")
-                        items.append([ava_id, name, description, self.client.chardict_meta[ava_id], self.utils.smalltext])
+            if mode == 'av':
+                items2 = await self.client.quefe(f"SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}';", type='all')
+                if not items2: await ctx.send(f":x: No result..."); return
 
-                    def makeembed(items, top, least, pages, currentpage):
-                        line = '' 
+                items = []
+                for item in items2:
+                    ava_id, name, description = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id='{item[0]}' {search_q};")
+                    items.append([ava_id, name, description, self.client.chardict_meta[ava_id], self.utils.smalltext])
 
-                        for item in items[top:least]:
-                            
-                            line = line + f"""\n`{item[0]}` · **{item[1]}** {item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
+                def makeembed(items, top, least, pages, currentpage):
+                    line = '' 
 
-                        reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s avatars", colour = discord.Colour(0x011C3A), description=line)
-                        reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
-                        return reembed
-                        #else:
-                        #    await ctx.send("*Nothing but dust here...*")
-                    
-                    await self.tools.pagiMain(ctx, items, makeembed)
+                    for item in items[top:least]:
+                        
+                        line = line + f"""\n`{item[0]}` · **{item[1]}** {item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
 
-                else:
-                    items2 = await self.client.quefe(f"SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}';", type='all')
-                    if not items2: await ctx.send(f":x: No result..."); return
+                    reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s avatars", colour = discord.Colour(0x011C3A), description=line)
+                    reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                    return reembed
+                    #else:
+                    #    await ctx.send("*Nothing but dust here...*")
+                
+                await self.tools.pagiMain(ctx, items, makeembed)
 
-                    items = []
-                    for item in items2:
-                        bg_code, name, description = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code='{item[0]}';")
-                        items.append([bg_code, name, description, self.client.bgdict_meta[bg_code], self.utils.smalltext])
+            else:
+                items2 = await self.client.quefe(f"SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}';", type='all')
+                if not items2: await ctx.send(f":x: No result..."); return
 
-                    def makeembed(items, top, least, pages, currentpage):
-                        line = '' 
+                items = []
+                for item in items2:
+                    bg_code, name, description = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code='{item[0]}' {search_q};")
+                    items.append([bg_code, name, description, self.client.bgdict_meta[bg_code], self.utils.smalltext])
 
-                        for item in items[top:least]:
-                            
-                            line = line + f"""\n`{item[0]}` · **{item[1]}** {item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
+                def makeembed(items, top, least, pages, currentpage):
+                    line = '' 
 
-                        reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
-                        reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
-                        return reembed
-                        #else:
-                        #    await ctx.send("*Nothing but dust here...*")
-                    
-                    await self.tools.pagiMain(ctx, items, makeembed)
-            await browse()
+                    for item in items[top:least]:
+                        
+                        line = line + f"""\n`{item[0]}` · **{item[1]}** {item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
+
+                    reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
+                    reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                    return reembed
+                    #else:
+                    #    await ctx.send("*Nothing but dust here...*")
+                
+                await self.tools.pagiMain(ctx, items, makeembed)
 
         # FONTs
         except ZeroDivisionError:
-            items2 = await self.client.quefe(f"SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}';", type='all')
+            # Search query
+            search_q = ''
+            try:
+                temp = []
+                count = 0
+                for k in raw[1:]:
+                    # Light inject-filter
+                    k = k.replace("'", '_')
+                    k = k.replace('"', '_')
+
+                    temp.append(f" (tag LIKE '{k} %' OR tag LIKE '% {k}' OR tag LIKE '% {k} %') ")
+                    count += 1
+                    if count == 3: break    # limited to 3 keywords
+                if temp: search_q = f"{' AND '.join(temp)}"
+            except IndexError: pass
+
+            items2 = await self.client.quefe(f"SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}' {search_q};", type='all')
             if not items2: await ctx.send(f":x: No result..."); return
 
             items = []
