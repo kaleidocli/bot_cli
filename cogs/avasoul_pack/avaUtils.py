@@ -111,8 +111,8 @@ class avaUtils:
         if random.choice(total) <= percent: return True
         else: return False
 
-    async def space_out(self, text):
-        return ' '.join([f"{ch} " for ch in text])
+    async def space_out(self, text, space=' '):
+        return space.join([f"{ch}" for ch in text])
 
     async def inj_filter(self, text):
         text = text.replace("'", ' ')
@@ -199,16 +199,16 @@ class avaUtils:
             except json.decoder.JSONDecodeError:
                 with open(path.join('.', '.', '.', 'data', 'nixie_text.json'), mode='w') as nfp:
                     nx = {
-                            'a': 'nix_a', 'b': 'nix_b', 'c': 'nix_c', 'd': 'nix_d', 'e': 'nix_e', 'f': 'nix_f', 'g': 'nix_g', 'h': 'nix_h', 'i': 'nix_i',
-                            'j': 'nix_j', 'k': 'nix_k', 'l': 'nix_l', 'm': 'nix_m', 'n': 'nix_n', 'o': 'nix_o', 'p': 'nix_p', 'q': 'nix_q', 'r': 'nix_r',
-                            's': 'nix_s', 't': 'nix_t', 'u': 'nix_u', 'v': 'nix_v', 'w': 'nix_w', 'x': 'nix_x', 'y': 'nix_y', 'z': 'nix_z',
+                            'a': 'nix_lower_a', 'b': 'nix_lower_b', 'c': 'nix_lower_c', 'd': 'nix_lower_d', 'e': 'nix_lower_e', 'f': 'nix_lower_f', 'g': 'nix_lower_g', 'h': 'nix_lower_h', 'i': 'nix_lower_i',
+                            'j': 'nix_lower_j', 'k': 'nix_lower_k', 'l': 'nix_lower_l', 'm': 'nix_lower_m', 'n': 'nix_lower_n', 'o': 'nix_lower_o', 'p': 'nix_lower_p', 'q': 'nix_lower_q', 'r': 'nix_lower_r',
+                            's': 'nix_lower_s', 't': 'nix_lower_t', 'u': 'nix_lower_u', 'v': 'nix_lower_v', 'w': 'nix_lower_w', 'x': 'nix_lower_x', 'y': 'nix_lower_y', 'z': 'nix_lower_z',
                             'A': 'nix_A', 'B': 'nix_B', 'C': 'nix_C', 'D': 'nix_D', 'E': 'nix_E', 'F': 'nix_F', 'G': 'nix_G', 'H': 'nix_H', 'I': 'nix_I',
                             'J': 'nix_J', 'K': 'nix_K', 'L': 'nix_L', 'M': 'nix_M', 'N': 'nix_N', 'O': 'nix_O', 'P': 'nix_P', 'Q': 'nix_Q', 'R': 'nix_R',
                             'S': 'nix_S', 'T': 'nix_T', 'U': 'nix_U', 'V': 'nix_V', 'W': 'nix_W', 'X': 'nix_X', 'Y': 'nix_Y', 'Z': 'nix_Z',
                             '0': 'nix_0', '1': 'nix_1', '2': 'nix_2', '3': 'nix_3', '4': 'nix_4', '5': 'nix_5', '6': 'nix_6', '7': 'nix_7', '8': 'nix_8', '9': 'nix_9',
                             '!': 'nix_exclamation', '@': 'nix_at', '#': 'nix_hash', '$': 'nix_dollar', '%': 'nix_percent', '^': 'nix_carat', '&': 'nix_ampersand', '*': 'nix_asterisk', '(': 'nix_lparen', ')': 'nix_rparen', '-': 'nix_dash', '+': 'nix_plus', '_': 'nix_underbar', '=': 'nix_equal',
-                            '{': 'nix_lcurly', '}': 'nix_rcurly', '[': 'nix_lsquare', ']': 'nix_rsquare', '|': 'nix_pipe', '/': 'nix_slash', '\\': 'nix_backslash',
-                            ':': 'nix_colon', ';': 'nix_semi', "'": 'nix_backquote', '"': 'nix_dquote', '>': 'nix_greater', '<': 'nix_less', '?': 'nix_question', ',': 'nix_comma', '.': 'nix_period', '~': 'nix_approx', '`': 'nix_backquote'
+                            '{': 'nix_lcurly', '}': 'nix_rcurly', '[': 'nix_lsquare', ']': 'nix_rsquare', '|': 'nix_pipe', '/': 'nix_slash', '\\': 'nix_backslash', ' ': 'nix_space',
+                            ':': 'nix_colon', ';': 'nix_semi', "'": 'nix_singlequote', '"': 'nix_dquote', '>': 'nix_greater', '<': 'nix_less', '?': 'nix_question', ',': 'nix_comma', '.': 'nix_period', '~': 'nix_approx', '`': 'nix_backquote'
                         }
 
                     emojis = self.nixie_getEmojis()

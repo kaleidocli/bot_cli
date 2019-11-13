@@ -357,7 +357,7 @@ Definition? Mechanism? Lore? Yaaa```
                 if pack[0] != cat[0]: continue
 
                 d[pack[1]] = pack[2]
-            a.append([await self.utils.space_out(cat[0].upper()), d])
+            a.append([await self.utils.space_out(cat[0].upper(), space=''), d])
         return a
 
     async def helper_ember(self):

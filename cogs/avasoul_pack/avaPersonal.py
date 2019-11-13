@@ -53,7 +53,7 @@ class avaPersonal(commands.Cog):
 
 # ================== INFO/AVATAR ==================
 
-    @commands.command()
+    @commands.command(aliases=['begin', 'start'])
     @commands.cooldown(1, 30, type=BucketType.user)
     async def incarnate(self, ctx, *args):
         id = str(ctx.author.id); name = ctx.author.name
@@ -81,7 +81,7 @@ class avaPersonal(commands.Cog):
 
         bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
         if not bump:
-            await ctx.send(f">>> {ctx.author.mention}, welcome to The Pralayer!**\nThis world is hard and complex, thus you will need every help you can.\nFor now, my advice is using `tutorial 1` to at least know what to do with this bot.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+            await ctx.send(f">>> {ctx.author.mention}, {self.utils.nixietext('Welcome to The Pralayer!')}\nThis world is hard and complex, thus you will need every help you can.\nFor now, my advice is using `tutorial 1` to at least know what to do with this bot.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
         elif bump == 3:
             await ctx.send(f"<:osit:544356212846886924> You've already incarnated!"); return
         else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
