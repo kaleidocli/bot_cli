@@ -444,8 +444,10 @@ def prepformain():
     for extension in extensions:
         print(client.load_count, extension)
         if client.load_count == client.extension_count: break
-        client.load_extension(extension)
-        client.load_count += 1
+        try:
+            client.load_extension(extension)
+            client.load_count += 1
+        except discord.ext.commands.ExtensionNotFound: continue
     client.load_extension('cogs.avasoul_pack.avaAvatar')
     client.load_extension('cogs.avasoul_pack.avaDungeon')
     client.run(TOKEN, bot=True, reconnect=True)
