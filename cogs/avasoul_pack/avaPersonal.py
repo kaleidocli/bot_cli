@@ -580,24 +580,22 @@ class avaPersonal(commands.Cog):
 
         # POCKETS ==========================================
         if not args:
-            async def browse():
-                items = await self.client.quefe(f"SELECT slot_id, slot_name, item_id FROM pi_equipment WHERE user_Id='{ctx.author.id}';", type='all')
+            items = await self.client.quefe(f"SELECT slot_id, slot_name, item_id FROM pi_equipment WHERE user_Id='{ctx.author.id}';", type='all')
 
-                def makeembed(items, top, least, pages, currentpage):
-                    line = '' 
+            def makeembed(items, top, least, pages, currentpage):
+                line = '' 
 
-                    for item in items[top:least]:
-                        line = line + f"""\n[`{item[0]}`| **{item[1]}**] == `{item[2]}`"""
+                for item in items[top:least]:
+                    line = line + f"""\n[`{item[0]}`| **{item[1]}**] == `{item[2]}`"""
 
-                    reembed = discord.Embed(title = f"<:armor_p:619743809286438929> Pocket of **{ctx.author.name}**", colour = discord.Colour(0x011C3A), description=line)
-                    reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
-                    return reembed
-                    #else:
-                    #    await ctx.send("*Nothing but dust here...*")
-                
-                await self.tools.pagiMain(items, ctx, items, makeembed)
+                reembed = discord.Embed(title = f"<:armor_p:619743809286438929> Pocket of **{ctx.author.name}**", colour = discord.Colour(0x011C3A), description=line)
+                reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                return reembed
+                #else:
+                #    await ctx.send("*Nothing but dust here...*")
+            
+            await self.tools.pagiMain(ctx, items, makeembed)
 
-            await browse()
             return
 
 
