@@ -203,7 +203,7 @@ class avaCombat(commands.Cog):
         else: print("<<<<< Non PVP nor PVE >>>>>>>")
 
     @commands.command(aliases=['rng'])
-    @commands.cooldown(1, 10, type=BucketType.user)
+    @commands.cooldown(1, 2, type=BucketType.user)
     async def range(self, ctx, *args):
 
         # >Aim <coord_X> <coord_Y> <shots(optional)>      |      >Aim <@user/mob_name> <shots(optional)>       |          >Aim (defaul - shot=1)
@@ -398,7 +398,10 @@ class avaCombat(commands.Cog):
             # Mobs first. If there's no mob in current_enemy, then randomly pick one
             try:
                 if CE['lock'] == 'n/a':
-                    target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
+                    try:
+                        target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
+                    except IndexError:
+                        await ctx.send(f"There's no mob around you, **{ctx.author.name}**..."); return
                     target_id = target
                     __mode = 'PVE'
                     # CE - Processing/lock
@@ -441,7 +444,7 @@ class avaCombat(commands.Cog):
 
         elif __mode == 'PVE':
             # Check if target is a valid mob       |       GET TARGET's INFO
-            try: t_Ax, t_Ay, t_Bx, t_By, t_name, t_AFlame, t_AIce, t_ADark, t_AHoly = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By, name, au_FLAME, au_ICE, au_DARK, au_HOLY FROM environ_MOB WHERE mob_id='{target_id}';")
+            try: t_Ax, t_Ay, t_Bx, t_By, t_name, t_AFlame, t_AIce, t_ADark, t_AHoly, t_speed, t_DEFMA, t_DEFPY = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By, name, au_FLAME, au_ICE, au_DARK, au_HOLY, speed, defense_magic, defense_physic FROM environ_MOB WHERE mob_id='{target_id}';")
             # E: Invalid target, or target's not in the same region
             except TypeError: await ctx.send(f"<:osit:544356212846886924> Unable to locate `{target_id}` in your surrounding, {ctx.author.mention}!"); return
 
@@ -450,7 +453,7 @@ class avaCombat(commands.Cog):
             distance = await self.utils.distance_tools(cur_X, cur_Y, t_cur_X, t_cur_Y)
             if distance > w_rmax or distance < w_rmin: await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, the target is out of your weapon's range!"); return
         elif __mode == 'PVE':
-            distance = 1                    # There is NO distance in a PVE battle, therefore the accuracy will always be at its lowest
+            distance = 0                    # There is NO distance in a PVE battle, therefore the accuracy will always be at its lowest
 
 
 
@@ -529,19 +532,27 @@ class avaCombat(commands.Cog):
 
         # NUME calc
         numerator = random.choice(range(100+int(w_accu_randomness)))
+        print("===============================")
+        print(f"NUM: {numerator}")
+        print(f"W_ACCU: {w_accu_range}")
+        print(f"DISTAN: {distance}")
 
         # DENO calc
-        if not accuracy_range: accuracy_range = 1
-        if distance > w_accu_range: denominator = 100*(distance/w_accu_range)
-        else: denominator = 100*(distance/w_accu_range)
+        if not w_accu_range: w_accu_range = 1
+        if distance > w_accu_range: denominator = 100*(distance/w_accu_range) + t_speed
+        else: denominator = 100 + t_speed
+        print(f"DEN: {denominator}")
 
         # Optimal point
-        optimal_point = (w_rmax - w_rmin)/5*2 - distance
+        if not distance: optimal_point = random.choice(range(round((w_rmax - w_rmin)/9*2)))        # PVE, where distance=0
+        else: optimal_point = (w_rmax - w_rmin)/9*2 - distance
         if optimal_point > 0: numerator += optimal_point*1.7
+        print(f"OPT: {optimal_point}")
+        print(f"DEN_2: {denominator}")
 
         # Check if numerator > denominator
-        if numerator > denominator: shots = shots
-        else: shots = round(shots/denominator*numerator)
+        if numerator < denominator: shots = round(shots/denominator*numerator)
+        print(f"SHOTS: {shots}")
 
         # tCE - Processing
         # SHOTS are evaluated with probability and user's CE (PCM:Attack) (More attack -> Less accuracy)
@@ -567,7 +578,7 @@ class avaCombat(commands.Cog):
         if __mode == 'PVP':
             await self.PVP_range(shots, ctx.message, _style, __mode, aDict={'a_dmg': a_dmg, 'a_weight': a_weight, 'w_aura': w_aura, 'w_speed': w_speed, 'w_stealth': w_stealth}, tDict={'target': target, 'target_id': target_id, 't_name': t_name, 't_combat_HANDLING': t_combat_HANDLING, 't_left_hand': t_left_hand, 't_right_hand': t_right_hand, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE, tCE=tCE)
         elif __mode == 'PVE':
-            await self.PVE_range(shots, ctx.message, _style, aDict={'a_dmg': a_dmg, 'w_aura': w_aura}, tDict={'target_id': target_id, 't_name': t_name, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE)
+            await self.PVE_range(shots, ctx.message, _style, aDict={'a_dmg': a_dmg, 'w_aura': w_aura}, tDict={'target_id': target_id, 't_name': t_name, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly, 't_speed': t_speed, 't_DEFPY': t_DEFPY, 't_DEFMA': t_DEFMA}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE)
         else: print("<<<<< OH SHIET >>>>>>>")
 
     @commands.command()
@@ -1193,7 +1204,11 @@ class avaCombat(commands.Cog):
 
         if style == 'PHYSIC':
 
-            await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{my_dmgdeal} WHERE mob_id='{tDict['target_id']}'; ")
+            # DMG re-calc (Mob's DEFPY)
+            my_dmgdeal = my_dmgdeal - tDict['t_DEFPY']
+
+            if my_dmgdeal > 0: await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{my_dmgdeal} WHERE mob_id='{tDict['target_id']}'; ")
+            else: my_dmgdeal = 0
 
             # Inform, of course :>
             await MSG.channel.send(f"<:gunshot:616136094739726347> **{MSG.author.name}** ⋙ *{my_dmgdeal}* ⋙ **「`{tDict['target_id']}` | {tDict['t_name']}」**!")
@@ -1207,7 +1222,11 @@ class avaCombat(commands.Cog):
             try: dmgdeal = int(my_dmgdeal*uDict[aura_dict[aDict['w_aura']]]/tDict[aura_redict[aDict['w_aura']]])
             except ZeroDivisionError: dmgdeal = int(my_dmgdeal*tDict[aura_dict[aDict['w_aura']]])
 
-            await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{dmgdeal} WHERE mob_id='{tDict['target_id']}'; ")
+            # DMG re-calc (Mob's DEFPY)
+            dmgdeal = dmgdeal - tDict['t_DEFMA']
+
+            if dmgdeal > 0: await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{dmgdeal} WHERE mob_id='{tDict['target_id']}'; ")
+            else: dmgdeal = 0
 
             # Inform, of course :>
             await MSG.channel.send(f"<:gunshot:616136094739726347> **{MSG.author.name}** ⋙ *{dmgdeal}* ⋙ **「`{tDict['target_id']}` | {tDict['t_name']}」**!")

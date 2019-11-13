@@ -192,8 +192,7 @@ class avaTools:
                     
                     # Get the <mob> prototype
                     name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink = await self.client.quefe(f"SELECT name, description, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, description, lockon_max, illulink FROM model_mob WHERE mob_code='{mob[0]}';")
-                    try: rewards = rewards.split(' | ')
-                    except AttributeError: rewards = []
+                    if rewards: rewards = rewards.split(' | ')
                     
                     # Mass production
                     for _ in range(mob[1]):
@@ -202,6 +201,7 @@ class avaTools:
                         status = []; objecto = []; bingo_list = []
                         # Gacha
                         if rewards:
+                            print(name, rewards)
                             for reward in rewards:
                                 stuff = reward.split(' - ')
                                 if await self.utils.percenter(int(stuff[2])):
