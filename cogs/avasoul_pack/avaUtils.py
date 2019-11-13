@@ -4,18 +4,29 @@ from dateutil.relativedelta import relativedelta
 import math
 import random
 import numpy as np
+import json
+from os import path
 
 import discord
 
 class avaUtils:
 
     def __init__(self, client):
+        """
+            Note: Two Nix archive server IDs (637838584996560896 for EC3, 644092524595642388 for EC4)
+        """
+
         self.client = client
         self.smoltext = str.maketrans({'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ', 'i': 'ᶦ',
                                 'j': 'ʲ', 'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ', 'q': 'ᵠ', 'r': 'ʳ',
                                 's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
                                 '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
                                 ')': '⁾', '(': '⁽'})
+        
+        self.nixtext = {}
+        self.nixified = False
+
+
 
     def time_get(self):
         day = 1; month = 1; year = 1
@@ -180,6 +191,60 @@ class avaUtils:
         """
         return text.lower().translate(self.smoltext)
 
+    def nixietext(self, text):
+        if not self.nixified:
+            try:
+                with open(path.join('.', '.', '.', 'data', 'nixie_text.json'), mode='r') as nfp:
+                    nx = json.load(nfp)
+            except json.decoder.JSONDecodeError:
+                with open(path.join('.', '.', '.', 'data', 'nixie_text.json'), mode='w') as nfp:
+                    nx = {
+                            'a': 'nix_a', 'b': 'nix_b', 'c': 'nix_c', 'd': 'nix_d', 'e': 'nix_e', 'f': 'nix_f', 'g': 'nix_g', 'h': 'nix_h', 'i': 'nix_i',
+                            'j': 'nix_j', 'k': 'nix_k', 'l': 'nix_l', 'm': 'nix_m', 'n': 'nix_n', 'o': 'nix_o', 'p': 'nix_p', 'q': 'nix_q', 'r': 'nix_r',
+                            's': 'nix_s', 't': 'nix_t', 'u': 'nix_u', 'v': 'nix_v', 'w': 'nix_w', 'x': 'nix_x', 'y': 'nix_y', 'z': 'nix_z',
+                            'A': 'nix_A', 'B': 'nix_B', 'C': 'nix_C', 'D': 'nix_D', 'E': 'nix_E', 'F': 'nix_F', 'G': 'nix_G', 'H': 'nix_H', 'I': 'nix_I',
+                            'J': 'nix_J', 'K': 'nix_K', 'L': 'nix_L', 'M': 'nix_M', 'N': 'nix_N', 'O': 'nix_O', 'P': 'nix_P', 'Q': 'nix_Q', 'R': 'nix_R',
+                            'S': 'nix_S', 'T': 'nix_T', 'U': 'nix_U', 'V': 'nix_V', 'W': 'nix_W', 'X': 'nix_X', 'Y': 'nix_Y', 'Z': 'nix_Z',
+                            '0': 'nix_0', '1': 'nix_1', '2': 'nix_2', '3': 'nix_3', '4': 'nix_4', '5': 'nix_5', '6': 'nix_6', '7': 'nix_7', '8': 'nix_8', '9': 'nix_9',
+                            '!': 'nix_exclamation', '@': 'nix_at', '#': 'nix_hash', '$': 'nix_dollar', '%': 'nix_percent', '^': 'nix_carat', '&': 'nix_ampersand', '*': 'nix_asterisk', '(': 'nix_lparen', ')': 'nix_rparen', '-': 'nix_dash', '+': 'nix_plus', '_': 'nix_underbar', '=': 'nix_equal',
+                            '{': 'nix_lcurly', '}': 'nix_rcurly', '[': 'nix_lsquare', ']': 'nix_rsquare', '|': 'nix_pipe', '/': 'nix_slash', '\\': 'nix_backslash',
+                            ':': 'nix_colon', ';': 'nix_semi', "'": 'nix_backquote', '"': 'nix_dquote', '>': 'nix_greater', '<': 'nix_less', '?': 'nix_question', ',': 'nix_comma', '.': 'nix_period', '~': 'nix_approx', '`': 'nix_backquote'
+                        }
+
+                    emojis = self.nixie_getEmojis()
+                    print(emojis)
+
+                    for k, v in nx.items():
+                        for e in emojis:
+                            if not e: continue
+                            print(v, e, str(e))
+                            if v == e.name:
+                                nx[k] = str(e)
+
+                    print(nx)
+
+                    json.dump(nx, nfp, ensure_ascii=True, indent=4)
+
+            self.nixtext = str.maketrans(nx)
+            self.nixified = True
+
+        return text.translate(self.nixtext)
+
+    def nixie_getEmojis(self):
+        # Get two archive
+        ECs = [] 
+        for id in (637838584996560896, 644092524595642388):
+            try:
+                a = self.client.get_guild(id)
+                print(id, a)
+                ECs.append(a)
+            except TypeError: continue
+        # Get emoji
+        Em = ()
+        for EC in ECs:
+            try: Em = Em + EC.emojis
+            except AttributeError: continue
+        return Em
 
 
     # Obsolete from JSON ver

@@ -53,7 +53,8 @@ class avaTrivia(commands.Cog):
 
     # @commands.Cog.listener()
     # async def on_ready(self):
-    #     print("|| Trivia ---- READY!")
+    #     self.utils = avaUtils(self.client, emojis=await self.utils.nixie_getEmojis())
+
 
 
 
@@ -456,6 +457,7 @@ class avaTrivia(commands.Cog):
         await ctx.send(self.client.support_server_invite)
 
 
+
 # ================== DUMB COMMANDS ==================
     @commands.command()
     async def swear(self, ctx, *args):
@@ -541,6 +543,10 @@ class avaTrivia(commands.Cog):
         except discordErrors.Forbidden: pass    
 
         await ctx.send(resp2)
+
+    @commands.command()
+    async def nixify(self, ctx, *, args):
+        await ctx.send(self.utils.nixietext(args))
 
 
 

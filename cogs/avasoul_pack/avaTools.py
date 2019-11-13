@@ -169,10 +169,10 @@ class avaTools:
 
     async def world_built(self):
         regions = await self.client.quefe("SELECT environ_code FROM environ", type='all')
-        print(regions)
+        # print(regions)
 
         for region in regions:
-            print(region)
+            # print(region)
             await asyncio.sleep(0.2)
             region = region[0]
             
@@ -180,7 +180,7 @@ class avaTools:
             mobs = await self.client.quefe(f"SELECT mob_code, quantity, limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_diversity WHERE environ_code='{region}';", type='all')
 
             for mob in mobs:
-                print(mob)
+                # print(mob)
                 mob = list(mob)
                 # MOB
                 if mob[0].startswith('mb'):

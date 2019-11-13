@@ -424,3 +424,19 @@ class avaNPC(commands.Cog):
 
 def setup(client):
     client.add_cog(avaNPC(client))
+
+
+
+
+
+
+
+# ================== THING ==================
+
+class c_NPC:
+    def __init__(self, pack):
+        """
+        npc_code, name, description, branch, evo, lp, strr, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink = pack
+        """
+
+        self.npc_code, self.name, self.description, self.branch, self.evo, self.lp, self.strr, self.chain, self.speed, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.rewards, self.illulink = pack

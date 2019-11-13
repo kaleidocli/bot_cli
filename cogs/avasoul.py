@@ -32,6 +32,7 @@ class avasoul(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
         self.client.quefe = self.tools.quefe
+        self.client.DBC = {}                # DB cache
 
         self.ava_dict = {}
         self.prote_lib = {}

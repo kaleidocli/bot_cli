@@ -25,7 +25,8 @@ class avaHelper(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-        self.helper_title = '**G U I D E**⠀⠀|⠀⠀**R P G  C O M M A N D S**'
+        self.helper_title = f'**G U I D E**⠀⠀|⠀⠀**R P G  C O M M A N D S**'
+        # self.helper_title = f"{self.utils.nixietext('COMMANDS')}"
         self.helper_description = f"""
                                  ```ini
 [faq] for basic understandings.
@@ -34,16 +35,19 @@ class avaHelper(commands.Cog):
                                 ╟ **Not enough?** Join [our support camp!]({self.client.support_server_invite})
 
                                 ╟ **『USAGE』**
->>>                               ↱ How to use a command?
+>>>                             ↱ List of available commands:
+                                ⤷ ·· ||Use `help` alone, and use the arrows below||.  
+                                ↱ How to use a command?
                                 ⤷ ·· ||Use `faq 1`: "How to use commands?"||.
-                                ↱ List of available commands:
-                                ⤷ ·· ||Use `help` alone, and use the arrows below||.
-                                ↱ Full explanation of a single command:
+                                ↱ How to learn more of a command:
                                 ⤷ ·· ||Use `help [insert_command_name_here]`||.
-                                ↱ How to read an explanation:
+                                ↱ How to understand this `help` command:
                                 ⤷ ·· ||Use `help help`||.
                                 
                                 """
+                                # ↱ List of available commands:
+                                # ⤷ ·· ||Use `help` alone, and use the arrows below||.
+
         self.helper_thumbnail = ['https://imgur.com/KBOW82t.png'] # 'https://imgur.com/EQsptpa.png'
         self.helper_banners = ["https://imgur.com/D1Ld5A7.gif", "https://imgur.com/e8cIazx.gif"]
         self.helper_preface = None
@@ -373,18 +377,23 @@ Definition? Mechanism? Lore? Yaaa```
         count = 1
         thre = '▱'*(pages-1)
         for stuff in self.helper_preface:
-            line = ''
+            lines = []
+            cur = 0; per = 6
             for k, v in stuff[1].items():
-                line = line + f"> **`{k}`**\n╚╡{v}\n"
-            tembeach = discord.Embed(
-                description = f"""
-                ```{stuff[0]}```
-                {line}""",
-                colour = discord.Colour(0x527D8F)
-            )
-            tembeach.set_thumbnail(url=random.choice(self.helper_thumbnail))
-            tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
-            temb_socket.append(tembeach)
+                lines.append(f"> **`{k}`**\n╚╡{v}\n")
+            pages = int(len(lines)/per)
+            if len(lines) % per != 0: pages += 1
+            for _ in range(pages):
+                tembeach = discord.Embed(
+                    description = f"""
+                    {self.utils.nixietext(stuff[0])}
+                    {''.join(lines[cur:cur+per])}""",
+                    colour = discord.Colour(0x527D8F)
+                )
+                tembeach.set_thumbnail(url=random.choice(self.helper_thumbnail))
+                tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
+                temb_socket.append(tembeach)
+                cur += per
 
         return temb_socket
 
