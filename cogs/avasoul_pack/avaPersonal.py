@@ -81,7 +81,8 @@ class avaPersonal(commands.Cog):
 
         bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
         if not bump:
-            await ctx.send(f">>> {ctx.author.mention}, {self.utils.nixietext('Welcome to The Pralayer!')}\nThis world is hard and complex, thus you will need every help you can.\nFor now, my advice is using `tutorial 1` to at least know what to do with this bot.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+            await ctx.send(f">>> {self.utils.nixietext(f'Welcome to the Pralayer, {ctx.author.name}!')}")
+            await ctx.send(f">>> This bot is hard, {ctx.author.mention}! So I'll personally advise you using `tutorial 1` to at least know what to do with this bot.\nAfter that, you can check `faq` for some extra info.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
         elif bump == 3:
             await ctx.send(f"<:osit:544356212846886924> You've already incarnated!"); return
         else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
@@ -176,7 +177,7 @@ class avaPersonal(commands.Cog):
 
         #box = f"\n░░░░ **{name}** | {lmao[gender].capitalize()}, {age} ░░░░\n╟**`Money`** · <:36pxGold:548661444133126185>{money}\n╟**`Merit`** · {merit}\n╟**`Degrees`** · `{degrees}`\n━━━━━╾ {combat_HANDLING.capitalize()} hand ╼━━━━\n╟**`RIGHT`** · {right_hand}\n╟**`LEFT`** · {left_hand}\n━━━━━╾ **`EVO`** {evo} ╼━━━━━━\n**·** `STA` {STA}/{MAX_STA}\n**·** `LP` {LP}/{MAX_LP}\n**·** `STR` {STR}\n**·** `INT` {INTT}"
         box = discord.Embed(title = f"{age} {lmao[gender].capitalize()} | **{name}** ||<:merit_badge:620137704662761512>`{merit}` <:perk:632340885996044298>`{perks}`||", colour = discord.Colour(0x36393F))
-        box.add_field(name=f"`LP` · **{LP:,}**/{MAX_LP:,}", value=f"""{LP_line}""", inline=True)
+        box.add_field(name=f"`LP` · **{LP:,}**/{MAX_LP:,}", value=f"""{LP_line}""", inline=False)
         box.add_field(name=f"`STA` · **{STA:,}**/{MAX_STA:,}", value=f"""{STA_line}""", inline=True)
         box.add_field(name=f'>>> **`EVO`** · {evo}\n**`STR`** · {STR}\n**`INT`** · {INTT}\n**`CHARM`** · {charm}', value=f"<:right_hand:521197677346553861>{right_hand}")
         box.add_field(name=f'>>> **`FLAME`** · {au_FLAME}\n**`ICE`** · {au_ICE}\n**`HOLY`** · {au_HOLY}\n**`DARK`** · {au_DARK}', value=f"<:left_hand:521197732162043922>{left_hand}")

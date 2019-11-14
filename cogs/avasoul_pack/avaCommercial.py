@@ -65,7 +65,7 @@ class avaCommercial(commands.Cog):
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n\n```"{description}"```\n"""
                 
-                reembed = discord.Embed(title=f"`{item_code}`| **{' '.join([x for x in name.upper()])}**", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title=f"`{item_code}`| **{' '.join([x for x in name.upper()])}**⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", colour = discord.Colour(0x011C3A), description=line)
                 reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
 
                 try: acc_per = 10//accuracy_randomness
@@ -447,7 +447,7 @@ $ {invs:,}```"""
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n```"{description}"```\n"""
                 
-                reembed = discord.Embed(title=f"`{item_code}`|**{' '.join([x for x in name.upper()])}** {evo_plus}", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title=f"`{item_code}`|**{' '.join([x for x in name.upper()])}** {evo_plus}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", colour = discord.Colour(0x011C3A), description=line)
                 reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
 
                 try: acc_per = 10//accuracy_randomness

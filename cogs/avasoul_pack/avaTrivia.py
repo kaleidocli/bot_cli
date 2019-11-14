@@ -211,11 +211,11 @@ class avaTrivia(commands.Cog):
                 elif swi < 4: line = line + f"⠀·⠀**`{m[0]}`**`[{m[1]}]`"; swi += 1
                 elif swi == 4: line = line + f"\n╟**`{m[0]}`**`[{m[1]}]`"; swi = 2
 
-            reembed = discord.Embed(title = f":map: `{region[0]}`| **{region[1]}**", description = f"""```dsconfig
+            reembed = discord.Embed(title = f":map: `{region[0]}`| **{region[1]}**⠀⠀⠀    ⠀⠀⠀⠀⠀", description = f"""```dsconfig
     {region[2]}```""", colour = discord.Colour(0x011C3A))
             reembed.add_field(name=":bar_chart: Entities", value=f"╟`Players` · **{players}**\n╟`Mobs` · **{mobs}**\n╟`NPCs` · **{npcs}**", inline=True)
             reembed.add_field(name=":bar_chart: Terrain", value=f"╟`Area` · {region[4]}m x {region[5]}m\n╟`Land` · **{region[7]}** slots\n╟`Biomes` · *{region[6].replace(' - ', '*, *')}*", inline=True)
-            reembed.add_field(name=":scales: Economy", value=f"╟`Shop` · Selling **{shop_quantity}** items\n╟`Traders` · Selling **{trader_quantity}** ingredients", inline=True)
+            reembed.add_field(name=":scales: Economy", value=f"╟`Shop` · Selling **{shop_quantity}** items\n╟`Traders` · Selling **{trader_quantity}** ingredients", inline=False)
             if line: reembed.add_field(name=f":smiling_imp: Diversity ({len(mob_types)})", value=line, inline=True)
             reembed.set_thumbnail(url=self.biome[region[6].split(' - ')[0]])
             if region[3]: reembed.set_image(url=region[3])
