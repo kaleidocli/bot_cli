@@ -177,10 +177,12 @@ class avaPersonal(commands.Cog):
 
         #box = f"\n░░░░ **{name}** | {lmao[gender].capitalize()}, {age} ░░░░\n╟**`Money`** · <:36pxGold:548661444133126185>{money}\n╟**`Merit`** · {merit}\n╟**`Degrees`** · `{degrees}`\n━━━━━╾ {combat_HANDLING.capitalize()} hand ╼━━━━\n╟**`RIGHT`** · {right_hand}\n╟**`LEFT`** · {left_hand}\n━━━━━╾ **`EVO`** {evo} ╼━━━━━━\n**·** `STA` {STA}/{MAX_STA}\n**·** `LP` {LP}/{MAX_LP}\n**·** `STR` {STR}\n**·** `INT` {INTT}"
         box = discord.Embed(title = f"{age} {lmao[gender].capitalize()} | **{name}** ||<:merit_badge:620137704662761512>`{merit}` <:perk:632340885996044298>`{perks}`||", colour = discord.Colour(0x36393F))
-        box.add_field(name=f"`LP` · **{LP:,}**/{MAX_LP:,}", value=f"""{LP_line}""", inline=False)
+        box.add_field(name=f"`LP` · **{LP:,}**/{MAX_LP:,}", value=f"""{LP_line}""", inline=True)
+        box.add_field(name='⠀', value='⠀', inline=True)
         box.add_field(name=f"`STA` · **{STA:,}**/{MAX_STA:,}", value=f"""{STA_line}""", inline=True)
-        box.add_field(name=f'>>> **`EVO`** · {evo}\n**`STR`** · {STR}\n**`INT`** · {INTT}\n**`CHARM`** · {charm}', value=f"<:right_hand:521197677346553861>{right_hand}")
-        box.add_field(name=f'>>> **`FLAME`** · {au_FLAME}\n**`ICE`** · {au_ICE}\n**`HOLY`** · {au_HOLY}\n**`DARK`** · {au_DARK}', value=f"<:left_hand:521197732162043922>{left_hand}")
+        box.add_field(name=f'>>> **`EVO`** · {evo}\n**`STR`** · {STR}\n**`INT`** · {INTT}\n**`CHARM`** · {charm}', value=f"<:right_hand:521197677346553861>{right_hand}", inline=True)
+        box.add_field(name='⠀', value='⠀', inline=True)
+        box.add_field(name=f'>>> **`FLAME`** · {au_FLAME}\n**`ICE`** · {au_ICE}\n**`HOLY`** · {au_HOLY}\n**`DARK`** · {au_DARK}', value=f"<:left_hand:521197732162043922>{left_hand}", inline=True)
         # box.add_field(name=f'>>> **`merit`** · {merit}{pocket_line}', value=f"{handling[combat_HANDLING]}", inline=True)
         box.set_thumbnail(url=ctx.author.avatar_url)
         # box.set_footer(text=f'', icon_url='https://imgur.com/jkznAfT')
