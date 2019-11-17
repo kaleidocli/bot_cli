@@ -566,7 +566,9 @@ class avaCombat(commands.Cog):
         if shots == 0: 
             await ctx.send(f":interrobang: **MISS...** again, {ctx.author.mention}?")
 
-            if __bmode == 'INDIRECT' and __mode == 'PVP': await target.send(f":sos: **Someone** is trying to hurt you, {target.mention}!")
+            if __mode == 'PVP':
+                if __bmode == 'INDIRECT':
+                    await target.send(f":sos: **Someone** is trying to hurt you, {target.mention}!")
             return
 
 
