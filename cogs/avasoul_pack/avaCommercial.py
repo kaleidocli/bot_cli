@@ -339,7 +339,7 @@ class avaCommercial(commands.Cog):
                     if stats == 'YELLOW': await ctx.send("<:osit:544356212846886924> You need a **GREEN** status to transfer money."); return
                     
                     # Get quantity
-                    for i in args[1:]:
+                    for i in args:
                         try: quantity = int(i)
                         except ValueError: continue
                         if quantity >= invs: quantity = invs
@@ -352,7 +352,9 @@ class avaCommercial(commands.Cog):
                     # Tax and shiet
                     tax = 40 - int(tier)*5
                     try: q_atx = int(quantity/100*(100-tax))
-                    except NameError: await ctx.send("<:osit:544356212846886924> Please provide the amount of money"); return
+                    except NameError:
+                        q_atx = 1
+                        # await ctx.send("<:osit:544356212846886924> Please provide the amount of money"); return
 
                     line = f"""```clean
         BEFORE Tax:⠀⠀⠀⠀⠀⠀⠀$ {quantity:,}
