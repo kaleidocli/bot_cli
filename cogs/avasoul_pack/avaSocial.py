@@ -8,8 +8,6 @@ import asyncio
 from functools import partial
 from datetime import datetime
 
-from .avaTools import avaTools
-from .avaUtils import avaUtils
 from utils import checks
 
 
@@ -17,6 +15,9 @@ from utils import checks
 class avaSocial(commands.Cog):
 
     def __init__(self, client):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
@@ -87,11 +88,11 @@ class avaSocial(commands.Cog):
         if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:605255050289348620> Calm your lewdness, **{ctx.author.name}**~~"): return
 
         # User info
-        try: LP, max_LP, STA, max_STA, charm, partner, gender = await self.client.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, partner, gender FROM personal_info WHERE id='{ctx.author.id}' AND partner!='n/a';")
+        try: LP, max_LP, STA, max_STA, charm, partner, gender, race = await self.client.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, partner, gender, race FROM personal_info WHERE id='{ctx.author.id}' AND partner!='n/a';")
         except TypeError: await ctx.send("<:osit:544356212846886924> Get yourself a partner first :>"); return
 
         # Partner info
-        t_LP, t_max_LP, t_STA, t_max_STA, t_charm, t_gender, t_name = await self.client.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, gender, name FROM personal_info WHERE id='{partner}';")
+        t_LP, t_max_LP, t_STA, t_max_STA, t_charm, t_gender, t_name, t_race = await self.client.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, gender, name, race FROM personal_info WHERE id='{partner}';")
         #tar = self.client.get_user(int(partner))
         tar = await self.client.loop.run_in_executor(None, partial(self.client.get_user, int(partner)))
 
@@ -99,7 +100,7 @@ class avaSocial(commands.Cog):
         if await self.utils.percenter(charm+t_charm, total=200):
             await ctx.send(f"||<a:RingingBell:559282950190006282> Name your child. Timeout=30s||\n<:sailu:559155210384048129> Among these dark of the age, a new life has enlighten...\n⠀⠀⠀⠀**{ctx.author.name}** and {tar.mention}, how will you christen your little?\n⠀⠀⠀⠀⠀⠀⠀⠀Won't you do, keep shut and remain silence.")
 
-            def UMCc_check(m):
+            def UMCc_check(m):  
                 return m.channel == ctx.channel and m.author in [tar, ctx.author]
 
             try: resp = await self.client.wait_for('message', timeout=30, check=UMCc_check)
@@ -115,7 +116,7 @@ class avaSocial(commands.Cog):
             year, month, day, hour, minute = await self.client.loop.run_in_executor(None, self.utils.time_get)
             # Child will have 9999999 in front of its id
             id = f"99999999{''.join([str(year), str(month), str(day), str(hour), str(minute)])}"
-            await self.tools.character_generate(id, resp.content, dob=[year, month, day, hour, minute], resu=False)
+            await self.tools.character_generate(id, resp.content, dob=[year, month, day, hour, minute], resu=False, info_pack=[random.choice((race, t_race)), None, None])
             await self.tools.hierarchy_generate(id, guardian_ids=[father, mother], chem_value=0)
             await ctx.send(f"<:sailu:559155210384048129> The whole Pralaeyr welcomes you, **{resp.content}**! May the Olds look upon you, {ctx.author.mention} and **{t_name}**.")
 

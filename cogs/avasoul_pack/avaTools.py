@@ -314,15 +314,30 @@ class avaTools:
         ava = {}
 
         if not resu:
-            if info_pack[2]: ava['name'] = await self.utils.inj_filter(info_pack[2])
+            # Name
+            if info_pack:
+                if info_pack[2]:
+                    ava['name'] = await self.utils.inj_filter(info_pack[2])
+                else:
+                    ava['name'] = await self.utils.inj_filter(name[0:20])
             else: ava['name'] = await self.utils.inj_filter(name[0:20])
             ava['dob'] = f"{dob[2]} - {dob[1]} - {dob[0]}"
             ava['age'] = 0
-            if info_pack: ava['gender'] = info_pack[1]
+            # Gender
+            if info_pack:
+                if info_pack[1]:
+                    ava['gender'] = info_pack[1]
+                else:
+                    ava['gender'] = random.choice(['m', 'f'])
             else: ava['gender'] = random.choice(['m', 'f'])
-            
-            if info_pack: ava['race'] = info_pack[0]
+            # Race
+            if info_pack:
+                if info_pack[0]:
+                    ava['race'] = info_pack[0]
+                else:
+                    ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
             else: ava['race'] = random.choice(['rc0', 'rc1', 'rc2', 'rc3'])
+
             r_aura, r_min_H, r_max_H, r_min_W, r_max_W, r_size_1, r_size_2, r_size_3 = await self.quefe(f"SELECT aura, min_H, max_H, min_W, max_W, size_1, size_2, size_3 FROM model_race WHERE race_code='{ava['race']}';")
             if ava['gender'] == 'm':
                 ava['height'] = random.choice(range(r_min_H + 10, r_max_H + 10))
