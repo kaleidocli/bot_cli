@@ -54,9 +54,11 @@ class avaPersonal(commands.Cog):
 # ================== INFO/AVATAR ==================
 
     @commands.command(aliases=['begin', 'start'])
-    @commands.cooldown(1, 30, type=BucketType.user)
+    @commands.cooldown(1, 6, type=BucketType.user)
     async def incarnate(self, ctx, *args):
         id = str(ctx.author.id); name = ctx.author.name
+        cmd_tag = 'incarnate'
+        if not await self.__cd_check(ctx.message, cmd_tag, f"<:fufu:605255050289348620> You're not dead long enough, **{ctx.author.name}**."): return
 
         # Create a living entity (creator-only)
         if args:
@@ -83,9 +85,10 @@ class avaPersonal(commands.Cog):
         if not bump:
             await ctx.send(f">>> {self.utils.nixietext(f'Welcome to the Pralayer, {ctx.author.name}!')}")
             await ctx.send(f">>> This bot is hard, {ctx.author.mention}! So I'll personally advise you using `tutorial 1` to at least know what to do with this bot.\nAfter that, you can check `faq` for some extra info.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'working', ex=82800, nx=True))
         elif bump == 3:
             await ctx.send(f"<:osit:544356212846886924> You've already incarnated!"); return
-        else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")         
+        else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")
 
     @commands.command(aliases=['p'])
     @commands.cooldown(1, 4, type=BucketType.user)
