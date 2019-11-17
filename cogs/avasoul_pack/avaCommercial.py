@@ -370,7 +370,7 @@ class avaCommercial(commands.Cog):
                     except asyncio.TimeoutError: await ctx.send(f":credit_card: Aborted!"); return
 
                     # Transfer
-                    if await self.client._cursor.execute(f"UPDATE pi_bank SET investment=investment+{q_atx} WHERE id='{target.id}';") == 0:
+                    if await self.client._cursor.execute(f"UPDATE pi_bank SET investment=investment+{q_atx} WHERE user_id='{target.id}';") == 0:
                         await ctx.send(f"<:osit:544356212846886924> User does not have a bank account!"); return
                     # Update prev investment, then the investment, then the invest_age
                     await self.client._cursor.execute(f"UPDATE pi_bank SET investment=(investment+investment*{invs_interst}*{age - invest_age})-{quantity}, invest_age={age} WHERE user_id='{ctx.author.id}';")
