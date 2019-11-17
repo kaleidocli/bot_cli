@@ -51,7 +51,8 @@ class avaTools:
         # Whether get time-to-live of the dict
         if getttl:
             time = await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.ttl, key))
-            if not time: return None, None
+            if not time: return None, 0
+            elif time < 0: return None, 0
             else: return dedict, time
         return dedict
 

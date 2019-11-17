@@ -637,7 +637,7 @@ class avaCombat(commands.Cog):
 
         # Passive Combat Movement (PCM) =================
         # If no CE
-        if not CE:
+        if CE_ttl <= 0:
             pcmLimit = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{ctx.author.id}' AND art_type='ability' AND art_code='aa1';")
             if len(args[0]) > pcmLimit[0]: await ctx.send(f"<:osit:544356212846886924> Your current PCM (PassiveCombatMovement) limit is `{pcmLimit[0]}`, **{ctx.author.name}**!"); return
 
