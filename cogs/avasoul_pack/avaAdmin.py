@@ -250,6 +250,11 @@ class avaAdmin(commands.Cog):
         name = '.'.join(temp)
 
         self.client.reload_extension(name)
+        
+        # Prep =====================
+        cog = self.client.get_cog(name)
+        await cog.reloadSetup()
+
         await ctx.send(":white_check_mark:")
 
     @commands.command()

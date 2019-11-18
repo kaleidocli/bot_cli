@@ -94,7 +94,7 @@ class avaTools:
             # Check info. If not exist, get info.
             if not target_coord:
                 target_coord = await self.client.quefe(f"SELECT cur_X, cur_Y, cur_PLACE FROM personal_info WHERE id='{target_id}';")
-                if not target_coord: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. Use `incarnate` to create one, then `tutorial` for... tutorial <:yeee:636045188153868309>"); return
+                if not target_coord: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. You can use command `incarnate` to create one, and `tutorial` for... tutorial <:yeee:636045188153868309>"); return
             if not pb_coord:
                 pb_coord_temp = await self.client.quefe(f"SELECT PB, type, biome FROM environ WHERE environ_code='{target_coord[2]}';")
                 pb_coord_temp2 = pb_coord_temp[0].split(' | ')
@@ -120,7 +120,7 @@ class avaTools:
         try:
             LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'")
             #LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob = await self.quefe(f"SELECT LP, MAX_LP, STA, MAX_STA, cur_X, cur_Y, stats, dob FROM personal_info WHERE id='{target_id}'")
-        except TypeError: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. Use `incarnate` to create one, then `tutorial` for... tutorial <:yeee:636045188153868309>"); return
+        except TypeError: await MSG.channel.send(f"You don't have a *character*, **{MSG.author.name}**. You can use command `incarnate` to create one, and `tutorial` for... tutorial <:yeee:636045188153868309>"); return
         if stats == 'DEAD': 
             #if target_id == MSG.author.id: await MSG.channel.say(f"<:tumbstone:544353849264177172> You. Are. Dead, **{target.mention}**. Have a nice day!"); return
             #else: await MSG.channel.send(f"<:tumbstone:544353849264177172> The target **{target.name}** was dead, **{MSG.author.mention}**. *Press F to pay respect.*"); return

@@ -93,7 +93,7 @@ def check_id():
 @client.event
 async def on_ready():
     # await client.loop.run_in_executor(None, settings_plugin)
-    await client.change_presence(activity=discord.Game(name='with aknalumos <3 With prefix: [cli ]'))
+    await client.change_presence(activity=discord.Game(name='With [cli help] to start!'))
     print("|||||   THE BOT IS READY   |||||")
 
 @client.event
