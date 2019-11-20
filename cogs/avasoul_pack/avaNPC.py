@@ -25,6 +25,9 @@ class avaNPC(commands.Cog):
 
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
+        self.client.DBC['model_NPC'] = {}
+        self.client.DBC['model_NPC']['narrator'] = c_NPC(None, narrator=True)
+        self.client.DBC['model_conversation'] = {}
 
         print("|| NPC ---- READY!")
 
@@ -32,9 +35,13 @@ class avaNPC(commands.Cog):
 
 # ================== EVENTS ==================
 
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     print("|| NPC ---- READY!")
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.reloadSetup()
+
+    async def reloadSetup(self):
+        self.client.DBC['model_NPC'] = await self.cacheNPC()
+        self.client.DBC['model_conversation'] = await self.cacheConversation()
 
 
 
@@ -72,55 +79,87 @@ class avaNPC(commands.Cog):
                 msg = await ctx.send(embed=emli[cursor][0])
                 #Top-left   #Left   #Pick   #Right   #Top-right
                 await self.tools.pageButtonAdd(msg, reaction=["\U000023ee", "\U00002b05", "\U0001f44b", "\U000027a1", "\U000023ed"])
-            else: msg = await ctx.send(embed=emli[cursor][0], delete_after=30); return
+            elif not pages:
+                await ctx.send("<:osit:544356212846886924> No NPC found in this region."); return
+            else:
+                msg = await ctx.send(embed=emli[cursor][0], delete_after=25); return
 
             while True:
                 try:
-                    reaction, user = await self.tools.pagiButton(timeout=20, check=lambda r, u: u == ctx.author)
+                    reaction, _ = await self.tools.pagiButton(timeout=20, check=lambda r, u: u == ctx.author)
                     if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                         cursor += 1
                         await msg.edit(embed=emli[cursor][0])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
                     elif reaction.emoji == "\U00002b05" and cursor > 0:
                         cursor -= 1
                         await msg.edit(embed=emli[cursor][0])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
                     elif reaction.emoji == '\U0001f44b':
                         await ctx.invoke(self.interact, emli[cursor][1])
                         return
                     elif reaction.emoji == "\U000023ee" and cursor != 0:
                         cursor = 0
                         await msg.edit(embed=emli[cursor][0])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
                     elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
                         cursor = pages - 1
                         await msg.edit(embed=emli[cursor][0])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
                 except asyncio.TimeoutError:
                     await msg.delete(); return
 
 
         # SPECIFIC ========================================
         # User's info
-        cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
+        # cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
 
-        try: npc = await self.client.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc WHERE npc_code='{args[0]}' OR name LIKE '%{args[0]}%';")
-        except IndexError: await ctx.send(f"<:osit:544356212846886924> Missing npc's code"); return
-
-        if not npc: await ctx.send("<:osit:544356212846886924> NPC not found!"); return
+        try:
+            try:
+                npc = self.client.DBC['model_NPC'][args[0]]
+            except KeyError:
+                npc = None
+                for n in self.client.DBC['model_NPC'].values():
+                    if n.check(name=args[0]):
+                        npc = n
+                        break
+            if not npc: await ctx.send("<:osit:544356212846886924> NPC not found!"); return
+            # npc = await self.client.quefe(f"SELECT name, description, branch, EVO, illulink, npc_code FROM model_npc WHERE npc_code='{args[0]}' OR name LIKE '%{args[0]}%';")
+        except IndexError:
+            await ctx.send(f"<:osit:544356212846886924> Missing NPC's code"); return
 
         # Relationship's info
-        try: value_chem, value_impression, flag = await self.client.quefe(f"SELECT value_chem, value_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{args[0]}';")
+        try:
+            value_1, value_2, value_3 = await self.client.quefe(f"SELECT value_1, value_2, value_3 FROM pi_flag WHERE user_id='{ctx.author.id}' AND flag_code='intera.{npc.npc_code}';")
         # E: Relationship not initiated. Init one.
         except TypeError:
-            value_chem = 0; value_impression = 0; flag = 'n/a'
-            await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{args[0]}', {value_chem}, {value_impression}, '{flag}');")
+            value_1 = 0; value_2 = 0; value_3 = ''
+            # await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{args[0]}', {limit_chem}, {limit_impression}, '{flag}');")
+            await self.client._cursor.execute(f"SELECT func_flag_reward('{ctx.author.id}', 'intera.{npc.npc_code}', {value_1}, {value_2}, '{value_3}');")
 
-        packs = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE entity_code='{args[0]}' AND limit_flag='{flag}' AND (({value_chem}>=limit_chem AND chem_compasign='>=') OR ({value_chem}<limit_chem AND chem_compasign='<')) AND (({value_impression}>=limit_impression AND imp_compasign='>=') OR ({value_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC;", type='all')
+        # packs = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE entity_code='{args[0]}' AND limit_flag='{flag}' AND (({limit_chem}>=limit_chem AND chem_compasign='>=') OR ({limit_chem}<limit_chem AND chem_compasign='<')) AND (({limit_impression}>=limit_impression AND imp_compasign='>=') OR ({limit_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC;", type='all')
+        packs = await self.client.quefe(f"""
+            SELECT e.limit_Ax, e.limit_Ay, e.limit_Bx, e.limit_By FROM environ_interaction e, pi_flag f, personal_info pf
+            WHERE
+            (
+                e.entity_code="{npc.npc_code}"
+                AND e.region=pf.cur_PLACE
+                AND pf.id="{ctx.author.id}"
+            )
+            AND
+            (
+                (
+                    e.limit_flag='n/a'
+                    OR
+                    (
+                        f.user_id="{ctx.author.id}"
+                        AND e.limit_flag=f.flag_code
+                    )
+                )
+                OR
+                (
+                    ((e.limit_chem=">=" AND f.value_1>=e.limit_chem) OR (e.limit_chem="<" AND f.value_1<e.limit_chem)) 
+                    AND ((e.limit_impression=">=" AND f.value_2>=e.limit_impression) OR (e.limit_impression="<" AND f.value_2<e.limit_impression))
+                )
+            )
+            ORDER BY e.limit_Ax ASC, e.limit_Ay ASC;
+        """, type='all')
         # Remove duplicate (?)
         packs = list(set(packs))
 
@@ -128,9 +167,9 @@ class avaNPC(commands.Cog):
             packs, npc = items
             packs = packs[top:least]
 
-            temb = discord.Embed(title = f"`{npc[5]}`| **{npc[0].upper()}** {self.utils.smalltext(f'{npc[2].capitalize()} NPC')}", description = f"""```dsconfig
-    {npc[1]}```""", colour = discord.Colour(0x011C3A))
-            temb.set_thumbnail(url=random.choice(npc[4].split(' <> ')))
+            temb = discord.Embed(title = f"`{npc.npc_code}`| **{npc.name.upper()}** {self.utils.smalltext(f'{npc.branch.capitalize()} NPC')}", description = f"""```dsconfig
+    {npc.description}```""", colour = discord.Colour(0x011C3A))
+            temb.set_thumbnail(url=random.choice(npc.illulink.split(' <> ')))
 
             tinue = True
             while tinue:
@@ -139,6 +178,7 @@ class avaNPC(commands.Cog):
                 try:
                     for _ in range(4):
                         temp.append(packs.pop(0))
+                    if not packs: tinue = False
                 except IndexError: tinue = False
 
                 for p in temp:
@@ -153,20 +193,112 @@ class avaNPC(commands.Cog):
         await self.tools.pagiMain(ctx, (packs, npc), makeembed_two, item_per_page=8, timeout=60, delete_on_exit=False, pair=True)
 
 
-    async def interact_engine(self, ctx, pack, intera_kw='talk', args=()):
-        cur_PLACE, cur_X, cur_Y, charm, value_chem, value_impression, flag, entity_code, entity_name, illulink = pack
+    def turn_embing(self, pack, asker):
+        """
+            pack:   (author, (line1, line2,), illulink)
 
-        # if intera_kw == 'inspect': await self.trigg['GE_inspect']([ctx, value_chem, value_impression, flag, entity_code, entity_name, cur_PLACE, cur_X, cur_Y]); return
+            Return embs ((emb, dura), (emb, dura),..)    
+        """
+        author_code, lines, illulink = pack
+        embs = []
 
-        # Interaction's info
-        #print(f"SELECT entity_code, trigg, data_goods, effect_query, line, limit_chem, fail_line, reward_chem, reward_impression FROM environ_interaction WHERE entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' AND (({value_chem}>=limit_chem AND chem_compasign='>=') OR ({value_chem}<limit_chem AND chem_compasign='<')) AND (({value_impression}>=limit_impression AND imp_compasign='>=') OR ({value_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC, limit_chem DESC, limit_impression DESC LIMIT 1;")
-        try: entity_code, trigg, data_goods, effect_query, lines, limit_chem, fail_line, r_chem, r_imp = await self.client.quefe(f"SELECT entity_code, trigg, data_goods, effect_query, line, limit_chem, fail_line, reward_chem, reward_impression FROM environ_interaction WHERE entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' AND (({value_chem}>=limit_chem AND chem_compasign='>=') OR ({value_chem}<limit_chem AND chem_compasign='<')) AND (({value_impression}>=limit_impression AND imp_compasign='>=') OR ({value_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC, limit_chem DESC, limit_impression DESC LIMIT 1;")
-        except TypeError: await ctx.message.add_reaction('\U00002754'); return         # Silently ignore         #await ctx.send("<:osit:544356212846886924> Entity not found!"); return
+        # ASKER
+        if author_code == 'self':
+            for line in lines:
+                # Embing
+                temb = discord.Embed(description=f"""```css
+    {line}```""", colour = 0x36393E)
+                temb.set_thumbnail(url=asker.avatar_url)
+                if illulink: temb.set_image(url=illulink)
+                temb.set_footer(text=f"{asker.name}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", icon_url='https://imgur.com/VmpsPi6.png')
+                # temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
+
+                # Dura
+                dura = len(line)//7
+                if dura < 5: dura = 5
+
+                embs.append((temb, dura))
+
+        # NPC / NARRATOR
+        else:
+            author = self.client.DBC['model_NPC'][author_code]
+        
+            for line in lines:
+                # Prep
+                line = line.replace('user_name_here', asker.name)
+
+                # Embing
+                if not author.narrator:
+                    temb = discord.Embed(description=f"""```css
+    {line}```""", colour = 0x36393E)
+                else:
+                    temb = discord.Embed(description=line, colour = 0x36393E)
+                if author.illulink: temb.set_thumbnail(url=random.choice(author.illulink))
+                if illulink: temb.set_image(url=illulink)
+                temb.set_footer(text=f"{author.npc_code} | {author.name}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", icon_url='https://imgur.com/VmpsPi6.png')
+                # temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
+
+                # Dura
+                dura = len(line)//7
+                if dura < 5: dura = 5
+
+                embs.append((temb, dura))
+
+        return embs
+
+    async def interact_engine(self, ctx, pack, intera_kw='talk', args=(), intera_pack=(), conv_code_in=''):
+        # cur_PLACE, cur_X, cur_Y, charm, limit_chem, limit_impression, flag, entity_code, entity_name, illulink = pack
+        entity_code, entity_name, illulink = pack
+
+        # INFO Interaction ===============================
+        try:
+            if intera_pack:
+                trigg, data_goods, effect_query, lines, r_chem, r_imp, charm, _ = intera_pack
+            else:
+                trigg, data_goods, effect_query, lines, r_chem, r_imp, charm = await self.client.quefe(f"""
+                    SELECT e.trigg, e.data_goods, e.effect_query, e.line, e.reward_chem, e.reward_impression, pf.charm FROM environ_interaction e, pi_flag f, personal_info pf
+                    WHERE
+                    (
+                        e.entity_code="{entity_code}"
+                        AND pf.id="{ctx.author.id}"
+                        AND e.region=pf.cur_PLACE AND e.limit_Ax<=pf.cur_X AND pf.cur_X<e.limit_Bx AND e.limit_Ay<=pf.cur_Y AND pf.cur_Y<e.limit_By
+                        AND e.intera_kw='{intera_kw}'
+                    )
+                    AND
+                    (
+                        (
+                            e.limit_flag='n/a'
+                            OR 
+                            (
+                                e.limit_flag=f.flag_code
+                                AND f.user_id="{ctx.author.id}"
+                            )
+                        )
+                        AND
+                        (
+                            ((e.limit_chem=">=" AND f.value_1>=e.limit_chem) OR (e.limit_chem="<" AND f.value_1<e.limit_chem)) 
+                            AND ((e.limit_impression=">=" AND f.value_2>=e.limit_impression) OR (e.limit_impression="<" AND f.value_2<e.limit_impression))
+                        )
+                    )
+                    ORDER BY e.limit_Ax DESC, e.limit_Ay DESC LIMIT 1;
+                """)
+            # entity_code, trigg, data_goods, effect_query, lines, r_chem, r_imp = await self.client.quefe(f"""
+            # SELECT entity_code, trigg, data_goods, effect_query, line, reward_chem, reward_impression 
+            # FROM environ_interaction 
+            # WHERE 
+            # entity_code='{entity_code}' AND intera_kw='{intera_kw}' AND limit_flag='{flag}' 
+            # AND (({limit_chem}>=limit_chem AND chem_compasign='>=') OR ({limit_chem}<limit_chem AND chem_compasign='<')) 
+            # AND (({limit_impression}>=limit_impression AND imp_compasign='>=') OR ({limit_impression}<limit_impression AND imp_compasign='<')) 
+            # AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By
+            # ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC, limit_chem DESC, limit_impression DESC LIMIT 1;""")
+        except TypeError:
+            await ctx.message.add_reaction('\U00002754'); return         # Silently ignore         #await ctx.send("<:osit:544356212846886924> Entity not found!"); return
 
         # Prep
-        if not lines: lines = 'Ahem...'
+        if conv_code_in: conv_code = conv_code_in
+        elif lines: conv_code = random.choice(lines.split(' - '))
 
-        # TRIGGER !!!!!!!!!!!!!!!!!!!
+        # TRIGGER ========================================
         if trigg != 'n/a':
             try: illulink = random.choice(illulink.split(' <> '))
             except AttributeError: illulink = ''
@@ -178,117 +310,80 @@ class avaNPC(commands.Cog):
             except KeyError: pass
             return
 
-        async def line_gen(lines, illulink='', first_time=False):
-
-            def embing(entity_code, entity_name, line, illulink, dura=5, left=False):
-                # In case <LEFT>
-                if left:
-                    temb = discord.Embed(title=f"`{entity_code}` <:bubble_dot:544354428338044929> **{entity_name}**", description=f"""*{entity_name} has left*""", colour = 0x36393E)
-                    temb.set_thumbnail(url=random.choice(illulink.split(' <> ')))
-                    temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
-                    return temb, dura, False
-
-                temb = discord.Embed(title=f"`{entity_code}` <:bubble_dot:544354428338044929> **{entity_name}**", description=f"""```css
-        {line}```""", colour = 0x36393E)
-
-                temb.set_thumbnail(url=random.choice(illulink.split(' <> ')))
-                temb.set_footer(text='⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀')
-                if dura < 5: dura = 5
-
-                return temb, dura, True
-
-            # Splitting line
-            linu = random.choice(lines.split(' ||| '))
-            # Check if line is continous
-            if ' >>> ' in linu:
-                linu = linu.split(' >>> ')
-                linus = []
-                for line in linu:
-                    dura = round(len(line)/7)
-                    linus.append(embing(entity_code, entity_name, line, illulink, dura=dura))
-                return linus, dura, True, True
-            # Splitting urls with the sets
-            line = linu.split(' <> ')
-            dura = round(len(line[0])/7)
-            # try: illulink = line[1]
-            # except IndexError: illulink = ''
-
-            # Carrying on conversation
-            if await self.utils.percenter(value_chem - limit_chem, total=100) or first_time:
-                linus, dura, checkk = embing(entity_code, entity_name, line[0], illulink, dura=dura)
-                return linus, dura, checkk, False
-            # Or not...
-            else:
-                linus, dura, checkk = embing(entity_code, entity_name, line[0], illulink, dura=dura, left=True)
-                return linus, dura, checkk, False
-
-        def RUM_check(reaction, user):
-            return user == ctx.author and reaction.message.id == msg.id and str(reaction.emoji) == "<:bubble_dot:544354428338044929>"
-
-        try: effect_query = effect_query.replace('user_id_here', f"{ctx.author.id}")
-        # E: No effect_query
-        except AttributeError: pass
-
-        # Rewarding relationship
-        r_chem = r_chem.split(' | ')
-        rwc = random.choice(r_chem)
-        if effect_query: await self.client._cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{int(rwc)}+{round(charm/50)}, value_impression=value_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
-        else: await self.client._cursor.execute(f"UPDATE pi_relationship SET value_chem=value_chem+{int(rwc)}+{round(charm/50)}, value_impression=value_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
-
-        # In case pick the fail one
-        if rwc == r_chem[0] and int(rwc) != 0:
-            lines = fail_line
-
-        temb, dura, checkk, continuous = await line_gen(lines, illulink, first_time=True)
-
-        # CONTINUOUS line
-        if continuous:
-            emb, dura, checkk = temb.pop(0)
-            msg = await ctx.send(embed=emb)
-            await msg.add_reaction(':bubble_dot:544354428338044929')
-
-            for peck in temb:
-                try:
-                    await self.client.wait_for('reaction_add', check=RUM_check, timeout=dura)
-                    emb, dura, checkk = peck
-                    await msg.edit(embed=emb, delete_after=30)
-
-                except asyncio.TimeoutError:
-                    await msg.delete(); return
+        # TURN embing =====================================
+        embs = []
+        try:
+            conv = self.client.DBC['model_conversation'][conv_code]
+            for l in conv.line:
+                embs = embs + self.turn_embing(l, ctx.author)
+            if not embs: return
+        except KeyError:
+            await self.client.owner.send(f"<!> Corrupted conv_code `{conv_code}` in intera_kw `{intera_kw}` of NPC `{entity_code}`")
             return
 
-        msg = await ctx.send(embed=temb)
-        await msg.add_reaction(':bubble_dot:544354428338044929')
+        # START ===========================================
+        count = 1
+        msg = None
+        switch = None
+        for e in embs:
+            if not msg:
+                msg = await ctx.send(embed=e[0], delete_after=(e[1]+7))
+                await msg.add_reaction(':bubble_dot:544354428338044929')
+            else:
+                await msg.edit(embed=e[0], delete_after=(e[1]+7))
 
-        while True:
             try:
-                await self.client.wait_for('reaction_add', check=RUM_check, timeout=dura)
-                temb, dura, checkk, continuous = await line_gen(lines)
-                # CONTINUOUS line
-                if continuous:
-                    emb, dura, checkk = temb.pop(0)
-                    msg = await ctx.send(embed=emb)
-                    await msg.add_reaction(':bubble_dot:544354428338044929')
+                if conv.type == 'CHOICE' and count == len(embs):
+                    await msg.add_reaction(':tick_yes:515012376962138112')
+                    await msg.add_reaction(':tick_no:515012452635770882')                    
 
-                    for peck in temb:
-                        try:
-                            await self.client.wait_for('reaction_add', check=RUM_check, timeout=dura)
-                            emb, dura, checkk = peck
-                            await msg.edit(embed=emb, delete_after=30)
-
-                        except asyncio.TimeoutError:
-                            await msg.delete(); return
-                    return
-                # NON-CONTINUOUS
+                    reaction, _ = await self.tools.pagiButton(check=lambda r, u: u == ctx.author and r.message.id == msg.id, timeout=e[1])
+                    try:
+                        if str(reaction.emoji) == ':tick_yes:515012376962138112':
+                            switch = random.choice(conv.node_1)
+                        else:
+                            switch = random.choice(conv.node_2)
+                    except IndexError: return
                 else:
-                    if checkk: await msg.edit(embed=temb)
-                    else: await msg.edit(embed=temb, delete_after=5); return
+                    await self.tools.pagiButton(check=lambda r, u: u == ctx.author and r.message.id == msg.id, timeout=e[1])
+            except concurrent.futures.TimeoutError: return
 
-            except asyncio.TimeoutError:
-                await msg.delete(); return
+            count += 1
+
+        # EFFECT ========================================
+        if not effect_query: effect_query = ''
+        # Interaction
+        try:
+            effect_query = effect_query.replace('user_id_here', f"{ctx.author.id}")
+        except AttributeError: pass
+        # Conv
+        try:
+            effect_query += conv.effect_query
+        except TypeError: pass
+
+        # Rewarding relationship
+        try:
+            r_chem = r_chem.split(' | ')
+            rwc = random.choice(r_chem)
+        except AttributeError:
+            rwc = 0
+        if entity_code.startswith('p'):
+            if effect_query:
+                # await self.client._cursor.execute(f"UPDATE pi_relationship SET limit_chem=limit_chem+{int(rwc)}+{round(charm/50)}, limit_impression=limit_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
+                await self.client._cursor.execute(f"SELECT func_flag_reward('{ctx.author.id}', 'intera.{entity_code}', {int(rwc)}+{round(charm/50)}, {int(random.choice(r_imp.split(' | ')))}, ''); {effect_query}")
+            else:
+                await self.client._cursor.execute(f"SELECT func_flag_reward('{ctx.author.id}', 'intera.{entity_code}', {int(rwc)}+{round(charm/50)}, {int(random.choice(r_imp.split(' | ')))}, '');")
+        else:
+            if effect_query: await self.client._cursor.execute(effect_query)
+
+        # SWITCH to next CONV =========================
+        if switch: await self.interact_engine(ctx, pack, intera_kw=intera_kw, args=args, intera_pack=intera_pack, conv_code_in=switch)
 
 
-    @commands.command(aliases=['in'])
+
+
+
+    @commands.command(aliases=['meet'])
     @commands.cooldown(1, 25, type=BucketType.user)
     async def interact(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
@@ -296,9 +391,6 @@ class avaNPC(commands.Cog):
         try:
             intera_kw = args[1]
         except IndexError: intera_kw = None
-
-        # User's info
-        cur_PLACE, cur_X, cur_Y, charm = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y, charm FROM personal_info WHERE id='{ctx.author.id}';")
 
         # NPC / Item
         try:
@@ -308,29 +400,79 @@ class avaNPC(commands.Cog):
             except TypeError: await ctx.message.add_reaction('\U00002754'); return
         except ValueError:
             try:
-                entity_code, entity_name, illulink = await self.client.quefe(f"""SELECT npc_code, name, illulink FROM model_npc WHERE npc_code="{args[0]}" OR name LIKE "%{args[0]}%";""")
-            # E: NPC not found --> Silently ignore
-            except TypeError: await ctx.message.add_reaction('\U00002754'); return
-        except IndexError: await ctx.send("<:osit:544356212846886924> Missing NPC's code"); return
+                npc = self.client.DBC['model_NPC'][args[0]]
+            except KeyError:
+                npc = None
+                for n in self.client.DBC['model_NPC'].values():
+                    if n.check(name=args[0]):
+                        npc = n
+                        break
+            if not npc: await ctx.message.add_reaction('\U00002754'); return
+            entity_code = npc.npc_code          # entity_code is for interact_engine.   (and trigg also)
+            entity_name = npc.name              # entity_name and illulink is for trigg
+            illulink = random.choice(npc.illulink)
+            # try:
+            #     entity_code, entity_name, illulink = await self.client.quefe(f"""SELECT npc_code, name, illulink FROM model_npc WHERE npc_code="{args[0]}" OR name LIKE "%{args[0]}%";""")
+            # # E: NPC not found --> Silently ignore
+            # except TypeError: await ctx.message.add_reaction('\U00002754'); return
+        except IndexError: await ctx.send("<:osit:544356212846886924> Entity not found!"); return
 
-        # Relationship's info
-        try: value_chem, value_impression, flag = await self.client.quefe(f"SELECT value_chem, value_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
-        # E: Relationship not initiated. Init one.
-        except TypeError:
-            value_chem = 0; value_impression = 0; flag = 'n/a'
-            await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{entity_code}', {value_chem}, {value_impression}, '{flag}');")
+        # # Relationship's info
+        # try:
+        #     limit_chem, limit_impression, flag = await self.client.quefe(f"SELECT limit_chem, limit_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
+        # # E: Relationship not initiated. Init one.
+        # except TypeError:
+        #     limit_chem = 0; limit_impression = 0; flag = 'n/a'
+        #     await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{entity_code}', {limit_chem}, {limit_impression}, '{flag}');")
 
 
         # BEFORE THE RIDE
         if intera_kw:
-            await self.interact_engine(ctx, (cur_PLACE, cur_X, cur_Y, charm, value_chem, value_impression, flag, entity_code, entity_name, illulink), intera_kw=intera_kw, args=args)
+            await self.interact_engine(ctx, (entity_code, entity_name, illulink), intera_kw=intera_kw, args=args)
             return
 
 
         # Interaction's info        (limit_flag is a dummy)
-        try: pecks = await self.client.quefe(f"SELECT intera_kw, limit_flag FROM environ_interaction WHERE entity_code='{entity_code}' AND limit_flag='{flag}' AND (({value_chem}>=limit_chem AND chem_compasign='>=') OR ({value_chem}<limit_chem AND chem_compasign='<')) AND (({value_impression}>=limit_impression AND imp_compasign='>=') OR ({value_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY intera_kw ASC;", type='all')
-        except TypeError: await ctx.message.add_reaction('\U00002754'); return         # Silently ignore
-        packs = list(pecks)
+        try:
+            # pecks = await self.client.quefe(f"SELECT intera_kw, limit_flag FROM environ_interaction WHERE entity_code='{entity_code}' AND limit_flag='{flag}' AND (({limit_chem}>=limit_chem AND chem_compasign='>=') OR ({limit_chem}<limit_chem AND chem_compasign='<')) AND (({limit_impression}>=limit_impression AND imp_compasign='>=') OR ({limit_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY intera_kw ASC;", type='all')
+            pecks = await self.client.quefe(f"""
+                SELECT e.trigg, e.data_goods, e.effect_query, e.line, e.reward_chem, e.reward_impression, pf.charm, e.intera_kw FROM environ_interaction e, pi_flag f, personal_info pf
+                WHERE
+                (
+                    e.entity_code="{entity_code}"
+                    AND pf.id="{ctx.author.id}"
+                    AND e.region=pf.cur_PLACE AND e.limit_Ax<=pf.cur_X AND pf.cur_X<e.limit_Bx AND e.limit_Ay<=pf.cur_Y AND pf.cur_Y<e.limit_By
+                )
+                AND
+                (
+                    (
+                        e.limit_flag='n/a'
+                        OR 
+                        (
+                            e.limit_flag=f.flag_code
+                            AND f.user_id="{ctx.author.id}"
+                        )
+                    )
+                    AND
+                    (
+                        ((e.limit_chem=">=" AND f.value_1>=e.limit_chem) OR (e.limit_chem="<" AND f.value_1<e.limit_chem)) 
+                        AND ((e.limit_impression=">=" AND f.value_2>=e.limit_impression) OR (e.limit_impression="<" AND f.value_2<e.limit_impression))
+                    )
+                )
+                ORDER BY e.intera_kw ASC;
+            """, type='all')
+
+            if not pecks: await ctx.message.add_reaction('\U00002754'); return
+
+            pecks = list(set(pecks))
+            packs = []
+            pack_dict = {}
+
+            for p in pecks:
+                packs.append((p[7], ''))
+                pack_dict[p[7]] = p
+        except TypeError:
+            await ctx.message.add_reaction('\U00002754'); return         # Silently ignore
 
         # INIT ======================
         currentpage = 1
@@ -374,7 +516,7 @@ class avaNPC(commands.Cog):
                     await msg.edit(embed=emli[cursor_string][cursor_micro][0])
                 elif reaction.emoji == "\U0001f44b":
                     await msg.delete()
-                    await self.interact_engine(ctx, (cur_PLACE, cur_X, cur_Y, charm, value_chem, value_impression, flag, entity_code, entity_name, illulink), intera_kw=emli[cursor_string][cursor_micro][1], args=args)
+                    await self.interact_engine(ctx, (entity_code, entity_name, illulink), intera_kw=emli[cursor_string][cursor_micro][1], args=args, intera_pack=pack_dict[emli[cursor_string][cursor_micro][1]])
                     msg = await ctx.send(embed=emli[cursor_string][cursor_micro][0])
                     await self.tools.pageButtonAdd(msg, extra=["\U00002b05", "\U000025c0", "\U0001f44b", "\U000025b6", "\U000027a1"], extra_replace=True)
 
@@ -419,6 +561,26 @@ class avaNPC(commands.Cog):
 
         return [temb, ikw]
 
+    async def cacheNPC(self):
+        temp = {}
+
+        res = await self.client.quefe("SELECT npc_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink FROM model_NPC;", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[0]] = c_NPC(r)
+
+        return temp
+
+    async def cacheConversation(self):
+        temp = {}
+
+        res = await self.client.quefe("SELECT ordera, conv_code, type, line, node_1, node_2, effect_query FROM model_converstation;", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[1]] = c_Conversation(r)
+
+        return temp
+
 
 
 
@@ -434,9 +596,45 @@ def setup(client):
 # ================== THING ==================
 
 class c_NPC:
-    def __init__(self, pack):
+    def __init__(self, pack, narrator=False):
         """
         npc_code, name, description, branch, evo, lp, strr, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink = pack
         """
+        self.narrator = narrator
+        if not narrator: self.npc_code, self.name, self.description, self.branch, self.evo, self.lp, self.strr, self.chain, self.speed, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.rewards, self.illulink = pack
+        else: self.npc_code, self.name, self.description, self.branch, self.evo, self.lp, self.strr, self.chain, self.speed, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.rewards, self.illulink = ('n/a', 'n/a', 'n/a', 'n/a', 1, 1, 1, 1, 1, 1, 1, 1, 1, '', '')
+        self.illulink = self.illulink.split(' <> ')
+        self.search_name = self.name.lower()
 
-        self.npc_code, self.name, self.description, self.branch, self.evo, self.lp, self.strr, self.chain, self.speed, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.rewards, self.illulink = pack
+    def check(self, npc_code='', name=''):
+        if npc_code and npc_code == self.npc_code: return True
+        if name and name in self.search_name: return True
+        return False
+
+
+class c_Conversation:
+    def __init__(self, pack):
+        """
+        ordera, conv_code, type, line, node_1, node_2, effect_query
+
+        <TURN> in a <conversation> is a series of lines that has the same speaker
+        """
+
+        self.ordera, self.conv_code, self.type, lines, self.node_1, self.node_2, self.effect_query = pack
+
+        # Partial conv split
+        self.line = []
+        for il in lines.split(' ||| '):
+            # Turns of conv       (author, (line1, line2,), illulink)
+            a = il.split(' --- ')
+            if len(a) < 3: a.append('')
+            elif a[2] == 'n/a': a[2] = ''
+            # Line
+            a[1] = tuple(a[1].split(' >>> '))
+            self.line.append(tuple(a))
+
+        # Multi-node
+        try: self.node_1 = self.node_1.split(' - ')
+        except AttributeError: self.node_1 = []
+        try: self.node_2 = self.node_2.split(' - ')
+        except AttributeError: self.node_2 = []

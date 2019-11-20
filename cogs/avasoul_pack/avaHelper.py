@@ -156,7 +156,7 @@ Definition? Mechanism? Lore? Yaaa```
             for pack in packs:
                 line = line + f"""
 · {pack[0]}"""
-            temb = discord.Embed(title=':mag_right:⠀⠀You were saying...', description=f"```{line}```", colour = discord.Colour(0xB1F1FA))
+            temb = discord.Embed(title=':mag_right:⠀⠀Were you saying...', description=f"```{line}```", colour = discord.Colour(0xB1F1FA))
             await ctx.send(embed=temb); return
 
 
@@ -227,7 +227,7 @@ Definition? Mechanism? Lore? Yaaa```
             for pack in packs:
                 line = line + f"""
 · {pack[0]}"""
-            temb = discord.Embed(title=':mag_right:⠀⠀You were saying...', description=f"```{line}```", colour = discord.Colour(0xB1F1FA))
+            temb = discord.Embed(title=':mag_right:⠀⠀Were you saying...', description=f"```{line}```", colour = discord.Colour(0xB1F1FA))
             await ctx.send(embed=temb); return
 
         temb = discord.Embed(
