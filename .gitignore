@@ -4,4 +4,7 @@ te.txt
 cogs/__pycache__/
 __pycache__/
 data/audio
+data/helpdoc
+data/NPC
+data/map
 audio
