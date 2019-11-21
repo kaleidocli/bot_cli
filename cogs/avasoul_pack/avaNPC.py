@@ -8,15 +8,15 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 from tabulate import tabulate
 
-from .avaTools import avaTools
-from .avaUtils import avaUtils
-from .npcTriggers import npcTrigger
-
 
 
 class avaNPC(commands.Cog):
 
     def __init__(self, client):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+        from .npcTriggers import npcTrigger
+
         self.client = client
         self.npcTrigger = npcTrigger(self.client)
         self.trigg = {'p0c0i0training': self.npcTrigger.p0c0i0training,
