@@ -580,11 +580,11 @@ class avaNPC(commands.Cog):
             await v()
 
     async def cacheNPC(self):
-        self.client.DBC['model_NPC'] = await self.cacheNPC()
+        self.client.DBC['model_NPC'] = await self.cacheNPC_tool()
         self.client.DBC['model_NPC']['narrator'] = c_NPC(None, narrator=True)
 
     async def cacheConversation(self):
-        self.client.DBC['model_conversation'] = await self.cacheConversation()
+        self.client.DBC['model_conversation'] = await self.cacheConversation_tool()
 
     async def cacheNPC_tool(self):
         temp = {}

@@ -291,6 +291,7 @@ class avaAdmin(commands.Cog):
                 await cog.cacheMethod[args[1]]()
         except IndexError: await ctx.send(":x: Missing database name"); return
         except KeyError: await ctx.send(":x: DB not found"); return
+        except AttributeError: await ctx.send(":x: Unknown cog"); return
 
         await ctx.send(":white_check_mark:")
 
