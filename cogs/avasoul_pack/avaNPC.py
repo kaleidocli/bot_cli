@@ -215,7 +215,7 @@ class avaNPC(commands.Cog):
 
                 # Dura
                 dura = len(line)//7
-                if dura < 5: dura = 5
+                if dura < 7: dura = 7
 
                 embs.append((temb, dura))
 
@@ -327,10 +327,10 @@ class avaNPC(commands.Cog):
         switch = None
         for e in embs:
             if not msg:
-                msg = await ctx.send(embed=e[0], delete_after=(e[1]+7))
+                msg = await ctx.send(embed=e[0])
                 await msg.add_reaction(':bubble_dot:544354428338044929')
             else:
-                await msg.edit(embed=e[0], delete_after=(e[1]+7))
+                await msg.edit(embed=e[0])
 
             try:
                 if conv.type == 'CHOICE' and count == len(embs):
@@ -346,7 +346,9 @@ class avaNPC(commands.Cog):
                     except IndexError: return
                 else:
                     await self.tools.pagiButton(check=lambda r, u: u == ctx.author and r.message.id == msg.id, timeout=e[1])
-            except concurrent.futures.TimeoutError: return
+            except concurrent.futures.TimeoutError:
+                await msg.delete()
+                return
 
             count += 1
 
