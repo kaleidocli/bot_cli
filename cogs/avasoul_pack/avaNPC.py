@@ -25,9 +25,13 @@ class avaNPC(commands.Cog):
 
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
+
         self.client.DBC['model_NPC'] = {}
-        self.client.DBC['model_NPC']['narrator'] = c_NPC(None, narrator=True)
         self.client.DBC['model_conversation'] = {}
+        self.cacheMethod = {
+            'model_NPC': self.cacheNPC,
+            'model_conversation': self.cacheConversation
+        }
 
         print("|| NPC ---- READY!")
 
@@ -40,8 +44,7 @@ class avaNPC(commands.Cog):
         await self.reloadSetup()
 
     async def reloadSetup(self):
-        self.client.DBC['model_NPC'] = await self.cacheNPC()
-        self.client.DBC['model_conversation'] = await self.cacheConversation()
+        await self.cacheAll()
 
 
 
@@ -191,6 +194,161 @@ class avaNPC(commands.Cog):
             
 
         await self.tools.pagiMain(ctx, (packs, npc), makeembed_two, item_per_page=8, timeout=60, delete_on_exit=False, pair=True)
+
+    @commands.command(aliases=['meet'])
+    @commands.cooldown(1, 25, type=BucketType.user)
+    async def interact(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        try:
+            intera_kw = args[1]
+        except IndexError: intera_kw = None
+
+        # NPC / Item
+        try:
+            int(args[0])        # Please don't, don't don't remove this
+            try: entity_code, entity_name, illulink = await self.client.quefe(f"SELECT item_id, name, illulink FROM pi_inventory WHERE item_id='{args[0]}' AND user_id='n/a' AND existence='GOOD';")
+            # E: Item not found --> Silently ignore
+            except TypeError: await ctx.message.add_reaction('\U00002754'); return
+        except ValueError:
+            try:
+                npc = self.client.DBC['model_NPC'][args[0]]
+            except KeyError:
+                npc = None
+                for n in self.client.DBC['model_NPC'].values():
+                    if n.check(name=args[0]):
+                        npc = n
+                        break
+            if not npc: await ctx.message.add_reaction('\U00002754'); return
+            entity_code = npc.npc_code          # entity_code is for interact_engine.   (and trigg also)
+            entity_name = npc.name              # entity_name and illulink is for trigg
+            illulink = random.choice(npc.illulink)
+            # try:
+            #     entity_code, entity_name, illulink = await self.client.quefe(f"""SELECT npc_code, name, illulink FROM model_npc WHERE npc_code="{args[0]}" OR name LIKE "%{args[0]}%";""")
+            # # E: NPC not found --> Silently ignore
+            # except TypeError: await ctx.message.add_reaction('\U00002754'); return
+        except IndexError: await ctx.send("<:osit:544356212846886924> Entity not found!"); return
+
+        # # Relationship's info
+        # try:
+        #     limit_chem, limit_impression, flag = await self.client.quefe(f"SELECT limit_chem, limit_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
+        # # E: Relationship not initiated. Init one.
+        # except TypeError:
+        #     limit_chem = 0; limit_impression = 0; flag = 'n/a'
+        #     await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{entity_code}', {limit_chem}, {limit_impression}, '{flag}');")
+
+
+        # BEFORE THE RIDE
+        if intera_kw:
+            await self.interact_engine(ctx, (entity_code, entity_name, illulink), intera_kw=intera_kw, args=args)
+            return
+
+
+        # Interaction's info        (limit_flag is a dummy)
+        try:
+            # pecks = await self.client.quefe(f"SELECT intera_kw, limit_flag FROM environ_interaction WHERE entity_code='{entity_code}' AND limit_flag='{flag}' AND (({limit_chem}>=limit_chem AND chem_compasign='>=') OR ({limit_chem}<limit_chem AND chem_compasign='<')) AND (({limit_impression}>=limit_impression AND imp_compasign='>=') OR ({limit_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY intera_kw ASC;", type='all')
+            pecks = await self.client.quefe(f"""
+                SELECT e.trigg, e.data_goods, e.effect_query, e.line, e.reward_chem, e.reward_impression, pf.charm, e.intera_kw FROM environ_interaction e, pi_flag f, personal_info pf
+                WHERE
+                (
+                    e.entity_code="{entity_code}"
+                    AND pf.id="{ctx.author.id}"
+                    AND e.region=pf.cur_PLACE AND e.limit_Ax<=pf.cur_X AND pf.cur_X<e.limit_Bx AND e.limit_Ay<=pf.cur_Y AND pf.cur_Y<e.limit_By
+                )
+                AND
+                (
+                    (
+                        e.limit_flag='n/a'
+                        OR 
+                        (
+                            e.limit_flag=f.flag_code
+                            AND f.user_id="{ctx.author.id}"
+                        )
+                    )
+                    AND
+                    (
+                        ((e.limit_chem=">=" AND f.value_1>=e.limit_chem) OR (e.limit_chem="<" AND f.value_1<e.limit_chem)) 
+                        AND ((e.limit_impression=">=" AND f.value_2>=e.limit_impression) OR (e.limit_impression="<" AND f.value_2<e.limit_impression))
+                    )
+                )
+                ORDER BY e.intera_kw ASC;
+            """, type='all')
+
+            if not pecks: await ctx.message.add_reaction('\U00002754'); return
+
+            pecks = list(set(pecks))
+            packs = []
+            pack_dict = {}
+
+            for p in pecks:
+                packs.append((p[7], ''))
+                pack_dict[p[7]] = p
+        except TypeError:
+            await ctx.message.add_reaction('\U00002754'); return         # Silently ignore
+
+        # INIT ======================
+        currentpage = 1
+        item_per_page = 8
+        pages = int(len(packs)/item_per_page)
+        if len(packs)%item_per_page != 0: pages += 1
+
+        # Creating strings ============
+        emli = []
+        for _ in range(pages):
+            stringembed = self.stringembed_intera((packs, [entity_code, entity_name, illulink]), currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+            emli.append(stringembed)
+            currentpage += 1
+
+        # [ [[em, kw], [em, kw]], [] ]
+
+        # START =======================
+        cursor_string = 0
+        cursor_micro = 0
+        msg = await ctx.send(embed=emli[cursor_string][cursor_micro][0])
+        await self.tools.pageButtonAdd(msg, extra=["\U00002b05", "\U000025c0", "\U0001f44b", "\U000025b6", "\U000027a1"], extra_replace=True)
+
+        while True:
+            try:
+                reaction, _ = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
+                if reaction.emoji == "\U000027a1":
+                    if cursor_string < pages - 1: cursor_string += 1
+                    else: cursor_string = 0
+                    await msg.edit(embed=emli[cursor_string][cursor_micro][0])
+                elif reaction.emoji == "\U00002b05":
+                    if cursor_string > 0: cursor_string -= 1
+                    else: cursor_string = pages - 1
+                    await msg.edit(embed=emli[cursor_string][cursor_micro][0])
+                elif reaction.emoji == "\U000025b6":
+                    if cursor_micro < len(emli[cursor_string]) - 1: cursor_micro += 1
+                    else: cursor_micro = 0
+                    await msg.edit(embed=emli[cursor_string][cursor_micro][0])
+                elif reaction.emoji == "\U000025c0":
+                    if cursor_micro > 0: cursor_micro -= 1
+                    else: cursor_micro = len(emli[cursor_string]) - 1
+                    await msg.edit(embed=emli[cursor_string][cursor_micro][0])
+                elif reaction.emoji == "\U0001f44b":
+                    await msg.delete()
+                    await self.interact_engine(ctx, (entity_code, entity_name, illulink), intera_kw=emli[cursor_string][cursor_micro][1], args=args, intera_pack=pack_dict[emli[cursor_string][cursor_micro][1]])
+                    msg = await ctx.send(embed=emli[cursor_string][cursor_micro][0])
+                    await self.tools.pageButtonAdd(msg, extra=["\U00002b05", "\U000025c0", "\U0001f44b", "\U000025b6", "\U000027a1"], extra_replace=True)
+
+            except concurrent.futures.TimeoutError:
+                return
+
+
+
+
+
+# ================== ADMIN ==================
+
+
+
+
+
+
+
+
+# ================== TOOLS ==================
 
 
     def turn_embing(self, pack, asker):
@@ -383,153 +541,6 @@ class avaNPC(commands.Cog):
 
 
 
-
-
-    @commands.command(aliases=['meet'])
-    @commands.cooldown(1, 25, type=BucketType.user)
-    async def interact(self, ctx, *args):
-        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
-
-        try:
-            intera_kw = args[1]
-        except IndexError: intera_kw = None
-
-        # NPC / Item
-        try:
-            int(args[0])        # Please don't, don't don't remove this
-            try: entity_code, entity_name, illulink = await self.client.quefe(f"SELECT item_id, name, illulink FROM pi_inventory WHERE item_id='{args[0]}' AND user_id='n/a' AND existence='GOOD';")
-            # E: Item not found --> Silently ignore
-            except TypeError: await ctx.message.add_reaction('\U00002754'); return
-        except ValueError:
-            try:
-                npc = self.client.DBC['model_NPC'][args[0]]
-            except KeyError:
-                npc = None
-                for n in self.client.DBC['model_NPC'].values():
-                    if n.check(name=args[0]):
-                        npc = n
-                        break
-            if not npc: await ctx.message.add_reaction('\U00002754'); return
-            entity_code = npc.npc_code          # entity_code is for interact_engine.   (and trigg also)
-            entity_name = npc.name              # entity_name and illulink is for trigg
-            illulink = random.choice(npc.illulink)
-            # try:
-            #     entity_code, entity_name, illulink = await self.client.quefe(f"""SELECT npc_code, name, illulink FROM model_npc WHERE npc_code="{args[0]}" OR name LIKE "%{args[0]}%";""")
-            # # E: NPC not found --> Silently ignore
-            # except TypeError: await ctx.message.add_reaction('\U00002754'); return
-        except IndexError: await ctx.send("<:osit:544356212846886924> Entity not found!"); return
-
-        # # Relationship's info
-        # try:
-        #     limit_chem, limit_impression, flag = await self.client.quefe(f"SELECT limit_chem, limit_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
-        # # E: Relationship not initiated. Init one.
-        # except TypeError:
-        #     limit_chem = 0; limit_impression = 0; flag = 'n/a'
-        #     await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{entity_code}', {limit_chem}, {limit_impression}, '{flag}');")
-
-
-        # BEFORE THE RIDE
-        if intera_kw:
-            await self.interact_engine(ctx, (entity_code, entity_name, illulink), intera_kw=intera_kw, args=args)
-            return
-
-
-        # Interaction's info        (limit_flag is a dummy)
-        try:
-            # pecks = await self.client.quefe(f"SELECT intera_kw, limit_flag FROM environ_interaction WHERE entity_code='{entity_code}' AND limit_flag='{flag}' AND (({limit_chem}>=limit_chem AND chem_compasign='>=') OR ({limit_chem}<limit_chem AND chem_compasign='<')) AND (({limit_impression}>=limit_impression AND imp_compasign='>=') OR ({limit_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY intera_kw ASC;", type='all')
-            pecks = await self.client.quefe(f"""
-                SELECT e.trigg, e.data_goods, e.effect_query, e.line, e.reward_chem, e.reward_impression, pf.charm, e.intera_kw FROM environ_interaction e, pi_flag f, personal_info pf
-                WHERE
-                (
-                    e.entity_code="{entity_code}"
-                    AND pf.id="{ctx.author.id}"
-                    AND e.region=pf.cur_PLACE AND e.limit_Ax<=pf.cur_X AND pf.cur_X<e.limit_Bx AND e.limit_Ay<=pf.cur_Y AND pf.cur_Y<e.limit_By
-                )
-                AND
-                (
-                    (
-                        e.limit_flag='n/a'
-                        OR 
-                        (
-                            e.limit_flag=f.flag_code
-                            AND f.user_id="{ctx.author.id}"
-                        )
-                    )
-                    AND
-                    (
-                        ((e.limit_chem=">=" AND f.value_1>=e.limit_chem) OR (e.limit_chem="<" AND f.value_1<e.limit_chem)) 
-                        AND ((e.limit_impression=">=" AND f.value_2>=e.limit_impression) OR (e.limit_impression="<" AND f.value_2<e.limit_impression))
-                    )
-                )
-                ORDER BY e.intera_kw ASC;
-            """, type='all')
-
-            if not pecks: await ctx.message.add_reaction('\U00002754'); return
-
-            pecks = list(set(pecks))
-            packs = []
-            pack_dict = {}
-
-            for p in pecks:
-                packs.append((p[7], ''))
-                pack_dict[p[7]] = p
-        except TypeError:
-            await ctx.message.add_reaction('\U00002754'); return         # Silently ignore
-
-        # INIT ======================
-        currentpage = 1
-        item_per_page = 8
-        pages = int(len(packs)/item_per_page)
-        if len(packs)%item_per_page != 0: pages += 1
-
-        # Creating strings ============
-        emli = []
-        for _ in range(pages):
-            stringembed = self.stringembed_intera((packs, [entity_code, entity_name, illulink]), currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
-            emli.append(stringembed)
-            currentpage += 1
-
-        # [ [[em, kw], [em, kw]], [] ]
-
-        # START =======================
-        cursor_string = 0
-        cursor_micro = 0
-        msg = await ctx.send(embed=emli[cursor_string][cursor_micro][0])
-        await self.tools.pageButtonAdd(msg, extra=["\U00002b05", "\U000025c0", "\U0001f44b", "\U000025b6", "\U000027a1"], extra_replace=True)
-
-        while True:
-            try:
-                reaction, _ = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
-                if reaction.emoji == "\U000027a1":
-                    if cursor_string < pages - 1: cursor_string += 1
-                    else: cursor_string = 0
-                    await msg.edit(embed=emli[cursor_string][cursor_micro][0])
-                elif reaction.emoji == "\U00002b05":
-                    if cursor_string > 0: cursor_string -= 1
-                    else: cursor_string = pages - 1
-                    await msg.edit(embed=emli[cursor_string][cursor_micro][0])
-                elif reaction.emoji == "\U000025b6":
-                    if cursor_micro < len(emli[cursor_string]) - 1: cursor_micro += 1
-                    else: cursor_micro = 0
-                    await msg.edit(embed=emli[cursor_string][cursor_micro][0])
-                elif reaction.emoji == "\U000025c0":
-                    if cursor_micro > 0: cursor_micro -= 1
-                    else: cursor_micro = len(emli[cursor_string]) - 1
-                    await msg.edit(embed=emli[cursor_string][cursor_micro][0])
-                elif reaction.emoji == "\U0001f44b":
-                    await msg.delete()
-                    await self.interact_engine(ctx, (entity_code, entity_name, illulink), intera_kw=emli[cursor_string][cursor_micro][1], args=args, intera_pack=pack_dict[emli[cursor_string][cursor_micro][1]])
-                    msg = await ctx.send(embed=emli[cursor_string][cursor_micro][0])
-                    await self.tools.pageButtonAdd(msg, extra=["\U00002b05", "\U000025c0", "\U0001f44b", "\U000025b6", "\U000027a1"], extra_replace=True)
-
-            except concurrent.futures.TimeoutError:
-                return
-
-
-
-
-
-
     def stringembed_intera(self, items, top, least, pages, currentpage):
         temp = []
 
@@ -563,7 +574,19 @@ class avaNPC(commands.Cog):
 
         return [temb, ikw]
 
+
+    async def cacheAll(self):
+        for v in self.cacheMethod.values():
+            await v()
+
     async def cacheNPC(self):
+        self.client.DBC['model_NPC'] = await self.cacheNPC()
+        self.client.DBC['model_NPC']['narrator'] = c_NPC(None, narrator=True)
+
+    async def cacheConversation(self):
+        self.client.DBC['model_conversation'] = await self.cacheConversation()
+
+    async def cacheNPC_tool(self):
         temp = {}
 
         res = await self.client.quefe("SELECT npc_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink FROM model_NPC;", type='all')
@@ -573,7 +596,7 @@ class avaNPC(commands.Cog):
 
         return temp
 
-    async def cacheConversation(self):
+    async def cacheConversation_tool(self):
         temp = {}
 
         res = await self.client.quefe("SELECT ordera, conv_code, type, line, node_1, node_2, effect_query FROM model_converstation;", type='all')

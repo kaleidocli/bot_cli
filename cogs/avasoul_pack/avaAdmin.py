@@ -244,11 +244,13 @@ class avaAdmin(commands.Cog):
     async def megareload(self, ctx, *args):
         temp = []
         name = ''
-        for n in args[0].split('.'):
-            if n == 'c': temp.append('cogs'); continue
-            elif n == 'a': temp.append('avasoul_pack'); continue
-            temp.append(n)
-        name = '.'.join(temp)
+        try:
+            for n in args[0].split('.'):
+                if n == 'c': temp.append('cogs'); continue
+                elif n == 'a': temp.append('avasoul_pack'); continue
+                temp.append(n)
+            name = '.'.join(temp)
+        except IndexError: await ctx.send(":x: Missing cog's name"); return
 
         self.client.reload_extension(name)
         
@@ -256,6 +258,39 @@ class avaAdmin(commands.Cog):
         cog = self.client.get_cog(name)
         try: await cog.reloadSetup()
         except AttributeError: pass
+
+        await ctx.send(":white_check_mark:")
+
+    @commands.command()
+    @checks.check_author()
+    async def megarecache(self, ctx, *args):
+        """
+            Use the exact name of the database (model_npc, etc.)
+            In order to use this in a cog, that cog must have:
+                - <cacheMethod> dict
+                - a cache function correspond to a DBC's name in the <cacheMethod> dict.    (e.g. {'model_NPC': self.cacheNPC})
+                - a <cacheAll> function
+            For example, please refer to cogs.avasoul_pack.avaNPC
+        """
+
+        temp = []
+        name = ''
+        try:
+            for n in args[0].split('.'):
+                if n == 'c': temp.append('cogs'); continue
+                elif n == 'a': temp.append('avasoul_pack'); continue
+                temp.append(n)
+            name = '.'.join(temp)
+        except IndexError: await ctx.send(":x: Missing cog's name"); return
+
+        cog = self.client.get_cog(name)
+        try:
+            if args[1] == 'all':
+                await cog.cacheAll()
+            else:
+                await cog.cacheMethod[args[1]]()
+        except IndexError: await ctx.send(":x: Missing database name"); return
+        except KeyError: await ctx.send(":x: DB not found"); return
 
         await ctx.send(":white_check_mark:")
 
