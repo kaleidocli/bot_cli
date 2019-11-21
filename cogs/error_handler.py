@@ -5,6 +5,7 @@ import discord
 from datetime import timedelta
 import asyncio
 import concurrent
+from pymysql import err as mysqlError
 
 
 
@@ -40,6 +41,8 @@ class ErrorHandler(commands.Cog):
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
         elif isinstance(error, asyncio.TimeoutError) or isinstance(error, discord.errors.Forbidden):
             return
+        elif isinstance(error, mysqlError.OperationalError):
+            await self.client.thp.mysqlReload()
         else:
             try:
                 try:
