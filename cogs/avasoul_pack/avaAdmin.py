@@ -4,6 +4,7 @@ from io import BytesIO
 from datetime import datetime
 import os
 import sys
+import asyncio
 
 import discord
 from discord.ext import commands
@@ -253,7 +254,8 @@ class avaAdmin(commands.Cog):
         
         # Prep =====================
         cog = self.client.get_cog(name)
-        await cog.reloadSetup()
+        try: await cog.reloadSetup()
+        except AttributeError: pass
 
         await ctx.send(":white_check_mark:")
 
