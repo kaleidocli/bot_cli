@@ -40,7 +40,9 @@ class misc(commands.Cog):
                 'roger': 'https://i.imgur.com/2pN0IfK.gif',
                 'angry': 'https://i.imgur.com/wnX6kax.gif',
                 'arigatou': 'https://i.imgur.com/wGiluXP.gif',
-                'welcome': 'https://i.imgur.com/rPxyRO0.gif'
+                'welcome': 'https://i.imgur.com/rPxyRO0.gif',
+                'thumbsup': 'https://imgur.com/XZ5gQ4r.gif',
+                'sad': 'https://imgur.com/ZeuaOeB.png'
                 }
 
 

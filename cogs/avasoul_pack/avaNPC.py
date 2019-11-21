@@ -169,7 +169,7 @@ class avaNPC(commands.Cog):
 
             temb = discord.Embed(title = f"`{npc.npc_code}`| **{npc.name.upper()}** {self.utils.smalltext(f'{npc.branch.capitalize()} NPC')}", description = f"""```dsconfig
     {npc.description}```""", colour = discord.Colour(0x011C3A))
-            temb.set_thumbnail(url=random.choice(npc.illulink.split(' <> ')))
+            temb.set_thumbnail(url=random.choice(npc.illulink))
 
             tinue = True
             while tinue:
