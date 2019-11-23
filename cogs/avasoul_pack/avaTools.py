@@ -27,10 +27,11 @@ class avaTools:
 
         try: await self.client._cursor.execute(query, args=args)
         except RuntimeError: return ''
-        #except mysqlError.OperationalError:
+        except mysqlError.OperationalError:
+            await self.client.thp.mysqlReload()
         #    loop.call_soon_threadsafe(loop.stop)
         #    conn, self.client._cursor = loop.run_until_complete(geself.client._CURSOR())
-        #    await self.client._cursor.execute(query, args=args)
+            await self.client._cursor.execute(query, args=args)
         if type == 'all': resu = await self.client._cursor.fetchall()
         else: resu = await self.client._cursor.fetchone()
         return resu
