@@ -8,6 +8,8 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 from tabulate import tabulate
 
+from utils import checks
+
 
 
 class avaNPC(commands.Cog):
@@ -337,8 +339,39 @@ class avaNPC(commands.Cog):
 
 # ================== ADMIN ==================
 
+    @commands.command()
+    @checks.check_author()
+    async def refreshConversation(self, ctx, *args):
+        count = 0
 
+        for conv_code in args:
+            try:
+                del self.client.DBC['model_conversation'][conv_code]
+            # except IndexError: await ctx.send(f":x: Missing conv_code"); return
+            # except KeyError: await ctx.send(f":x: Unknown conv_code"); return
+            except (IndexError, KeyError): continue
 
+            count += 1
+            await self.dbcGetConversation(conv_code)
+
+        await ctx.send(f":white_check_mark: Reloaded `{count}` conv.")
+
+    @commands.command()
+    @checks.check_author()
+    async def refreshNPC(self, ctx, *args):
+        count = 0
+
+        for npc_code in args:
+            try:
+                del self.client.DBC['model_NPC'][npc_code]
+            # except IndexError: await ctx.send(f":x: Missing conv_code"); return
+            # except KeyError: await ctx.send(f":x: Unknown conv_code"); return
+            except (IndexError, KeyError): continue
+
+            count += 1
+            await self.dbcGetNPC(npc_code)
+
+        await ctx.send(f":white_check_mark: Reloaded `{count}` conv.")
 
 
 
@@ -478,6 +511,7 @@ class avaNPC(commands.Cog):
                 await self.client.owner.send(f"<!> Corrupted conv_code `{conv_code}` in intera_kw `{intera_kw}` of NPC `{entity_code}`")
                 return
             for l in conv.line:
+                print(l, conv.line)
                 embs = embs + await self.turn_embing(l, ctx.author)
             if not embs: return
         except KeyError:
