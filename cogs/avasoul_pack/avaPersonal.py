@@ -83,7 +83,7 @@ class avaPersonal(commands.Cog):
 
         bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
         if not bump:
-            await ctx.send(f">>> {self.utils.nixietext(f'Welcome to the Pralayer, {ctx.author.name}!')}")
+            await ctx.send(f">>> {self.utils.nixietext(f'Welcome to the Pralayer!')}")
             await ctx.send(f">>> This bot is hard, {ctx.author.mention}! So I'll personally advise you using `tutorial 1` to at least know what to do with this bot.\nAfter that, you can check `faq` for some extra info.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
             await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'working', ex=82800, nx=True))
         elif bump == 3:

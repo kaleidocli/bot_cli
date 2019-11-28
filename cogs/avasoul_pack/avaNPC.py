@@ -347,7 +347,7 @@ class avaNPC(commands.Cog):
 # ================== TOOLS ==================
 
 
-    def turn_embing(self, pack, asker):
+    async def turn_embing(self, pack, asker):
         """
             pack:   (author, (line1, line2,), illulink)
 
@@ -478,7 +478,7 @@ class avaNPC(commands.Cog):
                 await self.client.owner.send(f"<!> Corrupted conv_code `{conv_code}` in intera_kw `{intera_kw}` of NPC `{entity_code}`")
                 return
             for l in conv.line:
-                embs = embs + self.turn_embing(l, ctx.author)
+                embs = embs + await self.turn_embing(l, ctx.author)
             if not embs: return
         except KeyError:
             await self.client.owner.send(f"<!> Corrupted conv_code `{conv_code}` in intera_kw `{intera_kw}` of NPC `{entity_code}`")
