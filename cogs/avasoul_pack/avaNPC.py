@@ -114,10 +114,8 @@ class avaNPC(commands.Cog):
         # cur_PLACE, cur_X, cur_Y = await self.client.quefe(f"SELECT cur_PLACE, cur_X, cur_Y FROM personal_info WHERE id='{ctx.author.id}';")
 
         try:
-            try:
-                npc = self.client.DBC['model_NPC'][args[0]]
-            except KeyError:
-                npc = None
+            npc = await self.dbcGetNPC(args[0])
+            if not npc:
                 for n in self.client.DBC['model_NPC'].values():
                     if n.check(name=args[0]):
                         npc = n
@@ -211,10 +209,8 @@ class avaNPC(commands.Cog):
             # E: Item not found --> Silently ignore
             except TypeError: await ctx.message.add_reaction('\U00002754'); return
         except ValueError:
-            try:
-                npc = self.client.DBC['model_NPC'][args[0]]
-            except KeyError:
-                npc = None
+            npc = await self.dbcGetNPC(args[0])
+            if not npc:
                 for n in self.client.DBC['model_NPC'].values():
                     if n.check(name=args[0]):
                         npc = n
@@ -363,6 +359,9 @@ class avaNPC(commands.Cog):
         # ASKER
         if author_code == 'self':
             for line in lines:
+                # Prep
+                line = line.replace('user_name_here', asker.name)
+
                 # Embing
                 temb = discord.Embed(description=f"""```css
     {line}```""", colour = 0x36393E)
@@ -379,7 +378,10 @@ class avaNPC(commands.Cog):
 
         # NPC / NARRATOR
         else:
-            author = self.client.DBC['model_NPC'][author_code]
+            author = await self.dbcGetNPC(author_code)
+            if not author:
+                await self.client.owner.send(f"<!> Corrupted conv_code `{author_code}`")
+                return
         
             for line in lines:
                 # Prep
@@ -471,7 +473,10 @@ class avaNPC(commands.Cog):
         # TURN embing =====================================
         embs = []
         try:
-            conv = self.client.DBC['model_conversation'][conv_code]
+            conv = await self.dbcGetConversation(conv_code)
+            if not conv:
+                await self.client.owner.send(f"<!> Corrupted conv_code `{conv_code}` in intera_kw `{intera_kw}` of NPC `{entity_code}`")
+                return
             for l in conv.line:
                 embs = embs + self.turn_embing(l, ctx.author)
             if not embs: return
@@ -605,6 +610,26 @@ class avaNPC(commands.Cog):
             temp[r[1]] = c_Conversation(r)
 
         return temp
+
+    async def dbcGetConversation(self, conv_code):
+        try:
+            return self.client.DBC['model_conversation'][conv_code]
+        except KeyError:
+            res = await self.client.quefe(f"SELECT ordera, conv_code, type, line, node_1, node_2, effect_query FROM model_converstation WHERE conv_code='{conv_code}';")
+            try:
+                self.client.DBC['model_conversation'][conv_code] = c_Conversation(res[0])
+                return self.client.DBC['model_conversation'][conv_code]
+            except TypeError: return False
+
+    async def dbcGetNPC(self, npc_code):
+        try:
+            return self.client.DBC['model_conversation'][npc_code]
+        except KeyError:
+            res = await self.client.quefe(f"SELECT npc_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink FROM model_NPC WHERE npc_code='{npc_code}';")
+            try:
+                self.client.DBC['model_NPC'][npc_code] = c_NPC(res[0])
+                return self.client.DBC['model_NPC'][npc_code]
+            except TypeError: return False
 
 
 
