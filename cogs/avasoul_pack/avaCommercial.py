@@ -291,8 +291,8 @@ class avaCommercial(commands.Cog):
             # E: User does not have account
             except TypeError:
 
-                await ctx.send(f":bank: Greeting, {ctx.author.mention}. It seems that there's no account has your id on it. Perhaps, would you like to open one?\n<a:RingingBell:559282950190006282> *Proceed?* (Key: `account confirm` | Timeout=10s)")
-                try: await self.client.wait_for('message', timeout=10, check=lambda m: m.channel == ctx.channel and m.content == 'account confirm' and m.author == ctx.author)
+                await ctx.send(f":bank: Greeting, {ctx.author.mention}. It seems that there's no account has your id on it. Perhaps, would you like to open one?\n<a:RingingBell:559282950190006282> *Proceed?* (Key: `account confirm` | Timeout=20s)")
+                try: await self.client.wait_for('message', timeout=20, check=lambda m: m.channel == ctx.channel and m.content == 'account confirm' and m.author == ctx.author)
                 except asyncio.TimeoutError: await ctx.send(f":bank: Indeed. Why would mongrels need a bank account..."); return
                 
                 # Create account

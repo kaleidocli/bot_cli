@@ -14,7 +14,8 @@ class avaThirdParty:
         self.configs = SConfig()
         self.redio = redis.Redis(host=self.configs.Redis_host, port=self.configs.Redis_port)
         self.loop = asyncio.get_event_loop()
-        self.client.conn, self.client._cursor = self.loop.run_until_complete(self.get_CURSOR())
+        try: self.client.conn, self.client._cursor = self.loop.run_until_complete(self.get_CURSOR())
+        except RuntimeError: pass
         self.client.client_id = self.configs.Imgur_id
         self.client.client_secret = self.configs.Imgur_secret
         self.client.imgur_client = ImgurClient(self.client.client_id, self.client.client_secret)

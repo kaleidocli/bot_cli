@@ -255,7 +255,7 @@ class avaAdmin(commands.Cog):
         self.client.reload_extension(name)
         
         # Prep =====================
-        cog = self.client.get_cog(name)
+        cog = self.client.get_cog(name.split('.')[-1])
         try: await cog.reloadSetup()
         except AttributeError: pass
 
@@ -281,9 +281,10 @@ class avaAdmin(commands.Cog):
                 elif n == 'a': temp.append('avasoul_pack'); continue
                 temp.append(n)
             name = '.'.join(temp)
-        except IndexError: await ctx.send(":x: Missing cog's name"); return
+        except IndexError: await ctx.send(":x: Missing cog's name (Note: No `c.a`, only `name`)"); return
 
         cog = self.client.get_cog(name)
+        print(name, cog)
         try:
             if args[1] == 'all':
                 await cog.cacheAll()
@@ -291,7 +292,7 @@ class avaAdmin(commands.Cog):
                 await cog.cacheMethod[args[1]]()
         except IndexError: await ctx.send(":x: Missing database name"); return
         except KeyError: await ctx.send(":x: DB not found"); return
-        except AttributeError: await ctx.send(":x: Unknown cog"); return
+        # except AttributeError: await ctx.send(":x: Unknown cog"); return
 
         await ctx.send(":white_check_mark:")
 
