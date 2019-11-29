@@ -7,28 +7,39 @@ from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
-from .avaTools import avaTools
-from .avaUtils import avaUtils
+from utils import checks
 
 
 
 class avaWorkshop(commands.Cog):
 
     def __init__(self, client):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
+
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-        print("|| Workshop --- READY!")
+        self.client.DBC['model_formula'] = {}
+        self.cacheMethod = {
+            'model_formula': self.cacheFormula
+        }        
 
 
 
 # ================== EVENTS ==================
 
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     print("|| Workshop --- READY!")
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await asyncio.sleep(8)
+        await self.reloadSetup()
+        print("|| Workshop --- READY!")
+
+    async def reloadSetup(self):
+        await self.cacheAll()
 
 
 
@@ -186,7 +197,7 @@ class avaWorkshop(commands.Cog):
     async def craft(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
-        if not args: await ctx.send(":tools: Craft? Cook? Anything you want~!"); return
+        if not args: await ctx.send(":tools: Use `formulas` for a list of formulas."); return
 
         raw = list(args)
         pack_values = []
@@ -235,244 +246,146 @@ class avaWorkshop(commands.Cog):
     @commands.command(aliases=['fml'])
     @commands.cooldown(1, 10, type=BucketType.user)
     async def formula(self, ctx, *args):
+        formus = None
 
         # FORMULA
         try:
+            if args[0] not in ['in', 'out']:
+                _mode = 'in'
+                args = args[0:6]
+            else:
+                _mode = args[0]
+                args = args[1:7]
+
             # Formulas' code
             if args[0].startswith('fm'):
-                try: formula_code, name, formula_value, description, tags, kit = await self.client.quefe(f"SELECT formula_code, name, formula_value, description, tags, kit FROM model_formula WHERE formula_code='{args[0]}';")
-                except TypeError: await ctx.send(":tools: Formula not found!"); return
+                try:
+                    # formula_code, name, formula_value, description, tags, kit = await self.client.quefe(f"SELECT formula_code, name, formula_value, description, tags, kit FROM model_formula WHERE formula_code='{args[0]}';")
+                    formula = await self.dbcGetFormula(args[0])
+                    if not formula: await ctx.send(":tools: Formula not found!"); return
+                except KeyError: await ctx.send(":tools: Formula not found!"); return
             
-                temb = discord.Embed(title=f":tools: `{formula_code}`|**{name}**", description=f"""```{description}```""", colour = discord.Colour(0x011C3A))
-                temb.add_field(name=f'╟ K I T [{formula_value}]', value=f'╟ {kit}', inline=True)
-                temb.add_field(name=f'╟ T A G S', value=f"╟ `{tags.replace(' - ', '` · `')}`", inline=True)
+                temb = discord.Embed(title=f":tools: `{formula.formula_code}`|**{formula.name}**", description=f"""```{formula.description}```""", colour = discord.Colour(0x011C3A))
+                temb.add_field(name=f'╟ K I T [{formula.formula_value}]', value=f'╟ {formula.kit}', inline=True)
+                temb.add_field(name=f'╟ T A G S', value=f"╟ `{'` · `'.join(formula.ingre_tag)}` >>> `{'` · `'.join(formula.produ_tag)}`", inline=True)
 
-                await ctx.send(embed=temb, delete_after=15)
+                await ctx.send(embed=temb)
 
             # Formulas' tag
             elif args[0].startswith('ar') or args[0].startswith('it') or args[0].startswith('ig') or args[0].startswith('bp') or args[0].startswith('am'):
-                formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula WHERE tags LIKE '%{await self.utils.inj_filter(' '.join(args))}%';", type='all')
-
-                def makeembed(top, least, pages, currentpage):
-                    line = ''; count = 1
-
-                    reembed = discord.Embed(colour = discord.Colour(0x011C3A))
-
-                    for formu in formus[top:least]:
-                        if count == 6:
-                            reembed.add_field(name="---------", value=line)
-                            count = 1; line = ''
-                        else:
-                            line = line + f"╟ `{formu[0]}`|**{formu[1]}**\n"
-                            count += 1
-                        if count < 6: reembed.add_field(name="---------", value=line)
-
-                    reembed.set_footer(text=f"------ {currentpage}/{pages} ------")
-                    return reembed
-                    #else:
-                    #    await ctx.send("*Nothing but dust here...*")
-                
-                async def attachreaction(msg):
-                    await msg.add_reaction("\U000023ee")    #Top-left
-                    await msg.add_reaction("\U00002b05")    #Left
-                    await msg.add_reaction("\U000027a1")    #Right
-                    await msg.add_reaction("\U000023ed")    #Top-right
-
-                pages = len(formus)//9
-                if len(formus)%9 != 0: pages += 1
-                currentpage = 1
-                cursor = 0
-
-                emli = []
-                # pylint: disable=unused-variable
-                for curp in range(pages):
-                    myembed = makeembed(currentpage*9-9, currentpage*9, pages, currentpage)
-                    emli.append(myembed)
-                    currentpage += 1
-                # pylint: enable=unused-variable
-                if pages > 1: 
-                    msg = await ctx.send(embed=emli[cursor])
-                    await attachreaction(msg)
-                else: msg = await ctx.send(embed=emli[cursor], delete_after=21); return
-
-                def UM_check(reaction, user):
-                    return user.id == ctx.message.author.id and reaction.message.id == msg.id
-
-                while True:
-                    try:    
-                        reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
-                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                            cursor += 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U00002b05" and cursor > 0:
-                            cursor -= 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ee" and cursor != 0:
-                            cursor = 0
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                            cursor = pages - 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                    except asyncio.TimeoutError:
-                        await msg.delete(); return
+                # formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula WHERE tags LIKE '%{await self.utils.inj_filter(' '.join(args))}%';", type='all')
+                if _mode == 'in':
+                    formus = []
+                    for f in self.client.DBC['model_formula'].values():
+                        await asyncio.sleep(0)
+                        if set(args).issubset(f.ingre_tag): formus.append(f)
+                else:
+                    for f in self.client.DBC['model_formula'].values():
+                        await asyncio.sleep(0)
+                        if set(args).issubset(f.produ_tag): formus.append(f)
+                raise IndexError
 
             # Formulas' name
             else:
-                formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula WHERE name LIKE '%{await self.utils.inj_filter(' '.join(args))}%';", type='all')
-                print(formus)
-
-                def makeembed(top, least, pages, currentpage):
-                    line = ''; count = 1
-
-                    reembed = discord.Embed(colour = discord.Colour(0x011C3A))
-
-                    for formu in formus[top:least]:
-                        if count == 6:
-                            reembed.add_field(name="---------", value=line)
-                            count = 1; line = ''
-                        else:
-                            line = line + f"╟ `{formu[0]}`|**{formu[1]}**\n"
-                            count += 1
-                        if count < 6: reembed.add_field(name="---------", value=line)
-
-                    reembed.set_footer(text=f"------ {currentpage}/{pages} ------")
-                    return reembed
-                    #else:
-                    #    await ctx.send("*Nothing but dust here...*")
-                
-                async def attachreaction(msg):
-                    await msg.add_reaction("\U000023ee")    #Top-left
-                    await msg.add_reaction("\U00002b05")    #Left
-                    await msg.add_reaction("\U000027a1")    #Right
-                    await msg.add_reaction("\U000023ed")    #Top-right
-
-                pages = len(formus)//9
-                if len(formus)%9 != 0: pages += 1
-                currentpage = 1
-                cursor = 0
-
-                emli = []
-                # pylint: disable=unused-variable
-                for curp in range(pages):
-                    myembed = makeembed(currentpage*6-6, currentpage*9, pages, currentpage)
-                    emli.append(myembed)
-                    currentpage += 1
-                # pylint: enable=unused-variable
-                if pages > 1: 
-                    msg = await ctx.send(embed=emli[cursor])
-                    await attachreaction(msg)
-                else: msg = await ctx.send(embed=emli[cursor], delete_after=21); return
-
-                def UM_check(reaction, user):
-                    return user.id == ctx.message.author.id and reaction.message.id == msg.id
-
-                while True:
-                    try:    
-                        reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
-                        if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                            cursor += 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U00002b05" and cursor > 0:
-                            cursor -= 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ee" and cursor != 0:
-                            cursor = 0
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                        elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                            cursor = pages - 1
-                            await msg.edit(embed=emli[cursor])
-                            try: await msg.remove_reaction(reaction.emoji, user)
-                            except discordErrors.Forbidden: pass
-                    except asyncio.TimeoutError:
-                        await msg.delete(); return
+                # formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula WHERE name LIKE '%{await self.utils.inj_filter(' '.join(args))}%';", type='all')
+                formus = []
+                for f in self.client.DBC['model_formula'].values():
+                    await asyncio.sleep(0)
+                    if await self.utils.inj_filter(' '.join(args)) in f.name: formus.append(f)
+                raise IndexError
 
 
         except IndexError:
 
-            formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula;", type='all')
+            if formus == None:
+                # formus = await self.client.quefe(f"SELECT formula_code, name FROM model_formula;", type='all')
+                formus = tuple(self.client.DBC['model_formula'].values())
 
-            def makeembed(top, least, pages, currentpage):
-                line = ''; count = 1
+            def makeembed(items, top, least, pages, currentpage):
+                line = ''; count = 1; field_count = 0
 
                 reembed = discord.Embed(colour = discord.Colour(0x011C3A))
-                for formu in formus[top:least]:
+                for formu in items[top:least]:
+                    line = line + f"╟ {formu.formula_code}:: {formu.name}\n"
                     if count == 6:
-                        reembed.add_field(name="---------", value=line)
+                        if not field_count:
+                            line2 = f"『Total』{len(items)}"
+                            field_count += 1
+                        else:
+                            line2 = f"『Page』{currentpage}/{pages}"
+                            field_count = 0
+                        reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
                         count = 1; line = ''
+                        continue
                     else:
-                        line = line + f"╟ `{formu[0]}`|**{formu[1]}**\n"
                         count += 1
-                    if count < 6 and line: reembed.add_field(name="---------", value=line)
+                if line:
+                    if not field_count:
+                        line2 = f"『Total』{len(items)}"
+                    else:
+                        line2 = f"『Page』{currentpage}/{pages}"
+                    reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                    if not field_count: reembed.add_field(name=f"『Page』{currentpage}/{pages}", value=f"""```⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀```""")
 
-                reembed.set_footer(text=f"------ {currentpage}/{pages} ------")
                 return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
             
-            async def attachreaction(msg):
-                await msg.add_reaction("\U000023ee")    #Top-left
-                await msg.add_reaction("\U00002b05")    #Left
-                await msg.add_reaction("\U000027a1")    #Right
-                await msg.add_reaction("\U000023ed")    #Top-right
+            await self.tools.pagiMain(ctx, formus, makeembed, item_per_page=12, delete_on_exit=False)
 
-            pages = len(formus)//9
-            if len(formus)%9 != 0: pages += 1
-            currentpage = 1
-            cursor = 0
 
-            emli = []
-            for curp in range(pages):
-                myembed = makeembed(currentpage*9-9, currentpage*9, pages, currentpage)
-                emli.append(myembed)
-                currentpage += 1
 
-            if pages > 1: 
-                msg = await ctx.send(embed=emli[cursor])
-                await attachreaction(msg)
-            else: msg = await ctx.send(embed=emli[cursor], delete_after=21); return
+# ================== ADMIN ==================
 
-            def UM_check(reaction, user):
-                return user.id == ctx.message.author.id and reaction.message.id == msg.id
+    @commands.command()
+    @checks.check_author()
+    async def refreshFormula(self, ctx, *args):
+        count = 0
 
-            while True:
-                try:    
-                    reaction, user = await self.client.wait_for('reaction_add', timeout=20, check=UM_check)
-                    if reaction.emoji == "\U000027a1" and cursor < pages - 1:
-                        cursor += 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U00002b05" and cursor > 0:
-                        cursor -= 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ee" and cursor != 0:
-                        cursor = 0
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                    elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
-                        cursor = pages - 1
-                        await msg.edit(embed=emli[cursor])
-                        try: await msg.remove_reaction(reaction.emoji, user)
-                        except discordErrors.Forbidden: pass
-                except asyncio.TimeoutError:
-                    await msg.delete(); return
+        for formula_code in args:
+            try:
+                del self.client.DBC['model_formula'][formula_code]
+            # except IndexError: await ctx.send(f":x: Missing conv_code"); return
+            # except KeyError: await ctx.send(f":x: Unknown conv_code"); return
+            except (IndexError, KeyError): continue
+
+            count += 1
+            await self.dbcGetFormula(formula_code)
+
+        await ctx.send(f":white_check_mark: Reloaded `{count}` formulas.")
+
+
+
+# ================== TOOLS ==================
+
+    async def cacheAll(self):
+        for v in self.cacheMethod.values():
+            await v()
+
+    async def cacheFormula(self):
+        self.client.DBC['model_formula'] = await self.cacheFormula_tool()
+
+    async def cacheFormula_tool(self):
+        temp = {}
+
+        res = await self.client.quefe("SELECT formula_code, name, formula_value, description, tags, kit, check_query, effect_query, info_msg FROM model_formula;", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[0]] = c_Formula(r)
+
+        return temp
+
+    async def dbcGetFormula(self, formula_code):
+        try:
+            return self.client.DBC['model_formula'][formula_code]
+        except KeyError:
+            res = await self.client.quefe(f"SELECT formula_code, name, formula_value, description, tags, kit, check_query, effect_query, info_msg FROM model_formula WHERE formula_code='{formula_code}';")
+            try:
+                self.client.DBC['model_formula'][formula_code] = c_Formula(res[0])
+                return self.client.DBC['model_formula'][formula_code]
+            except TypeError: return False
 
 
 
@@ -480,4 +393,20 @@ class avaWorkshop(commands.Cog):
 
 def setup(client):
     client.add_cog(avaWorkshop(client))
-    
+
+
+
+
+
+
+
+
+class c_Formula:
+    def __init__(self, pack):
+        self.formula_code, self.name, self.formula_value, self.description, tags, self.kit, self.check_query, self.effect_query, self.info_msg = pack
+
+        tags = tags.split(' >>> ')
+        try: self.ingre_tag = tags[0].split(' - ')
+        except IndexError: self.ingre_tag = []
+        try: self.produ_tag = tags[1].split(' - ')
+        except IndexError: self.produ_tag = []

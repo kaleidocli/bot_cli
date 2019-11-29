@@ -35,15 +35,15 @@ class avaNPC(commands.Cog):
             'model_conversation': self.cacheConversation
         }
 
-        print("|| NPC ---- READY!")
-
 
 
 # ================== EVENTS ==================
 
     @commands.Cog.listener()
     async def on_ready(self):
+        await asyncio.sleep(7)
         await self.reloadSetup()
+        print("|| NPC ---- READY!")
 
     async def reloadSetup(self):
         await self.cacheAll()

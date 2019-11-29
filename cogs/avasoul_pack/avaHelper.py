@@ -403,6 +403,7 @@ Definition? Mechanism? Lore? Yaaa```
         packs = await self.client.quefe("SELECT type, concept, short_description FROM sys_concept WHERE type<>'n/a' ORDER BY concept ASC;", type='all')
         a = []
         for cat in cats:
+            await asyncio.sleep(0)
             d = {}
             for pack in packs:
                 if pack[0] != cat[0]: continue
@@ -490,9 +491,11 @@ Definition? Mechanism? Lore? Yaaa```
 
     async def faqLoad(self):
         faqs = await self.client.quefe(f"SELECT id, user_id, question, answer, tag FROM sys_faq;", type='all')
+        faqs = await self.client.quefe(f"SELECT id, user_id, question, answer, tag FROM sys_faq;", type='all')
         temp = {}
 
         for faq in faqs:
+            await asyncio.sleep(0.25)
             temp[str(faq[0])] = {
                 'id': str(faq[0]),
                 'user_id': faq[1],
