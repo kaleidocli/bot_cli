@@ -321,12 +321,12 @@ class avaTrivia(commands.Cog):
         except KeyError: await ctx.send("<:osit:544356212846886924> Leaderboard not found."); return
 
     async def toprich(self, ctx):
-        ret = await self.client.quefe(f"SELECT name, age, money FROM personal_info ORDER BY money DESC LIMIT 10", type='all')
+        ret = await self.client.quefe(f"SELECT i.name, i.age, i.money, b.investment FROM personal_info i, pi_bank b WHERE i.id=b.user_id ORDER BY (i.money + b.investment) DESC LIMIT 10;", type='all')
 
         line = ''; count = 0
         for u in ret:
             count += 1
-            line = line + f"{count} | **{u[0]}** ({u[1]}) with <:36pxGold:548661444133126185> **{u[2]:,}**\n"
+            line = line + f"{count} | **{u[0]}** ({u[1]}) with <:36pxGold:548661444133126185> **{u[2]:,}** cash and $**{u[3]:,}** in bank\n"
 
         await ctx.send(embed=discord.Embed(title=":military_medal: Top 10 richest Remnants!", description=line, colour=0xFFC26F))
 
