@@ -400,7 +400,7 @@ class c_Formula:
         self.formula_value = []
         for v in formuva.split(' | '):
             v = v.split(' - ')
-            self.formula_value.append(tuple(v, int(v)))
+            self.formula_value.append(tuple(v[0], int(v[1])))
         self.formula_value = tuple(self.formula_value)
 
         tags = tags.split(' >>> ')
