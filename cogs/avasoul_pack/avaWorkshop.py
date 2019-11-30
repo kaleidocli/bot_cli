@@ -193,58 +193,51 @@ class avaWorkshop(commands.Cog):
         except ZeroDivisionError: await ctx.send("<:osit:544356212846886924> How could you even merge something with its own?!"); return
 
     @commands.command()
-    @commands.cooldown(1, 10, type=BucketType.user)
+    @commands.cooldown(1, 5, type=BucketType.user)
     async def craft(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
-        if not args: await ctx.send(":tools: Use `formulas` for a list of formulas."); return
-
-        raw = list(args)
-        pack_values = []
-
-        # Get packs
-        packs = raw[0].split('+')
-        # Get pack
-        for pack in packs:
-            # Split pack --> [item_id, quantity]
-            pack = pack.split('*')
-            # Get item_id
-            try: item_id = int(pack[0])
-            except (IndexError, TypeError): await ctx.send(f"<:osit:544356212846886924> Missing item's id"); return
-            except ValueError: await ctx.send(f"<:osit:544356212846886924> Invalid item's id"); return
-            # Get quantity
-            try: quantity = int(pack[1])
-            except ValueError: await ctx.send(f"<:osit:544356212846886924> Invalid item's id"); return
-            except (IndexError, TypeError): quantity = 1
-
-            # Get craft_value
-            craft_value = await self.client.quefe(f"SELECT craft_value FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id={item_id} AND quantity>={quantity};")
-
-            # Calculate each pack
-            try: pack_values.append(craft_value[0]*quantity)
-            except TypeError: await ctx.send(f"<:osit:544356212846886924> You don't have **{quantity}** item `{item_id}`. Please check your *item's id* or *its quantity*."); return
-        # Calculate total craft_value
-        total_cv = sum(pack_values)
+        try:
+            quantity = args[1]
+            if quantity > 10: quantity = 10
+        except IndexError: quantity = 1
 
         # Get FORMULA
-        try: check_query, effect_query, info_msg = await self.client.quefe(f"SELECT check_query, effect_query, info_msg FROM model_formula WHERE formula_value={total_cv};")
-        except TypeError: await ctx.send(":tools: Oops! You tried but nothing happened :<"); return
+        try:
+            # check_query, effect_query, info_msg = await self.client.quefe(f"SELECT check_query, effect_query, info_msg FROM model_formula WHERE formula_value={total_cv};")
+            formula = await self.dbcGetFormula(args[0])
+            if not formula: await ctx.send("<:osit:544356212846886924> Unknown formula_code. Use `formula` for a list of formulas."); return
+        except IndexError: await ctx.send(":tools: Missing formula_code. Use `formula` for a list of formulas."); return
 
-        info_msg = info_msg.split(' || ')
-        if check_query:
-            check_query = check_query.replace('user_id_here', f"{ctx.author.id}")
-            if self.client._cursor.execute(check_query) == 0: await ctx.send(f":tools: Oops! {info_msg[1]} :<"); return
+        # Check ingredient
+        missing = []
+        for ingre in formula.formula_value:
+            await asyncio.sleep(0)
+            if not await self.client._cursor.execute(f"SELECT quantity FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_code='{ingre[0]}' AND quantity>={ingre[1]*quantity};"):
+                missing.append(f"· {ingre[1]*quantity} [{ingre[0]}]")
+        if missing:
+            missing_line = "\n".join(missing)
+            await ctx.send(embed=discord.Embed(colour=discord.Colour(0x011C3A)).add_field(name=f":tools: Insufficience in **{len(missing)}** items:", value=f"""```ini
+{missing_line}```"""))
+            return
 
-        effect_query = effect_query.replace('user_id_here', f"{ctx.author.id}")
+        # Custom checks
+        if formula.check_query:
+            check_query = formula.check_query.replace('user_id_here', f"{ctx.author.id}").replace('quantity_here', f"{quantity}")
+            if self.client._cursor.execute(check_query) == 0: await ctx.send(f":tools: Oops! {formula.info_msg[1]} :<"); return
+
+        effect_query = formula.effect_query.replace('user_id_here', f"{ctx.author.id}")
 
         # Take effect (reward, effect, etc.)
-        if await self.client._cursor.execute(effect_query) == 0: await ctx.send(f":tools: Oops! {info_msg[1]} :<"); return
+        for _ in range(quantity):
+            await asyncio.sleep(0)
+            if await self.client._cursor.execute(effect_query) == 0: await ctx.send(f":tools: Oops! {formula.info_msg[1]} :<"); return
         
         # Inform
-        await ctx.send(f":tools: {info_msg[0]} **Successfully crafted!**")
+        await ctx.send(f":tools: {formula.info_msg[0]} **Successfully crafted!**")
 
     @commands.command(aliases=['fml'])
-    @commands.cooldown(1, 10, type=BucketType.user)
+    @commands.cooldown(1, 7, type=BucketType.user)
     async def formula(self, ctx, *args):
         formus = None
 
@@ -265,9 +258,8 @@ class avaWorkshop(commands.Cog):
                     if not formula: await ctx.send(":tools: Formula not found!"); return
                 except KeyError: await ctx.send(":tools: Formula not found!"); return
             
-                temb = discord.Embed(title=f":tools: `{formula.formula_code}`|**{formula.name}**", description=f"""```{formula.description}```""", colour = discord.Colour(0x011C3A))
-                temb.add_field(name=f'╟ K I T [{formula.formula_value}]', value=f'╟ {formula.kit}', inline=True)
-                temb.add_field(name=f'╟ T A G S', value=f"╟ `{'` · `'.join(formula.ingre_tag)}` >>> `{'` · `'.join(formula.produ_tag)}`", inline=True)
+                temb = discord.Embed(title=f":tools: `{formula.formula_code}`|**{formula.name}**", description=f"""```{formula.description}```""", colour=discord.Colour(0x011C3A))
+                temb.add_field(name=f'╟ REQUIREMENT (kit:{formula.kit})', value=f"╟ `{'` · `'.join(formula.ingre_tag)}` >>> `{'` · `'.join(formula.produ_tag)}`", inline=True)
 
                 await ctx.send(embed=temb)
 
@@ -403,10 +395,20 @@ def setup(client):
 
 class c_Formula:
     def __init__(self, pack):
-        self.formula_code, self.name, self.formula_value, self.description, tags, self.kit, self.check_query, self.effect_query, self.info_msg = pack
+        self.formula_code, self.name, formuva, self.description, tags, self.kit, self.check_query, self.effect_query, self.info_msg = pack
+
+        self.formula_value = []
+        for v in formuva.split(' | '):
+            v = v.split(' - ')
+            self.formula_value.append(tuple(v, int(v)))
+        self.formula_value = tuple(self.formula_value)
 
         tags = tags.split(' >>> ')
         try: self.ingre_tag = tags[0].split(' - ')
         except IndexError: self.ingre_tag = []
         try: self.produ_tag = tags[1].split(' - ')
         except IndexError: self.produ_tag = []
+
+        try: self.info_msg = self.info_msg.split(' || ')
+        except AttributeError: self.info_msg = ['', '']
+        if len(self.info_msg) < 2: self.info_msg.append('')
