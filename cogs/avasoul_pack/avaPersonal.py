@@ -221,7 +221,7 @@ class avaPersonal(commands.Cog):
 
         async def dbcFilterTag(args, DBC, dbc_name):
             temp = []
-            if len(args) > 1:
+            if not args:
                 for i in DBC[dbc_name].values():
                     await asyncio.sleep(0)
                     if set(args).issubset(i.tag): temp.append(i)
@@ -467,7 +467,7 @@ class avaPersonal(commands.Cog):
 
             items = []
             for item in items2:
-                items.append((item, self.client.bgdict_meta[item.font_id], self.utils.smalltext))
+                items.append((item, 1, self.utils.smalltext))
 
             def makeembed(items, top, least, pages, currentpage):
                 line = '' 
