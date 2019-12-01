@@ -218,6 +218,52 @@ class avaPersonal(commands.Cog):
         raw = list(args)
         mode = 'av'
 
+
+        async def dbcFilterTag(args, DBC, dbc_name):
+            temp = []
+            if len(args) > 1:
+                for i in DBC[dbc_name].values():
+                    await asyncio.sleep(0)
+                    if set(args).issubset(i.tag): temp.append(i)
+                return temp
+            else:
+                return list(DBC[dbc_name].values())
+
+        async def pagerMultiSingle(ctx, items, makeembed, makeembed_single):
+            """
+            ipp:                item_per_page of the NEXT embed
+            emli_pack[0]:       item_per_page of the CURRENT embed
+            """
+
+            emMulti = []
+            emSingle = []
+            cur_ember = makeembed
+            cur_emli = emMulti
+            cursor = 0
+            ipp = 6
+            msg = None
+            while True:
+                resp = await self.tools.pagiMain(ctx, items, cur_ember, extra_button=["\U000023ee", "\U00002b05", '\U0001f440', "\U000027a1", "\U000023ed"], timeout=30, extra_resp={'\U0001f440': 'view'}, item_per_page=ipp, emli=cur_emli, cursor=cursor, msg=msg)
+                try:
+                    msg, emli_pack, turner_pack = resp
+                    # print(emli_pack[1], emli_pack[2], turner_pack[0], cursor)
+                    if cur_ember == makeembed:
+                        cur_ember = makeembed_single
+                        ipp = 1
+                        emMulti = emli_pack[0]
+                        cur_emli = emSingle
+                        cursor = (turner_pack[0]+1)*emli_pack[2] - emli_pack[2]        # cursor+1*items_per_page_CURRENT - items_per_page
+                    else:
+                        cur_ember = makeembed
+                        ipp = 6
+                        emSingle = emli_pack[0]
+                        cur_emli = emMulti
+                        cursor = int(turner_pack[0]/ipp)       # cursor/items_per_page_NEXT     (always rounded up)
+                        if cursor > emli_pack[1]: cursor = emli_pack[1]
+
+                except TypeError: break
+
+
         try:
             if raw[0] == 'save':
                 # Naming
@@ -342,50 +388,6 @@ class avaPersonal(commands.Cog):
         # AVATARs
         # E: No avatar given
         except IndexError:
-
-            async def dbcFilterTag(args, DBC, dbc_name):
-                temp = []
-                if len(args) > 1:
-                    for i in DBC[dbc_name].values():
-                        await asyncio.sleep(0)
-                        if set(args).issubset(i.tag): temp.append(i)
-                    return temp
-                else:
-                    return list(DBC[dbc_name].values())
-
-            async def pagerMultiSingle(ctx, items, makeembed, makeembed_single):
-                """
-                ipp:                item_per_page of the NEXT embed
-                emli_pack[0]:       item_per_page of the CURRENT embed
-                """
-
-                emMulti = []
-                emSingle = []
-                cur_ember = makeembed
-                cur_emli = emMulti
-                cursor = 0
-                ipp = 6
-                msg = None
-                while True:
-                    resp = await self.tools.pagiMain(ctx, items, cur_ember, extra_button=["\U000023ee", "\U00002b05", '\U0001f440', "\U000027a1", "\U000023ed"], timeout=30, extra_resp={'\U0001f440': 'view'}, item_per_page=ipp, emli=cur_emli, cursor=cursor, msg=msg)
-                    try:
-                        msg, emli_pack, turner_pack = resp
-                        # print(emli_pack[1], emli_pack[2], turner_pack[0], cursor)
-                        if cur_ember == makeembed:
-                            cur_ember = makeembed_single
-                            ipp = 1
-                            emMulti = emli_pack[0]
-                            cur_emli = emSingle
-                            cursor = (turner_pack[0]+1)*emli_pack[2] - emli_pack[2]        # cursor+1*items_per_page_CURRENT - items_per_page
-                        else:
-                            cur_ember = makeembed
-                            ipp = 6
-                            emSingle = emli_pack[0]
-                            cur_emli = emMulti
-                            cursor = int(turner_pack[0]/ipp)       # cursor/items_per_page_NEXT     (always rounded up)
-                            if cursor > emli_pack[1]: cursor = emli_pack[1]
-
-                    except TypeError: break
 
             if mode == 'av':
                 # items2 = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id IN (SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
