@@ -430,7 +430,7 @@ class avaPersonal(commands.Cog):
 
                 items = []
                 for item in items2:
-                    items.append(item + (self.client.bgdict_meta[item.bg_code], self.utils.smalltext))
+                    items.append((item, self.client.bgdict_meta[item.bg_code], self.utils.smalltext))
 
                 def makeembed(items, top, least, pages, currentpage):
                     line = '' 
@@ -465,7 +465,7 @@ class avaPersonal(commands.Cog):
 
             items = []
             for item in items2:
-                items.append(item + (self.client.bgdict_meta[item.font_id], self.utils.smalltext))
+                items.append((item, self.client.bgdict_meta[item.font_id], self.utils.smalltext))
 
             def makeembed(items, top, least, pages, currentpage):
                 line = '' 
