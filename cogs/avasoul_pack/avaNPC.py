@@ -35,18 +35,20 @@ class avaNPC(commands.Cog):
             'model_conversation': self.cacheConversation
         }
 
+        print("|| NPC ---- READY!")
+
 
 
 # ================== EVENTS ==================
 
     @commands.Cog.listener()
     async def on_ready(self):
-        await asyncio.sleep(7)
+        await asyncio.sleep(9)
         await self.reloadSetup()
-        print("|| NPC ---- READY!")
 
     async def reloadSetup(self):
         await self.cacheAll()
+        print("|| NPC ---- RELOADED!")
 
 
 
@@ -614,6 +616,13 @@ class avaNPC(commands.Cog):
         return [temb, ikw]
 
 
+
+
+
+
+
+# ================== CACHE ==================
+
     async def cacheAll(self):
         for v in self.cacheMethod.values():
             await v()
@@ -661,7 +670,6 @@ class avaNPC(commands.Cog):
         except KeyError:
             res = await self.client.quefe(f"SELECT npc_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink FROM model_NPC WHERE npc_code='{npc_code}';")
             try:
-                print(res)
                 self.client.DBC['model_NPC'][npc_code] = c_NPC(res[0])
                 return self.client.DBC['model_NPC'][npc_code]
             except TypeError: return False

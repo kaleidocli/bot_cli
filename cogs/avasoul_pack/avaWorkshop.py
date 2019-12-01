@@ -26,7 +26,9 @@ class avaWorkshop(commands.Cog):
         self.client.DBC['model_formula'] = {}
         self.cacheMethod = {
             'model_formula': self.cacheFormula
-        }        
+        }
+
+        print("|| Workshop --- READY!")
 
 
 
@@ -36,7 +38,7 @@ class avaWorkshop(commands.Cog):
     async def on_ready(self):
         await asyncio.sleep(8)
         await self.reloadSetup()
-        print("|| Workshop --- READY!")
+        print("|| Workshop --- RELOADED!")
 
     async def reloadSetup(self):
         await self.cacheAll()

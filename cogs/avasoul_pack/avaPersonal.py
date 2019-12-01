@@ -11,6 +11,8 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import pymysql.err as mysqlError
 
+from utils import checks
+
 
 
 class avaPersonal(commands.Cog):
@@ -39,15 +41,29 @@ class avaPersonal(commands.Cog):
 
         self.aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
 
+        self.client.DBC['model_avatar'] = {}
+        self.client.DBC['model_background'] = {}
+        self.client.DBC['model_font'] = {}
+        self.cacheMethod = {
+            'model_avatar': self.cacheAvatar,
+            'model_background': self.cacheBackground,
+            'model_font': self.cacheFont
+        }
+
         print("|| Personal --- READY!")
 
 
 
 # ================== EVENTS ==================
 
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     print("|| Personal --- READY!")
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await asyncio.sleep(7)
+        await self.reloadSetup()
+
+    async def reloadSetup(self):
+        await self.cacheAll()
+        print("|| Personal ---- RELOADED!")
 
 
 
@@ -196,7 +212,7 @@ class avaPersonal(commands.Cog):
 
     # pylint: disable=unused-variable
     @commands.command(aliases=['wb'])
-    @commands.cooldown(1, 5, type=BucketType.user)
+    @commands.cooldown(1, 10, type=BucketType.user)
     async def wardrobe(self, ctx, *args):
 
         raw = list(args)
@@ -326,111 +342,155 @@ class avaPersonal(commands.Cog):
         # AVATARs
         # E: No avatar given
         except IndexError:
-            # Search query
-            search_q = ''
-            try:
+
+            async def dbcFilterTag(args, DBC, dbc_name):
                 temp = []
-                count = 0
-                for k in raw[1:]:
-                    k = k.lower()
+                if len(args) > 1:
+                    for i in DBC[dbc_name].values():
+                        await asyncio.sleep(0)
+                        if set(args).issubset(i.tag): temp.append(i)
+                    return temp
+                else:
+                    return list(DBC[dbc_name].values())
 
-                    # Light inject-filter
-                    k = k.replace("'", '_')
-                    k = k.replace('"', '_')
+            async def pagerMultiSingle(ctx, items, makeembed, makeembed_single):
+                """
+                ipp:                item_per_page of the NEXT embed
+                emli_pack[0]:       item_per_page of the CURRENT embed
+                """
 
-                    temp.append(f" (tag LIKE '{k}%' OR tag LIKE '%{k}' OR tag LIKE '% {k} %') ")
-                    count += 1
-                    if count == 3: break    # limited to 3 keywords
-                if temp: search_q = f"AND {' AND '.join(temp)}"
-            except IndexError: pass
+                emMulti = []
+                emSingle = []
+                cur_ember = makeembed
+                cur_emli = emMulti
+                cursor = 0
+                ipp = 6
+                msg = None
+                while True:
+                    resp = await self.tools.pagiMain(ctx, items, cur_ember, extra_button=["\U000023ee", "\U00002b05", '\U0001f440', "\U000027a1", "\U000023ed"], timeout=30, extra_resp={'\U0001f440': 'view'}, item_per_page=ipp, emli=cur_emli, cursor=cursor, msg=msg)
+                    try:
+                        msg, emli_pack, turner_pack = resp
+                        # print(emli_pack[1], emli_pack[2], turner_pack[0], cursor)
+                        if cur_ember == makeembed:
+                            cur_ember = makeembed_single
+                            ipp = 1
+                            emMulti = emli_pack[0]
+                            cur_emli = emSingle
+                            cursor = (turner_pack[0]+1)*emli_pack[2] - emli_pack[2]        # cursor+1*items_per_page_CURRENT - items_per_page
+                        else:
+                            cur_ember = makeembed
+                            ipp = 6
+                            emSingle = emli_pack[0]
+                            cur_emli = emMulti
+                            cursor = int(turner_pack[0]/ipp)       # cursor/items_per_page_NEXT     (always rounded up)
+                            if cursor > emli_pack[1]: cursor = emli_pack[1]
+
+                    except TypeError: break
 
             if mode == 'av':
-                items2 = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id IN (SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
+                # items2 = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id IN (SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
+                items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_avatar')
+                items2.sort(key=lambda v: v.ordera)
                 if not items2: await ctx.send(f":x: No result..."); return
 
                 items = []
                 for item in items2:
-                    items.append(item + (self.client.chardict_meta[item[0]], self.utils.smalltext))
+                    items.append((item, self.client.chardict_meta[item.avatar_id], self.utils.smalltext))
 
                 def makeembed(items, top, least, pages, currentpage):
                     line = '' 
 
-                    for item in items[top:least]:
-                        
-                        line = line + f"""\n`{item[0]}` · **{item[1]}** {item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
+                    reembed = discord.Embed(description = f"```AVATAR | {ctx.author.name}```", colour = discord.Colour(0x011C3A))
 
-                    reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s avatars", colour = discord.Colour(0x011C3A), description=line)
-                    reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                    for item in items[top:least]:
+                        # line = line + f"""\n`{item[0].avatar_id}` · **{item[0].name}** {item[2](str(item[1]['quantity']))}\n> *"{item[0].description}"*"""
+                        reembed.add_field(name=f"`{item[0].avatar_id}` · **{item[0].name}** {item[2](str(item[1]['quantity']))}", value=f""">>> *"{item[0].description}"*""")
+
+                    reembed.set_footer(text=f"Total {len(items)} | Page {currentpage} of {pages}")
                     return reembed
                     #else:
                     #    await ctx.send("*Nothing but dust here...*")
-                
-                await self.tools.pagiMain(ctx, items, makeembed)
+
+                def makeembed_single(items, top, least, pages, currentpage):
+                    line = '' 
+
+                    item = items[top:least][0]
+
+                    reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> `{item[0].avatar_id}`| **{item[0].name}** {item[2](str(item[1]['quantity']))}", colour = discord.Colour(0x011C3A), description=f""">>> {item[0].description}""")
+                    if item[0].illulink: reembed.set_image(url=item[0].illulink)
+                    return reembed
+
+                await pagerMultiSingle(ctx, items, makeembed, makeembed_single)
 
             else:
-                items2 = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code IN (SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
+                # items2 = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code IN (SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
+                items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_background')
+                items2.sort(key=lambda v: v.ordera)
                 if not items2: await ctx.send(f":x: No result..."); return
 
                 items = []
                 for item in items2:
-                    items.append(item + (self.client.bgdict_meta[item[0]], self.utils.smalltext))
+                    items.append(item + (self.client.bgdict_meta[item.bg_code], self.utils.smalltext))
 
                 def makeembed(items, top, least, pages, currentpage):
                     line = '' 
 
-                    for item in items[top:least]:
-                        
-                        line = line + f"""\n`{item[0]}` · **{item[1]}** {item[4](str(item[3]['quantity']))}\n⠀⠀⠀| *"{item[2]}"*"""
+                    reembed = discord.Embed(description = f"```BACKGROUND | {ctx.author.name}```", colour = discord.Colour(0x011C3A))
 
-                    reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
-                    reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                    for item in items[top:least]:
+                        # line = line + f"""\n`{item[0].avatar_id}` · **{item[0].name}** {item[2](str(item[1]['quantity']))}\n> *"{item[0].description}"*"""
+                        reembed.add_field(name=f"`{item[0].bg_code}` · **{item[0].name}** {item[2](str(item[1]['quantity']))}", value=f""">>> *"{item[0].description}"*""")
+
+                    reembed.set_footer(text=f"Total {len(items)} | Page {currentpage} of {pages}")
                     return reembed
                     #else:
                     #    await ctx.send("*Nothing but dust here...*")
-                
-                await self.tools.pagiMain(ctx, items, makeembed)
+
+                def makeembed_single(items, top, least, pages, currentpage):
+                    line = '' 
+
+                    item = items[top:least][0]
+
+                    reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> `{item[0].bg_code}`| **{item[0].name}** {item[2](str(item[1]['quantity']))}", colour = discord.Colour(0x011C3A), description=f""">>> {item[0].description}""")
+                    if item[0].illulink: reembed.set_image(url=item[0].illulink)
+                    return reembed
+
+                await pagerMultiSingle(ctx, items, makeembed, makeembed_single)
 
         # FONTs
         except ZeroDivisionError:
-            # Search query
-            search_q = ''
-            try:
-                temp = []
-                count = 0
-                for k in raw[1:]:
-                    k = k.lower()
-
-                    # Light inject-filter
-                    k = k.replace("'", '_')
-                    k = k.replace('"', '_')
-
-                    temp.append(f" (tag LIKE '{k}%' OR tag LIKE '%{k}' OR tag LIKE '% {k} %') ")
-                    count += 1
-                    if count == 3: break    # limited to 3 keywords
-                if temp: search_q = f"AND {' AND '.join(temp)}"
-            except IndexError: pass
-
-            items2 = await self.client.quefe(f"SELECT font_id, name, description FROM model_font WHERE font_id IN (SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
+            items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_font')
+            items2.sort(key=lambda v: v.ordera)
             if not items2: await ctx.send(f":x: No result..."); return
 
             items = []
             for item in items2:
-                items.append(item)
+                items.append(item + (self.client.bgdict_meta[item.font_id], self.utils.smalltext))
 
             def makeembed(items, top, least, pages, currentpage):
                 line = '' 
 
-                for item in items[top:least]:
-                    
-                    line = line + f"""\n`{item[0]}` · **{item[1]}**\n⠀⠀⠀| *"{item[2]}"*"""
+                reembed = discord.Embed(description = f"```FONT | {ctx.author.name}```", colour = discord.Colour(0x011C3A))
 
-                reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> **{ctx.author.name}**'s backgrounds", colour = discord.Colour(0x011C3A), description=line)
-                reembed.set_footer(text=f"Total: {len(items)} | Closet {currentpage} of {pages}")
+                for item in items[top:least]:
+                    # line = line + f"""\n`{item[0].avatar_id}` · **{item[0].name}** {item[2](str(item[1]['quantity']))}\n> *"{item[0].description}"*"""
+                    reembed.add_field(name=f"`{item[0].font_id}` · **{item[0].name}** {item[2](str(item[1]['quantity']))}", value=f""">>> *"{item[0].description}"*""")
+
+                reembed.set_footer(text=f"Total {len(items)} | Page {currentpage} of {pages}")
                 return reembed
                 #else:
                 #    await ctx.send("*Nothing but dust here...*")
-            
-            await self.tools.pagiMain(ctx, items, makeembed)
+
+            def makeembed_single(items, top, least, pages, currentpage):
+                line = '' 
+
+                item = items[top:least][0]
+
+                reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> `{item[0].font_id}`| **{item[0].name}** {item[2](str(item[1]['quantity']))}", colour = discord.Colour(0x011C3A), description=f""">>> {item[0].description}""")
+                if item[0].illulink: reembed.set_image(url=item[0].illulink)
+                return reembed
+
+            await pagerMultiSingle(ctx, items, makeembed, makeembed_single)
 
 
 
@@ -723,6 +783,7 @@ class avaPersonal(commands.Cog):
         return 1
 
     @commands.command()
+    @checks.check_author()
     async def test_incarnate(self, ctx):
         try:
             r, g, n = await self.tools.incarnateData_collect(ctx, self.aui)
@@ -732,5 +793,112 @@ class avaPersonal(commands.Cog):
 
 
 
+
+
+
+# ================== CACHE ==================
+
+    async def cacheAll(self):
+        for v in self.cacheMethod.values():
+            await v()
+
+    async def cacheAvatar(self):
+        self.client.DBC['model_avatar'] = await self.cacheAvatar_tool()
+
+    async def cacheBackground(self):
+        self.client.DBC['model_background'] = await self.cacheBackground_tool()
+
+    async def cacheFont(self):
+        self.client.DBC['model_font'] = await self.cacheFont_tool()
+
+    async def cacheAvatar_tool(self):
+        temp = {}
+
+        res = await self.client.quefe("SELECT ordera, avatar_id, name, description, tag, illulink FROM model_avatar;", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[1]] = c_Avatar(r)
+
+        return temp
+
+    async def dbcGetAvatar(self, avatar_id):
+        try:
+            return self.client.DBC['model_avatar'][avatar_id]
+        except KeyError:
+            res = await self.client.quefe("SELECT ordera, avatar_id, name, description, tag, illulink FROM model_avatar;")
+            try:
+                self.client.DBC['model_avatar'][avatar_id] = c_Avatar(res[0])
+                return self.client.DBC['model_avatar'][avatar_id]
+            except TypeError: return False
+
+    async def cacheBackground_tool(self):
+        temp = {}
+
+        res = await self.client.quefe("SELECT ordera, bg_code, name, description, tag, illulink FROM model_background;", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[1]] = c_Background(r)
+
+        return temp
+
+    async def dbcGetBackground(self, bg_code):
+        try:
+            return self.client.DBC['model_background'][bg_code]
+        except KeyError:
+            res = await self.client.quefe("SELECT ordera, bg_code, name, description, tag, illulink FROM model_background;")
+            try:
+                self.client.DBC['model_background'][bg_code] = c_Background(res[0])
+                return self.client.DBC['model_background'][bg_code]
+            except TypeError: return False
+
+    async def cacheFont_tool(self):
+        temp = {}
+
+        res = await self.client.quefe("SELECT ordera, font_id, name, description, tag, illulink FROM model_font;", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[1]] = c_Font(r)
+
+        return temp
+
+    async def dbcGetFont(self, font_id):
+        try:
+            return self.client.DBC['model_font'][font_id]
+        except KeyError:
+            res = await self.client.quefe("SELECT ordera, font_id, name, description, tag, illulink FROM model_font;")
+            try:
+                self.client.DBC['model_font'][font_id] = c_Font(res[0])
+                return self.client.DBC['model_font'][font_id]
+            except TypeError: return False
+
+
+
+
 def setup(client):
     client.add_cog(avaPersonal(client))
+
+
+
+
+
+
+class c_Avatar:
+    def __init__(self, pack):
+        self.ordera, self.avatar_id, self.name, self.description, self.tag, self.illulink = pack
+
+        try: self.tag = tuple(self.tag.split(' - '))
+        except AttributeError: self.tag = []
+
+class c_Background:
+    def __init__(self, pack):
+        self.ordera, self.bg_code, self.name, self.description, self.tag, self.illulink = pack
+
+        try: self.tag = tuple(self.tag.split(' - '))
+        except AttributeError: self.tag = []
+
+class c_Font:
+    def __init__(self, pack):
+        self.ordera, self.font_id, self.name, self.description, self.tag, self.illulink = pack
+
+        try: self.tag = tuple(self.tag.split(' - '))
+        except AttributeError: self.tag = []

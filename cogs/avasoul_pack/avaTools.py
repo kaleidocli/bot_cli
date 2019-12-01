@@ -531,8 +531,13 @@ class avaTools:
             for charCode in reaction + extra:
                 await msg.add_reaction(charCode)
 
-    async def pageTurner(self, msg, reaction, user, pageInfoPack):
-        """cursor, pages, emli = pageInfoPack"""
+    async def pageTurner(self, msg, reaction, user, pageInfoPack, extra_resp={}):
+        """
+        cursor, pages, emli = pageInfoPack
+        extra_resp: {'emoji_string': (tuple_of_values_to_respond)}
+
+        Return ----> cursor or (cursor, tuple_of_values_to_respond)
+        """
 
         cursor, pages, emli = pageInfoPack
 
@@ -542,24 +547,40 @@ class avaTools:
         elif reaction.emoji == "\U00002b05":
             if cursor > 0: cursor -= 1
             else: cursor = pages - 1
-        
         elif reaction.emoji == "\U000023ee" and cursor != 0:
             cursor = 0
         elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
             cursor = pages - 1
+
+        for k, v in extra_resp.items():
+            if reaction.emoji == k:
+                return (cursor, v)
         
         return cursor
 
-    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=["\U000023ee", "\U00002b05", "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0):
+    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=["\U000023ee", "\U00002b05", "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0, emli=[], extra_resp={}, msg=None):
         """
             This function is for makeembed() function that return single embed
 
             cursor:       (Int)  Starting cursor in the embeds list
+
             makembed:     (Func/Coro) Generator for one page with specific format.  
+
             extra_button: (List) Replacing buttons for the paginator.
+            
             pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor.
+
             pair:         (Bool) Check if items is given more than one package (e.g. cmd quest, quests)
-            pair_sample:  (Int)  Index number of the element in <items> to check for length of pages"""
+
+            pair_sample:  (Int)  Index number of the element in <items> to check for length of pages
+            
+            emli:         (List) List of embeds. If given, this emli will be used instead of generating new one
+                                 Different emli has different design, but share the same items
+
+            extra_resp:   (Dict) Extra resp for pageTurner
+
+            Return -----> None or (msg, (emli, pages, item_per_page), (cursor, tuple_of_values_response_from_pageTurner))
+        """
 
         if not pair:
             pages = int(len(items)/item_per_page)
@@ -571,23 +592,29 @@ class avaTools:
         if not delete_on_exit: timeout = None
 
         # Embedding items ============
-        emli = []
-        for _ in range(pages):
-            if inspect.iscoroutinefunction(makeembed):
-                myembed = await makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
-            else:
-                myembed = makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
-            emli.append(myembed)
-            currentpage += 1
+        if not emli:
+            for _ in range(pages):
+                if inspect.iscoroutinefunction(makeembed):
+                    myembed = await makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+                else:
+                    myembed = makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+                emli.append(myembed)
+                currentpage += 1
 
         # Send
         try:
             if pages > 1:
                 if not emli[cursor]: await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
-                msg = await ctx.send(embed=emli[cursor])
-                await self.pageButtonAdd(msg, reaction=extra_button)
+                try:
+                    await msg.edit(embed=emli[cursor])
+                except AttributeError:
+                    msg = await ctx.send(embed=emli[cursor])
+                    await self.pageButtonAdd(msg, reaction=extra_button)
             else:
-                msg = await ctx.send(embed=emli[0])
+                try:
+                    await msg.edit(embed=emli[cursor])
+                except AttributeError:
+                    msg = await ctx.send(embed=emli[0])
         # except discordErrors.HTTPException:
         except IndexError:
             await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
@@ -597,9 +624,11 @@ class avaTools:
             try:
                 reaction, user = await self.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=timeout)
                 if not pageTurner:
-                    cursor = await self.pageTurner(msg, reaction, user, (cursor, pages, emli))
+                    cursor = await self.pageTurner(msg, reaction, user, (cursor, pages, emli), extra_resp=extra_resp)
                 else:
-                    cursor = await pageTurner(msg, reaction, user, (cursor, pages, emli))
+                    cursor = await pageTurner(msg, reaction, user, (cursor, pages, emli), extra_resp=extra_resp)
+                if isinstance(cursor, tuple):
+                    return (msg, (emli, pages, item_per_page), cursor)
                 await msg.edit(embed=emli[cursor])
 
             except concurrent.futures.TimeoutError:
