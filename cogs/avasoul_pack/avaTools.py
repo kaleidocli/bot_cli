@@ -531,7 +531,7 @@ class avaTools:
             for charCode in reaction + extra:
                 await msg.add_reaction(charCode)
 
-    async def pageTurner(self, msg, reaction, user, pageInfoPack, extra_resp={}):
+    async def pageTurner(self, msg, reaction, user, pageInfoPack, extra_resp=None):
         """
         cursor, pages, emli = pageInfoPack
         extra_resp: {'emoji_string': (tuple_of_values_to_respond)}
@@ -558,7 +558,7 @@ class avaTools:
         
         return cursor
 
-    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=["\U000023ee", "\U00002b05", "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0, emli=[], extra_resp={}, msg=None):
+    async def pagiMain(self, ctx, items, makeembed, item_per_page=5, extra_button=["\U000023ee", "\U00002b05", "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0, emli=None, extra_resp=None, msg=None):
         """
             This function is for makeembed() function that return single embed
 
@@ -593,6 +593,7 @@ class avaTools:
 
         # Embedding items ============
         if not emli:
+            emli = []           # Do not freaking remove this
             for _ in range(pages):
                 if inspect.iscoroutinefunction(makeembed):
                     myembed = await makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
@@ -638,6 +639,8 @@ class avaTools:
                 return
             # Rate-limit
             await asyncio.sleep(0.35)
+        
+
 
     async def pagiMainMicro(self, ctx, items, makeembed, item_per_page=5, extra_button=["\U000023ee", "\U00002b05", '\U0001f44b', "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, timeout=15, delete_on_exit=True, pair=False, pair_sample=0):
         """

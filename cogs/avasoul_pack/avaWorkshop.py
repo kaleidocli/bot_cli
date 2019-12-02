@@ -240,7 +240,7 @@ class avaWorkshop(commands.Cog):
 
     @commands.command(aliases=['fml'])
     @commands.cooldown(1, 7, type=BucketType.user)
-    async def formula(self, ctx, *args):
+    async def tett(self, ctx, *args):
         formus = None
 
         # FORMULA

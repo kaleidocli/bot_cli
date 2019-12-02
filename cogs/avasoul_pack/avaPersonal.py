@@ -221,7 +221,7 @@ class avaPersonal(commands.Cog):
 
         async def dbcFilterTag(args, DBC, dbc_name):
             temp = []
-            if not args:
+            if args:
                 for i in DBC[dbc_name].values():
                     await asyncio.sleep(0)
                     if set(args).issubset(i.tag): temp.append(i)
