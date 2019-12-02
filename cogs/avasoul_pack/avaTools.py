@@ -552,9 +552,10 @@ class avaTools:
         elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
             cursor = pages - 1
 
-        for k, v in extra_resp.items():
-            if reaction.emoji == k:
-                return (cursor, v)
+        if extra_resp:
+            for k, v in extra_resp.items():
+                if reaction.emoji == k:
+                    return (cursor, v)
         
         return cursor
 

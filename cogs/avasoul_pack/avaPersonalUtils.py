@@ -401,7 +401,7 @@ class avaPersonalUtils(commands.Cog):
         except asyncio.TimeoutError: await ctx.send(f"<:osit:544356212846886924> Requested time-out!"); return
 
         self.client.ignore_list.append(ctx.author.id)
-        await ctx.send(f":white_check_mark: Sayonara, {ctx.author.name}... Thank you for your journey!")
+        await ctx.send(f":white_check_mark: Deletion may take a while... Sayonara, {ctx.author.name}, thank you for your journey!")
 
         for q in query.split('|||'):
             await asyncio.sleep(1)
