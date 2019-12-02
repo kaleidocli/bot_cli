@@ -602,6 +602,9 @@ class avaTools:
                 emli.append(myembed)
                 currentpage += 1
 
+        if not extra_resp:
+            extra_resp = {}
+
         # Send
         try:
             if pages > 1:
