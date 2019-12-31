@@ -219,15 +219,13 @@ class avaPersonal(commands.Cog):
         mode = 'av'
 
 
-        async def dbcFilterTag(args, DBC, dbc_name):
+        async def dbcFilterTag(args, DBC, dbc_name, id_filter=None):
             temp = []
-            if args:
-                for i in DBC[dbc_name].values():
-                    await asyncio.sleep(0)
-                    if set(args).issubset(i.tag): temp.append(i)
-                return temp
-            else:
-                return list(DBC[dbc_name].values())
+            for id in id_filter:
+                if args:
+                    if set(args).issubset(DBC[dbc_name][id].tag): temp.append(DBC[dbc_name][id])
+                else: temp.append(DBC[dbc_name][id])
+            return temp
 
         async def pagerMultiSingle(ctx, items, makeembed, makeembed_single):
             """
@@ -391,7 +389,8 @@ class avaPersonal(commands.Cog):
 
             if mode == 'av':
                 # items2 = await self.client.quefe(f"SELECT avatar_id, name, description FROM model_avatar WHERE avatar_id IN (SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
-                items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_avatar')
+                filting_list = await self.client.quefe(f"SELECT avatar_id FROM pi_avatars WHERE user_id='{ctx.author.id}';", type='all')
+                items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_avatar', id_filter=(i[0] for i in filting_list))
                 items2.sort(key=lambda v: v.ordera)
                 if not items2: await ctx.send(f":x: No result..."); return
 
@@ -426,7 +425,8 @@ class avaPersonal(commands.Cog):
 
             else:
                 # items2 = await self.client.quefe(f"SELECT bg_code, name, description FROM model_background WHERE bg_code IN (SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}') {search_q} ORDER BY ordera ASC;", type='all')
-                items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_background')
+                filting_list = await self.client.quefe(f"SELECT bg_code FROM pi_backgrounds WHERE user_id='{ctx.author.id}';", type='all')
+                items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_background', id_filter=(i[0] for i in filting_list))
                 items2.sort(key=lambda v: v.ordera)
                 if not items2: await ctx.send(f":x: No result..."); return
 
@@ -461,7 +461,8 @@ class avaPersonal(commands.Cog):
 
         # FONTs
         except ZeroDivisionError:
-            items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_font')
+            filting_list = await self.client.quefe(f"SELECT font_id FROM pi_fonts WHERE user_id='{ctx.author.id}';", type='all')
+            items2 = await dbcFilterTag(args[1:6], self.client.DBC, 'model_font', id_filter=(i[0] for i in filting_list))
             items2.sort(key=lambda v: v.ordera)
             if not items2: await ctx.send(f":x: No result..."); return
 
@@ -476,7 +477,7 @@ class avaPersonal(commands.Cog):
 
                 for item in items[top:least]:
                     # line = line + f"""\n`{item[0].avatar_id}` · **{item[0].name}** {item[2](str(item[1]['quantity']))}\n> *"{item[0].description}"*"""
-                    reembed.add_field(name=f"`{item[0].font_id}` · **{item[0].name}** {item[2](str(item[1]['quantity']))}", value=f""">>> *"{item[0].description}"*""")
+                    reembed.add_field(name=f"`{item[0].font_id}` · **{item[0].name}**", value=f""">>> *"{item[0].description}"*""")
 
                 reembed.set_footer(text=f"Total {len(items)} | Page {currentpage} of {pages}")
                 return reembed
@@ -488,7 +489,7 @@ class avaPersonal(commands.Cog):
 
                 item = items[top:least][0]
 
-                reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> `{item[0].font_id}`| **{item[0].name}** {item[2](str(item[1]['quantity']))}", colour = discord.Colour(0x011C3A), description=f""">>> {item[0].description}""")
+                reembed = discord.Embed(title = f"<a:blob_trashcan:531060436163100697> `{item[0].font_id}`| **{item[0].name}**", colour = discord.Colour(0x011C3A), description=f""">>> {item[0].description}""")
                 if item[0].illulink: reembed.set_image(url=item[0].illulink)
                 return reembed
 
