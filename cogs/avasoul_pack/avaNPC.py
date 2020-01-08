@@ -28,13 +28,6 @@ class avaNPC(commands.Cog):
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
 
-        self.client.DBC['model_NPC'] = {}
-        self.client.DBC['model_conversation'] = {}
-        self.cacheMethod = {
-            'model_NPC': self.cacheNPC,
-            'model_conversation': self.cacheConversation
-        }
-
         print("|| NPC ---- READY!")
 
 
@@ -43,11 +36,11 @@ class avaNPC(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        await asyncio.sleep(9)
+        # await asyncio.sleep(9)
         await self.reloadSetup()
 
     async def reloadSetup(self):
-        await self.cacheAll()
+        # await self.cacheAll()
         print("|| NPC ---- RELOADED!")
 
 
@@ -623,36 +616,9 @@ class avaNPC(commands.Cog):
 
 # ================== CACHE ==================
 
-    async def cacheAll(self):
-        for v in self.cacheMethod.values():
-            await v()
-
-    async def cacheNPC(self):
-        self.client.DBC['model_NPC'] = await self.cacheNPC_tool()
-        self.client.DBC['model_NPC']['narrator'] = c_NPC(None, narrator=True)
-
-    async def cacheConversation(self):
-        self.client.DBC['model_conversation'] = await self.cacheConversation_tool()
-
-    async def cacheNPC_tool(self):
-        temp = {}
-
-        res = await self.client.quefe("SELECT npc_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink FROM model_NPC;", type='all')
-        for r in res:
-            await asyncio.sleep(0)
-            temp[r[0]] = c_NPC(r)
-
-        return temp
-
-    async def cacheConversation_tool(self):
-        temp = {}
-
-        res = await self.client.quefe("SELECT ordera, conv_code, type, line, node_1, node_2, effect_query FROM model_converstation;", type='all')
-        for r in res:
-            await asyncio.sleep(0)
-            temp[r[1]] = c_Conversation(r)
-
-        return temp
+    # async def cacheAll(self):
+    #     for v in self.cacheMethod.values():
+    #         await v()
 
     async def dbcGetConversation(self, conv_code):
         try:
@@ -660,7 +626,7 @@ class avaNPC(commands.Cog):
         except KeyError:
             res = await self.client.quefe(f"SELECT ordera, conv_code, type, line, node_1, node_2, effect_query FROM model_converstation WHERE conv_code='{conv_code}';")
             try:
-                self.client.DBC['model_conversation'][conv_code] = c_Conversation(res[0])
+                self.client.DBC['model_conversation'][conv_code] = self.client.DBC['meta']['class']['c_Conversation'](res[0])
                 return self.client.DBC['model_conversation'][conv_code]
             except TypeError: return False
 
@@ -670,7 +636,7 @@ class avaNPC(commands.Cog):
         except KeyError:
             res = await self.client.quefe(f"SELECT npc_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink FROM model_NPC WHERE npc_code='{npc_code}';")
             try:
-                self.client.DBC['model_NPC'][npc_code] = c_NPC(res[0])
+                self.client.DBC['model_NPC'][npc_code] = self.client.DBC['meta']['class']['c_NPC'](res[0])
                 return self.client.DBC['model_NPC'][npc_code]
             except TypeError: return False
 
@@ -680,54 +646,3 @@ class avaNPC(commands.Cog):
 def setup(client):
     client.add_cog(avaNPC(client))
 
-
-
-
-
-
-
-# ================== THING ==================
-
-class c_NPC:
-    def __init__(self, pack, narrator=False):
-        """
-        npc_code, name, description, branch, evo, lp, strr, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink = pack
-        """
-        self.narrator = narrator
-        if not narrator: self.npc_code, self.name, self.description, self.branch, self.evo, self.lp, self.strr, self.chain, self.speed, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.rewards, self.illulink = pack
-        else: self.npc_code, self.name, self.description, self.branch, self.evo, self.lp, self.strr, self.chain, self.speed, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.rewards, self.illulink = ('n/a', 'n/a', 'n/a', 'n/a', 1, 1, 1, 1, 1, 1, 1, 1, 1, '', '')
-        self.illulink = self.illulink.split(' <> ')
-        self.search_name = self.name.lower()
-
-    def check(self, npc_code='', name=''):
-        if npc_code and npc_code == self.npc_code: return True
-        if name and name in self.search_name: return True
-        return False
-
-
-class c_Conversation:
-    def __init__(self, pack):
-        """
-        ordera, conv_code, type, line, node_1, node_2, effect_query
-
-        <TURN> in a <conversation> is a series of lines that has the same speaker
-        """
-
-        self.ordera, self.conv_code, self.type, lines, self.node_1, self.node_2, self.effect_query = pack
-
-        # Partial conv split
-        self.line = []
-        for il in lines.split(' ||| '):
-            # Turns of conv       (author, (line1, line2,), illulink)
-            a = il.split(' --- ')
-            if len(a) < 3: a.append('')
-            elif a[2] == 'n/a': a[2] = ''
-            # Line
-            a[1] = tuple(a[1].split(' >>> '))
-            self.line.append(tuple(a))
-
-        # Multi-node
-        try: self.node_1 = self.node_1.split(' - ')
-        except AttributeError: self.node_1 = []
-        try: self.node_2 = self.node_2.split(' - ')
-        except AttributeError: self.node_2 = []

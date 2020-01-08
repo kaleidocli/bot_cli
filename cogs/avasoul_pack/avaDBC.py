@@ -8,6 +8,9 @@ import inspect
 
 
 
+
+
+
 class avaDBC(commands.Cog):
     def __init__(self, client):
         from .avaTools import avaTools
@@ -15,16 +18,26 @@ class avaDBC(commands.Cog):
 
         self.client = client
 
+        self.client.DBC['meta'] = {}
+        self.client.DBC['meta']['class'] = {}
+
         self.client.DBC['model_mail'] = {}
         self.client.DBC['player'] = {}
         self.client.DBC['dbcf'] = {}
+        self.client.DBC['model_NPC'] = {}
+        self.client.DBC['model_conversation'] = {}
         self.cacheMethod = {
+            'model_NPC': self.cacheNPC,
+            'model_conversation': self.cacheConversation,
             'model_mail': self.cacheMail,
             'personal_info': self.cachePersonalInfo,
             'dbcf': self.cacheDBCF
         }
 
         print("|| DBC ---- READY!")
+
+
+
 
 
 
@@ -38,6 +51,9 @@ class avaDBC(commands.Cog):
     async def reloadSetup(self):
         await self.cacheAll()
         print("|| DBC ---- RELOADED!")
+
+
+
 
 
 
@@ -120,17 +136,37 @@ class avaDBC(commands.Cog):
 
 
 
+
+
+
 # ================== CACHE TOOL ==================
 
     async def cacheAll(self):
         for v in self.cacheMethod.values():
             await v()
 
+
+
+    # ================== DBC_CLASS ==================
+    async def cacheDBCC(self):
+        self.client.DBC['meta']['class'] = {
+                                            'c_Conversation': c_Conversation,
+                                            'c_NPC': c_NPC,
+                                            'c_PersonalInfo': c_PersonalInfo,
+                                            'c_Mail': c_Mail
+                                            }
+
+
+
+    # ================== DBC_FUNC ==================
     async def cacheDBCF(self):
         temp = [func for func in inspect.getmembers(avaDBC, predicate=inspect.iscoroutinefunction) if func[1].__name__.startswith('dbcf')]
         for t in temp:
             self.client.DBC['dbcf'][t[0]] = t[1]
 
+
+
+    # ================== PI ==================
     async def cachePersonalInfo(self):
         self.client.DBC['personal_info'] = await self.cachePersonalInfo_tool()
 
@@ -148,6 +184,9 @@ class avaDBC(commands.Cog):
 
         return temp
 
+
+
+    # ================== MAIL ==================
     async def cacheMail(self):
         self.client.DBC['model_mail'] = await self.cacheMail_tool()
 
@@ -158,6 +197,36 @@ class avaDBC(commands.Cog):
         for r in res:
             await asyncio.sleep(0)
             temp[r[0]] = c_Mail(r)
+
+        return temp
+
+
+
+    # ================== NPC ==================
+    async def cacheNPC(self):
+        self.client.DBC['model_NPC'] = await self.cacheNPC_tool()
+        self.client.DBC['model_NPC']['narrator'] = c_NPC(None, narrator=True)
+
+    async def cacheConversation(self):
+        self.client.DBC['model_conversation'] = await self.cacheConversation_tool()
+
+    async def cacheNPC_tool(self):
+        temp = {}
+
+        res = await self.client.quefe("SELECT npc_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink FROM model_NPC;", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[0]] = c_NPC(r)
+
+        return temp
+
+    async def cacheConversation_tool(self):
+        temp = {}
+
+        res = await self.client.quefe("SELECT ordera, conv_code, type, line, node_1, node_2, effect_query FROM model_converstation;", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[1]] = c_Conversation(r)
 
         return temp
 
@@ -413,4 +482,46 @@ class mailBox:
 
         except IndexError: pass
         
-            
+class c_NPC:
+    def __init__(self, pack, narrator=False):
+        """
+        npc_code, name, description, branch, evo, lp, strr, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, rewards, illulink = pack
+        """
+        self.narrator = narrator
+        if not narrator: self.npc_code, self.name, self.description, self.branch, self.evo, self.lp, self.strr, self.chain, self.speed, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.rewards, self.illulink = pack
+        else: self.npc_code, self.name, self.description, self.branch, self.evo, self.lp, self.strr, self.chain, self.speed, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.rewards, self.illulink = ('n/a', 'n/a', 'n/a', 'n/a', 1, 1, 1, 1, 1, 1, 1, 1, 1, '', '')
+        self.illulink = self.illulink.split(' <> ')
+        self.search_name = self.name.lower()
+
+    def check(self, npc_code='', name=''):
+        if npc_code and npc_code == self.npc_code: return True
+        if name and name in self.search_name: return True
+        return False
+
+class c_Conversation:
+    def __init__(self, pack):
+        """
+        ordera, conv_code, type, line, node_1, node_2, effect_query
+
+        <TURN> in a <conversation> is a series of lines that has the same speaker
+        """
+
+        self.ordera, self.conv_code, self.type, lines, self.node_1, self.node_2, self.effect_query = pack
+
+        # Partial conv split
+        self.line = []
+        for il in lines.split(' ||| '):
+            # Turns of conv       (author, (line1, line2,), illulink)
+            a = il.split(' --- ')
+            if len(a) < 3: a.append('')
+            elif a[2] == 'n/a': a[2] = ''
+            # Line
+            a[1] = tuple(a[1].split(' >>> '))
+            self.line.append(tuple(a))
+
+        # Multi-node
+        try: self.node_1 = self.node_1.split(' - ')
+        except AttributeError: self.node_1 = []
+        try: self.node_2 = self.node_2.split(' - ')
+        except AttributeError: self.node_2 = []
+

@@ -29,7 +29,7 @@ extensions = [  'jishaku',
                 'cogs.avasoul_pack.avaAdmin', 
                 'cogs.avasoul_pack.avaTrivia', 
                 'cogs.avasoul_pack.avaGuild', 
-                'cogs.avasoul_pack.avaNPC', 
+                'cogs.avasoul_pack.avaNPC',
                 'cogs.avasoul_pack.avaCombat', 
                 'cogs.avasoul_pack.avaCommercial', 
                 'cogs.avasoul_pack.avaSocial',
@@ -54,8 +54,7 @@ while True:
     conf = input(f"| Choosing profile [{resp}]? (y/n)\n| > ")
     if conf == 'y': break
 
-TOKEN = config.PROFILES[resp][0]
-PREFIX = config.PROFILES[resp][1]
+config.configProfile(resp)
 
 
 
@@ -64,7 +63,7 @@ PREFIX = config.PROFILES[resp][1]
 
 # ================== INITIALIZING ==================
 
-client = commands.Bot(command_prefix=PREFIX)
+client = commands.Bot(command_prefix=config.PREFIX)
 
 client.thp = avaThirdParty.avaThirdParty(client=client)
 
@@ -102,7 +101,7 @@ async def on_message(message):
     if not client.realready: return
     if message.mentions:
         if message.mentions[0] == client.user:
-            await message.channel.send(f"> {message.author.mention}, my prefix is **`{config.prefix[0]} `** (remember, `cli help`, not `Cli help`)"); return
+            await message.channel.send(f"> {message.author.mention}, my prefix is **`{config.PREFIX[0]} `** (remember, `cli help`, not `Cli help`)"); return
     if message.author.id in client.ignore_list: return
     await client.process_commands(message)
 
@@ -113,7 +112,7 @@ async def on_message(message):
 
 # ================== TOOLS ==================
 
-def prepformain(TOKEN):
+def prepformain(config):
     try:
         if client.load_count: return
     except AttributeError: client.load_count = 0
@@ -127,7 +126,7 @@ def prepformain(TOKEN):
         except discord.ext.commands.ExtensionNotFound: continue
     client.load_extension('cogs.avasoul_pack.avaAvatar')
     client.load_extension('cogs.avasoul_pack.avaDungeon')
-    client.run(TOKEN, bot=True, reconnect=True)
+    client.run(config.TOKEN, bot=config.IS_BOT, reconnect=True)
 
 def exitest():
     print("=========================== EXIT HERE ===================================")
@@ -139,4 +138,4 @@ def exitest():
 
 if __name__ == '__main__':
     atexit.register(exitest)
-    prepformain(TOKEN)
+    prepformain(config.TOKEN)
