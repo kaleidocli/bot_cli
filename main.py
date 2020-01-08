@@ -1,34 +1,21 @@
-import os
-from io import BytesIO
-import sys
 import atexit
-import random
 import asyncio
-import json
-import time
-from datetime import datetime
 
 import discord
 from discord.ext import commands
 import discord.errors as discordErrors
 from discord.ext.commands.cooldowns import BucketType
 
-from nltk import word_tokenize
-from PIL import Image
-import imgurpython
-import aiohttp
-
 from cogs.avasoul_pack import avaThirdParty
 from cogs.configs import SConfig
 
 
 
-config = SConfig()
-TOKEN = config.TOKEN
-help_dict = {}
-ava_dict = {}
-bulb = True
 
+
+
+
+config = SConfig()
 extensions = [  'jishaku',
                 'cogs.misc',
                 'cogs.audio',
@@ -53,25 +40,31 @@ extensions = [  'jishaku',
                 'cogs.avasoul_pack.avaDBC',
                 'cogs.error_handler']   # Always put error_handler at the BOTTOM!
 
-#prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
-# async def get_pref(bot, message):
-#    if not message.guild:  # dms
-#        return ">"
-#    try: prefix = prefixes[message.guild.id]   # could also use a list of prefixes
-#    except KeyError: prefix = '>'
-#    return commands.when_mentioned_or(prefix)(bot, message)
-
-# client = commands.Bot(command_prefix=get_pref)
-
-# async def get_pref(bot, message):
-#    return commands.when_mentioned_or(config.prefix[0])(bot, message)
 
 
 
-# ================== INITIAL ==================
 
-# client = commands.Bot(command_prefix=get_pref)
-client = commands.Bot(command_prefix=config.prefix[0])
+# ================== CONFIGURATING ==================
+
+while True:
+    resp = input("| Pick a profile (default==[{}]): \n|= [{}]\n| > ".format(config.default_profile, ']\n|= ['.join(tuple(config.PROFILES.keys()))))
+    if not resp: resp = config.default_profile; break
+    try: config.PROFILES[resp]
+    except KeyError: print("| <!> Invalid profile <!>")
+    conf = input(f"| Choosing profile [{resp}]? (y/n)\n| > ")
+    if conf == 'y': break
+
+TOKEN = config.PROFILES[resp][0]
+PREFIX = config.PROFILES[resp][1]
+
+
+
+
+
+
+# ================== INITIALIZING ==================
+
+client = commands.Bot(command_prefix=PREFIX)
 
 client.thp = avaThirdParty.avaThirdParty(client=client)
 
@@ -84,10 +77,8 @@ client.support_server_invite = config.support_server_invite
 
 client.remove_command('help')
 
-def check_id():
-    def inner(ctx):
-        return ctx.author.id == 214128381762076672
-    return commands.check(inner)
+
+
 
 
 
@@ -95,7 +86,6 @@ def check_id():
 
 @client.event
 async def on_ready():
-    # await client.loop.run_in_executor(None, settings_plugin)
     await client.change_presence(activity=discord.Game(name='with [cli help] to start!'))
     print("|||||   THE BOT IS READY   |||||")
 
@@ -118,20 +108,12 @@ async def on_message(message):
 
 
 
+
+
+
 # ================== TOOLS ==================
 
-async def setting_create():
-    #Return a setting dict
-    setting = {'nsfw_mode': False}
-    return setting
-
-# def settings_plugin():
-#     with open('config/bot_settings.json') as f:
-#         try:
-#             client.settings = json.load(f)
-#         except IndexError: print("ERROR at <settings_plugin()>")
-
-def prepformain():
+def prepformain(TOKEN):
     try:
         if client.load_count: return
     except AttributeError: client.load_count = 0
@@ -152,14 +134,9 @@ def exitest():
 
 
 
+
+
+
 if __name__ == '__main__':
     atexit.register(exitest)
-    prepformain()
-
-
-
-
-
-
-
-
+    prepformain(TOKEN)

@@ -1,4 +1,5 @@
 cogs/configs.py
+cogs/configs_prototype.py
 cogs/audio.py
 te.txt
 cogs/__pycache__/
