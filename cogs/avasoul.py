@@ -17,7 +17,6 @@ from functools import partial
 import numpy as np
 import pymysql.err as mysqlError
 
-from .avasoul_pack import avaThirdParty
 from .avasoul_pack.avaTools import avaTools
 from .avasoul_pack.avaUtils import avaUtils
 
@@ -27,7 +26,7 @@ class avasoul(commands.Cog):
 
     def __init__(self, client):
         self.client = client
-        self.client.thp = avaThirdParty.avaThirdParty(client=self.client)
+        
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)

@@ -9,14 +9,16 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 from PIL import Image, ImageDraw
 
-from .avaTools import avaTools
-from .avaUtils import avaUtils
+from utils import checks
 
 
 
 class avaPersonalUtils(commands.Cog):
 
     def __init__(self, client):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
@@ -26,11 +28,17 @@ class avaPersonalUtils(commands.Cog):
 
 
 
+
+
+
 # ================== EVENTS ==================
 
     # @commands.Cog.listener()
     # async def on_ready(self):
     #     print("|| PersonalUtils --- READY!")
+
+
+
 
 
 
@@ -419,6 +427,239 @@ class avaPersonalUtils(commands.Cog):
 
         self.client.ignore_list.remove(ctx.author.id)
 
+    @commands.command()
+    @commands.cooldown(1, 20, type=BucketType.user)
+    async def mail(self, ctx, *args):
+        pi = await self.client.DBC['dbcf']['dbcf_getPersonalInfo'](self, str(ctx.author.id))
+        search_kw = ''
+        if not pi: await ctx.send(f"You don't have a *character*, **{ctx.author.name}**. You can use command `incarnate` to create one, and `tutorial` for... tutorial <:yeee:636045188153868309>")
+
+        try:
+            if args[0].isdigit(): line = await self.mail_widget(ctx, pi, 'read', args[0:10])
+            elif len(args) == 1: search_kw = args[0]
+            else: line = await self.mail_widget(ctx, pi, args[0], args[1:11])
+            # Read
+            if isinstance(line, discord.embeds.Embed): await ctx.send(embed=line)
+            elif line != False: await ctx.send(f":envelope: Done{line}!")
+        except IndexError: pass
+
+        # NORMAL ==============================
+        # Prep item     ||     (ordera, sender, content)
+        read_item, unread_item, pin_item, trash_item = await self.mail_dataGet(pi, search_kw=search_kw)
+
+        # Makeembeds
+        def makeembed_read(items, top, least, pages, currentpage):
+            line = ''; count = 1; field_count = 0
+            reembed = discord.Embed(title=f':mailbox_with_no_mail: READ MAIL', description=line, colour = discord.Colour(0x011C3A))
+
+            for item in items[top:least]:
+                line = line + f"""{item[0]}. {item[1]}:: {item[2][:12]}\n"""
+                if count == 10:
+                    if not field_count:
+                        line2 = f"『Total』{len(items)}/200 mails"
+                        field_count += 1
+                    else:
+                        line2 = f"『Page』{currentpage}/{pages}"
+                        field_count = 0
+                    reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                    count = 1; line = ''
+                    continue
+                else:
+                    count += 1
+            if line:
+                if not field_count:
+                    line2 = f"『Total』{len(items)}/200 mails"
+                else:
+                    line2 = f"『Page』{currentpage}/{pages}"
+                reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                if not field_count: reembed.add_field(name=f"『Page』{currentpage}/{pages}", value=f"""```⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀```""")
+            return reembed
+
+        def makeembed_unread(items, top, least, pages, currentpage):
+            line = ''; count = 1; field_count = 0
+            reembed = discord.Embed(title=f':mailbox_with_mail: UNREAD MAIL', description=line, colour = discord.Colour(0x011C3A))
+
+            for item in items[top:least]:
+                line = line + f"""{item[0]}. {item[1]}:: {item[2][:12]}\n"""
+                if count == 10:
+                    if not field_count:
+                        line2 = f"『Total』{len(items)}/100 mails"
+                        field_count += 1
+                    else:
+                        line2 = f"『Page』{currentpage}/{pages}"
+                        field_count = 0
+                    reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                    count = 1; line = ''
+                    continue
+                else:
+                    count += 1
+            if line:
+                if not field_count:
+                    line2 = f"『Total』{len(items)}/100 mails"
+                else:
+                    line2 = f"『Page』{currentpage}/{pages}"
+                reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                if not field_count: reembed.add_field(name=f"『Page』{currentpage}/{pages}", value=f"""```⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀```""")
+            return reembed
+
+        def makeembed_pin(items, top, least, pages, currentpage):
+            line = ''; count = 1; field_count = 0
+            reembed = discord.Embed(title=f':pushpin: PINNED MAIL', description=line, colour = discord.Colour(0x011C3A))
+
+            for item in items[top:least]:
+                line = line + f"""{item[0]}. {item[1]}:: {item[2][:12]}\n"""
+                if count == 10:
+                    if not field_count:
+                        line2 = f"『Total』{len(items)}/50 mails"
+                        field_count += 1
+                    else:
+                        line2 = f"『Page』{currentpage}/{pages}"
+                        field_count = 0
+                    reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                    count = 1; line = ''
+                    continue
+                else:
+                    count += 1
+            if line:
+                if not field_count:
+                    line2 = f"『Total』{len(items)}/50 mails"
+                else:
+                    line2 = f"『Page』{currentpage}/{pages}"
+                reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                if not field_count: reembed.add_field(name=f"『Page』{currentpage}/{pages}", value=f"""```⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀```""")
+            return reembed
+
+        def makeembed_trash(items, top, least, pages, currentpage):
+            line = ''; count = 1; field_count = 0
+            reembed = discord.Embed(title=f':wastebasket: TRASH MAIL', description=line, colour = discord.Colour(0x011C3A))
+
+            for item in items[top:least]:
+                line = line + f"""{item[0]}. {item[1]}:: {item[2][:12]}\n"""
+                if count == 10:
+                    if not field_count:
+                        line2 = f"『Total』{len(items)}/100 mails"
+                        field_count += 1
+                    else:
+                        line2 = f"『Page』{currentpage}/{pages}"
+                        field_count = 0
+                    reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                    count = 1; line = ''
+                    continue
+                else:
+                    count += 1
+            if line:
+                if not field_count:
+                    line2 = f"『Total』{len(items)}/100 mails"
+                else:
+                    line2 = f"『Page』{currentpage}/{pages}"
+                reembed.add_field(name=line2, value=f"""```Asciidoc
+{line}```""")
+                if not field_count: reembed.add_field(name=f"『Page』{currentpage}/{pages}", value=f"""```⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀```""")
+            return reembed
+
+        resp = None
+        while True:
+            if not resp: resp = await self.tools.pagiMainMulti(ctx, ((makeembed_unread, unread_item, 20, False, None), (makeembed_read, read_item, 20, False, None), (makeembed_pin, pin_item, 10, False, None), (makeembed_trash, trash_item, 20, False, None)), timeout=60, extra_button=["\U000023ee", "\U00002b05", "\U00002195", "\U000027a1", "\U000023ed", "\U0001f5d1", "\U0000267b", "\U0001f441"], extra_resp={"\U0001f5d1": 'delete', "\U0000267b": 'recover', "\U0001f441": 'read'})
+            else: resp = await self.tools.pagiMainMulti(ctx, ((makeembed_unread, unread_item, 20, False, None), (makeembed_read, read_item, 20, False, None), (makeembed_pin, pin_item, 10, False, None), (makeembed_trash, trash_item, 20, False, None)), timeout=60, extra_button=["\U000023ee", "\U00002b05", "\U00002195", "\U000027a1", "\U000023ed", "\U0001f5d1", "\U0000267b", "\U0001f441"], extra_resp={"\U0001f5d1": 'delete', "\U0000267b": 'recover', "\U0001f441": 'read'}, emli=resp[1][0], cursor=resp[1][3], emli_cursor=resp[2][0])
+            try:
+                line = await self.mail_widget(ctx, pi, resp[2][1], None)
+                # Read
+                if isinstance(line, discord.embeds.Embed):
+                    await ctx.send(embed=line)
+                elif line != False: await ctx.send(f":envelope: Done{line}!")
+                read_item, unread_item, pin_item, trash_item = await self.mail_dataGet(pi, search_kw=search_kw)
+            except ValueError: continue
+
+            await resp[0].delete()
+
+
+
+
+
+
+# ================== TOOLS ==================
+
+    async def mail_widget(self, ctx, pi, name, value):
+        line = ''
+
+        if not value:
+            await ctx.send(f"<a:RingingBell:559282950190006282> Please type in mail's IDs to {name} ||(split by single space)||:", delete_after=20)
+            try:
+                value = await self.client.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=20)
+                value = value.content.split(' ')
+            except asyncio.TimeoutError: return False
+
+        if name == 'read':
+            # Read
+            if len(value) == 1:
+                try: m = await pi.mailBox.getMail(self.client, value[0])
+                except KeyError: return False
+                return discord.Embed(description=f"```{m.content}```||Tag: `{'` `'.join(m.tag)}`||", colour = discord.Colour(0x011C3A)).set_author(name=f"{m.sender}:")
+            # Mark as read
+            else:
+                f = await pi.mailBox.setRead(self.client, ctx.author.id, value)
+                if f: line = f", except mail id. `{'`, `'.join(f)}`"
+                return line
+        elif name == 'delete':
+            f = await pi.mailBox.moveToTrash(self.client, ctx.author.id, value)
+            if f: line = f", except mail id. `{'`, `'.join(f)}`"
+            return line
+        elif name == 'recover':
+            f = await pi.mailBox.recoverTrash(self.client, ctx.author.id, value)
+            if f: line = f", except mail id. `{'`, `'.join(f)}`"
+            return line
+        elif name == 'pin':
+            f = await pi.mailBox.moveToPin(self.client, ctx.author.id, value)
+            if f: line = f", except mail id. `{'`, `'.join(f)}`"
+            return line
+        else: return (name,) + value
+
+    async def mail_dataGet(self, pi, search_kw=''):
+        read_item = []; unread_item = [] ; pin_item = []; trash_item = []
+        for k in pi.mailBox.rmEntry:
+            await asyncio.sleep(0)
+            v = pi.mailBox.readMail[k]
+            if search_kw and search_kw not in self.client.DBC['model_mail'][v]: continue
+            read_item.append((k, self.client.DBC['model_mail'][v].sender, self.client.DBC['model_mail'][v].content))
+        for k in pi.mailBox.urmEntry:
+            await asyncio.sleep(0)
+            v = pi.mailBox.unreadMail[k]
+            if search_kw and search_kw not in self.client.DBC['model_mail'][v]: continue
+            unread_item.append((k, self.client.DBC['model_mail'][v].sender, self.client.DBC['model_mail'][v].content))
+        for k in pi.mailBox.pEntry:
+            await asyncio.sleep(0)
+            v = pi.mailBox.pin[k]
+            if search_kw and search_kw not in self.client.DBC['model_mail'][v]: continue
+            pin_item.append((k, self.client.DBC['model_mail'][v].sender, self.client.DBC['model_mail'][v].content))
+        for k in pi.mailBox.tEntry:
+            await asyncio.sleep(0)
+            v = pi.mailBox.trash[k]
+            if search_kw and search_kw not in self.client.DBC['model_mail'][v]: continue
+            trash_item.append((k, self.client.DBC['model_mail'][v].sender, self.client.DBC['model_mail'][v].content))
+
+        return read_item, unread_item, pin_item, trash_item
+
+
+
+
+
+# ================== ADMIN ==================
+
+    @commands.command()
+    @checks.check_author()
+    async def sendmail(self, ctx, *args):
+        try:
+            pi = await self.client.DBC['dbcf']['dbcf_getPersonalInfo'](self, args[0])
+            await pi.mailBox.updateMail(self.client, str(ctx.author.id), args[1])
+        except ZeroDivisionError:
+            await ctx.send(":x: User's ID or mail_code not found!"); return
 
 
 

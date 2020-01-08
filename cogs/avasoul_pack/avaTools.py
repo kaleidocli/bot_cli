@@ -24,6 +24,7 @@ class avaTools:
         """args ---> tuple"""
 
         if not self.client: return
+        await asyncio.sleep(0)
 
         try: await self.client._cursor.execute(query, args=args)
         except RuntimeError: return ''
@@ -63,6 +64,36 @@ class avaTools:
         file_name = await self.client.loop.run_in_executor(None, random.choice, await self.client.loop.run_in_executor(None, listdir, path))
         return file_name
 
+    async def EQ_executor(self, eq, query_split=' ||| ', args_split=' --- ', replacement=None):
+        """
+            Effect query executor. For both DB and DBC.
+
+            eq:                 Effect query (str/iterable)
+
+            replacement:        A tuple of tuple of replacements, which will be used for SQL-Query. (Must be string)
+
+                                e.g. (('user_id_here', '238659844459832'), ('user_name_here', 'foobar'),..)
+        """
+        if isinstance(eq, str):
+            eq = eq.split(query_split)
+
+        master_q = ''
+        for query in eq:
+            # DBC-Function  (always coroutine and *args)
+            if query.startswith('<dbcf>'):
+                query = query.split(args_split)     # [dbcf_code, args1, args2,..]
+                await self.client.DBC['dbcf'][query[0]](*query[1:])
+                continue
+            # SQL-Query
+            else:
+                # Prep
+                if replacement:
+                    for r in replacement:
+                        query.replace(r[0], r[1])
+                if not query.endswith(';'): query += '; '
+                master_q += query
+
+        await self.client._cursor.execute(master_q)
 
 
     async def ava_scan(self, MSG, type='all', target_id='n/a', target_coord=(), pb_coord=[]):
@@ -526,22 +557,26 @@ class avaTools:
 
         if extra_replace:
             for charCode in extra:
+                await asyncio.sleep(0)
                 await msg.add_reaction(charCode)
         else:
             for charCode in reaction + extra:
+                await asyncio.sleep(0)
                 await msg.add_reaction(charCode)
 
-    async def pageTurner(self, msg, reaction, user, pageInfoPack, extra_resp=None):
+    async def pageTurner(self, msg, reaction, user, pageInfoPack, extra_resp=None, multi_emli=None):
         """
         cursor, pages, emli = pageInfoPack
+        emli_cursor, emli_pages, emlis = pageInfoPack
         extra_resp: {'emoji_string': (tuple_of_values_to_respond)}
 
         Return ----> cursor or (cursor, tuple_of_values_to_respond)
         """
 
-        cursor, pages, emli = pageInfoPack
+        if multi_emli: cursor, pages, emli = multi_emli
+        else: cursor, pages, emli = pageInfoPack
 
-        if reaction.emoji == "\U000027a1":
+        if reaction.emoji == "\U000027a1" or (multi_emli and reaction.emoji == "\U00002195"):
             if cursor < pages - 1: cursor += 1
             else: cursor = 0
         elif reaction.emoji == "\U00002b05":
@@ -711,6 +746,116 @@ class avaTools:
                 return
             # Rate-limit
             await asyncio.sleep(0.35)
+
+
+
+    async def pagiMainMulti(self, ctx, emli_pack, extra_button=["\U000023ee", "\U00002b05", "\U00002195", "\U000027a1", "\U000023ed"], pageTurner=None, cursor=0, emli_cursor=0, timeout=15, delete_on_exit=True, emli=None, extra_resp=None, msg=None):
+        """
+            ============= Create multiple emlis. Switch between emli. =============
+
+            cursor:       (Int)  Starting cursor in the embeds list
+
+            makembed:     (Func/Coro) Generator for one page with specific format.  
+
+            extra_button: (List) Replacing buttons for the paginator.
+            
+            pageTurner:   (Coro) Custom behaviour for buttons - especially for extra buttons, isntead of standard behiviour. Return cursor.
+
+            pair:         (Bool) Check if items is given more than one package (e.g. cmd quest, quests)
+
+            pair_sample:  (Int)  Index number of the element in <items> to check for length of pages
+            
+            emli:         (List) List of embeds. If given, this emli will be used instead of generating new one
+                                 Different emli has different design, but share the same items
+
+            extra_resp:   (Dict) Extra resp for pageTurner
+
+            ------------- e = (makeembed, items, item_per_page=5, pair=False, pair_sample=None)     |||     emli_pack = (e, e,..)
+            ------------- ee = (emli, pages, item_per_page)     |||     emlis = (ee, ee,..)
+
+            Return -----> None or (msg, (emli, pages, item_per_page, emli_cursor), (cursor, values_of_the_extra_resp))
+        """
+
+        if emli:
+            emlis = emli
+        else:
+            emlis = []
+            emli_cursor = 0
+            for e in emli_pack:
+                emlis.append(await self.emliMaker(e[0], e[1], item_per_page=e[2], pair=e[3], pair_sample=e[4]))
+        emli_pages = len(emlis)
+
+        if not extra_resp:
+            extra_resp = {}
+        if not delete_on_exit: timeout = None
+
+        # Send
+        try:
+            # if not emlis[emli_cursor][cursor]: await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
+            try:
+                await msg.edit(embed=emlis[emli_cursor][0][cursor])
+            except AttributeError:
+                msg = await ctx.send(embed=emlis[emli_cursor][0][cursor])
+                await self.pageButtonAdd(msg, reaction=extra_button)
+        # except discordErrors.HTTPException:
+        except ZeroDivisionError:
+            await ctx.send(":spider_web::spider_web: Empty result... :spider_web::spider_web:"); return
+
+        # Button-ing
+        while True:
+            try:
+                reaction, user = await self.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=timeout)
+
+                if not pageTurner:
+                    cursor_out = await self.pageTurner(msg, reaction, user, (cursor, emlis[emli_cursor][1], emli), extra_resp=extra_resp, multi_emli=(emli_cursor, emli_pages, emlis))
+                else:
+                    cursor_out = await pageTurner(msg, reaction, user, (cursor, emlis[emli_cursor][1], emli), extra_resp=extra_resp, multi_emli=(emli_cursor, emli_pages, emlis))
+                
+                if reaction.emoji == "\U00002195":
+                    emli_cursor = cursor_out
+                    cursor = 0
+                elif not isinstance(cursor_out, tuple): cursor = cursor_out
+
+                if isinstance(cursor_out, tuple):
+                    return (msg, (emli, emlis[emli_cursor][1], emlis[emli_cursor][2], cursor), cursor_out)
+
+                try: await msg.edit(embed=emlis[emli_cursor][0][cursor])
+                except IndexError:
+                    cursor = 0
+
+            except concurrent.futures.TimeoutError:
+                if delete_on_exit:
+                    try: await msg.delete()
+                    except discordErrors.NotFound: pass
+                return
+            # Rate-limit
+            await asyncio.sleep(0.35)
+
+
+    async def emliMaker(self, makeembed, items, item_per_page=5, pair=False, pair_sample=0):
+
+        if not pair:
+            pages = int(len(items)/item_per_page)
+            if len(items)%item_per_page != 0: pages += 1
+        else:
+            pages = int(len(items[pair_sample])/item_per_page)
+            if len(items[pair_sample])%item_per_page != 0: pages += 1
+        if not pages: pages = 1
+        currentpage = 1
+
+        # Embedding items ============
+        emli = []           # Do not freaking remove this
+        for _ in range(pages):
+            if inspect.iscoroutinefunction(makeembed):
+                myembed = await makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+            else:
+                myembed = makeembed(items, currentpage*item_per_page-item_per_page, currentpage*item_per_page, pages, currentpage)
+            emli.append(myembed)
+            currentpage += 1
+        return emli, pages, item_per_page
+
+
+
 
 
 

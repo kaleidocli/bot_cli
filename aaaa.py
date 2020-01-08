@@ -18,6 +18,7 @@ from PIL import Image
 import imgurpython
 import aiohttp
 
+from cogs.avasoul_pack import avaThirdParty
 from cogs.configs import SConfig
 
 
@@ -49,6 +50,7 @@ extensions = [  'jishaku',
                 'cogs.avasoul_pack.avaWorkshop',
                 'cogs.avasoul_pack.avaPersonal',
                 'cogs.avasoul_pack.avaPersonalUtils',
+                'cogs.avasoul_pack.avaDBC',
                 'cogs.error_handler']   # Always put error_handler at the BOTTOM!
 
 #prefixes = {336642139381301249: 'cli ', 545945459747979265: 'cli ', 493467473870454785: 'cli '} # {Guild: [list, of, prefixes]}
@@ -70,6 +72,9 @@ extensions = [  'jishaku',
 
 # client = commands.Bot(command_prefix=get_pref)
 client = commands.Bot(command_prefix=config.prefix[0])
+
+client.thp = avaThirdParty.avaThirdParty(client=client)
+
 client.myconfig = config
 client.realready = False
 client.ignore_list = [422100286656479243]

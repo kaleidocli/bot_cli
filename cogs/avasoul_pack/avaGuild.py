@@ -61,7 +61,7 @@ class avaGuild(commands.Cog):
         if not args:
             # GET personal guild info
             try: guild_code, rank, total_quests = await self.client.quefe(f"SELECT guild_code, rank, total_quests FROM pi_guild WHERE user_id='{ctx.author.id}' AND guild_code<>'n/a';")
-            except TypeError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
+            except TypeError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet! Simply use command `guild join` to a local guild."); return
 
             # GE guild's info
             guild_name, description, region = await self.client.quefe(f"SELECT guild_name, description, region FROM model_guild WHERE guild_code='{guild_code}';")
@@ -137,7 +137,7 @@ class avaGuild(commands.Cog):
         try:
             if name == 'n/a':
                 await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
-        except IndexError: await ctx.send("<:osit:544356212846886924> You haven't joined any guilds yet!"); return
+        except IndexError: await ctx.send("<:osit:544356212846886924> You haven't joined any guild yet! Simply use command `guild join` to a local guild."); return
 
         current_place = await self.client.quefe(f"SELECT cur_PLACE, money FROM personal_info WHERE id='{ctx.author.id}'"); current_place = current_place[0]
 
@@ -167,7 +167,7 @@ class avaGuild(commands.Cog):
                     except mysqlError.InternalError: pass
                     snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
                     effect_query = effect_query.replace('user_id_here', f'{ctx.author.id}')
-                    
+
 
                     temp = snap_query.split(' || ')
                     temp2 = []
@@ -186,12 +186,12 @@ class avaGuild(commands.Cog):
 
 
                     await self.client._cursor.execute(f"""INSERT INTO pi_quests VALUES (0, '{quest_code}', '{ctx.author.id}', "{snap_query}", '{snapshot}', '{quest_sample}', '{eval_meth}', "{effect_query}", "{reward_query}", "{penalty_query}", {end_point}, 'FULL'); {effect_query}""")
-                    
+
                     await ctx.send(f":white_check_mark: {quest_line.capitalize()} quest `{raw[1]}`|**{quest_name}** accepted! Use `quest` to check your progress."); return
                 # E: Quest's id not found
                 except ValueError: await ctx.send("<:osit:544356212846886924> Quest not found"); return
                 # E: Quest's id not given (and current_quest is also empty)
-                except IndexError: await ctx.send(f"Take what?"); return
+                except IndexError: await ctx.send(f"<:osit:544356212846886924> Please provide a quest code, which can be found in command `quests`."); return
 
             elif raw[0] == 'leave': 
                 try:
@@ -217,9 +217,9 @@ class avaGuild(commands.Cog):
 
                 # Duration check
                 if end_point:
-                    if datetime.now() > end_point: await ctx.send(f"<:guild_p:619743808959283201> The quest is out of time, **{ctx.author.name}**!"); return
+                    if datetime.now() > end_point: await ctx.send(f"<:guild_p:619743808959283201> The quest is expired, **{ctx.author.name}**!"); return
 
-                if stats == 'DONE': await ctx.send("<:osit:544356212846886924> A quest cannot be claimed twice, scammer... <:fufu:520602319323267082>"); return
+                if stats == 'DONE': await ctx.send("<:osit:544356212846886924> Main and side quests can only be done once."); return
 
                 # Get current snapshot
                 temp = snap_query.split(' || ')
@@ -278,7 +278,7 @@ class avaGuild(commands.Cog):
                 #else: await self.client._cursor.execute(f"UPDATE pi_quests SET stats='DONE' WHERE user_id='{ctx.author.id}' AND quest_id={raw[1]};")
                 """
                 # Inform
-                await ctx.send(f"<:guild_p:619743808959283201> Quest completion is confirmed. **{ctx.author.name}**, may the Olds look upon you!")
+                await ctx.send(f"<:guild_p:619743808959283201> **Quest completed!**. **{ctx.author.name}**, may the Olds look upon you...")
                 # Ranking check
                 if await self.client._cursor.execute(f"UPDATE pi_guild SET rank='{self.guild_rank[rank][0]}' WHERE user_id='{ctx.author.id}' AND total_quests>={self.guild_rank[rank][1]};") == 1:
                     await ctx.send(f":beginner: Congrats, {ctx.message.author.mention}! You've been promoted to **{self.guild_rank[rank][0].upper()}**!")                         
@@ -286,7 +286,7 @@ class avaGuild(commands.Cog):
         except IndexError:
             bundle = await self.client.quefe(f"SELECT quest_id, quest_code, snap_query, snapshot, sample, eval_meth, end_point FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats IN ('ONGOING', 'FULL');", type='all')
             # ONGOING quest check
-            if not bundle: await ctx.send(f"<:guild_p:619743808959283201> You have currently no active quest, **{ctx.author.name}**! Try get some and prove yourself."); return
+            if not bundle: await ctx.send(f"<:guild_p:619743808959283201> You have currently no active quest, **{ctx.author.name}**. Check for some in command `quests`!"); return
             bundle2 = []
             for pack in bundle:
                 tempbu = await self.client.quefe(f"SELECT name, description, quest_line, description FROM model_quest WHERE quest_code='{pack[1]}';", type='all')

@@ -45,7 +45,11 @@ class avaAvatar(commands.Cog):
                     'bg14': 'sg_indoor',
                     'bg15': 'sg_outdoor_am',
                     'bg16': 'sg_outdoor_pm',
-                    'bg17': 'rwby'
+                    'bg17': 'rwby',
+                    'bg18': 'xxx_trash',
+                    'bg19': 'cc_day',
+                    'bg20': 'cc_afternoon',
+                    'bg21': 'cc_night'
                     }
         self.char_dict = {
                         'av0': 'Iris',
@@ -88,7 +92,12 @@ class avaAvatar(commands.Cog):
                         'av37': 'SG_Moeka',
                         'av38': 'SG_Moeka_2',
                         'av39': 'SG_Suzuha',
-                        'av40': 'rwby'
+                        'av40': 'rwby',
+                        'av41': 'xxx_trash',
+                        'av42': 'CC_Yamazoe',
+                        'av43': 'CC_Kurusu',
+                        'av44': 'CC_Onoe',
+                        'av45': 'CC_Hinae'
                         }
         self.font_dict = {
                         'fnt0': 'ERASLGHT.ttf',
@@ -155,18 +164,16 @@ class avaAvatar(commands.Cog):
         """Split multiple ava by '-' """
 
         # AVATARs
-        async def uA(target, v='full'):
+        async def uA(target, v='full', mode='n/a'):
             if v == 'full':
-                temp = await self.client.quefe(f"SELECT avatar_id FROM model_avatar", type='all')
+                temp = await self.client.quefe(f"SELECT avatar_id FROM model_avatar;", type='all')
                 avas = [i[0] for i in temp]
             else:
-                temp = await self.client.quefe(f"SELECT avatar_id FROM model_avatar WHERE avatar_id='{v}'", type='all')
-                if not temp: return False
-                avas = [v.split('-')]
+                avas = v.split('-')
             master_que = ''
 
             if mode == 'all':
-                user_ids = await self.client.quefe("SELECT id FROM personal_info", type='all')
+                user_ids = await self.client.quefe("SELECT id FROM personal_info;", type='all')
                 for pack in user_ids:
                     await asyncio.sleep(0)
                     que = ''
@@ -180,14 +187,12 @@ class avaAvatar(commands.Cog):
             return True
 
         # BACKGROUNDs
-        async def uB(target, v='full'):
+        async def uB(target, v='full', mode='n/a'):
             if v == 'full':
                 temp = await self.client.quefe(f"SELECT bg_code FROM model_background", type='all')
                 avas = [i[0] for i in temp]
             else:
-                temp = await self.client.quefe(f"SELECT bg_code FROM model_background WHERE bg_code='{v}'", type='all')
-                if not v: return False
-                avas = [v.split('-')]
+                avas = v.split('-')
             master_que = ''
 
             if mode == 'all':
@@ -205,14 +210,12 @@ class avaAvatar(commands.Cog):
             return True
 
         # FONTs
-        async def uF(target, v='full'):
+        async def uF(target, v='full', mode='n/a'):
             if v == 'full':
                 temp = await self.client.quefe(f"SELECT font_id FROM model_font", type='all')
                 avas = [i[0] for i in temp]
             else:
-                temp = await self.client.quefe(f"SELECT font_id FROM model_font WHERE font_id='{v}';", type='all')
-                if not temp: return False
-                avas = [v.split('-')]
+                avas = v.split('-')
 
             master_que = ''
 
@@ -232,27 +235,32 @@ class avaAvatar(commands.Cog):
 
 
         mode = 'single'
+        av_index = 1
         # Get target        ||      Everyone, one, self
         try:
             if args[0] == 'all': mode = 'all'
             if ctx.message.mentions: target = ctx.message.mentions[0]
-            else: target = ctx.author
-        except IndexError: target = ctx.author
+            else:
+                av_index = 0
+                target = ctx.author
+        except IndexError:
+            target = ctx.author
+            av_index = 0
         # Get ava
         try:
-            if args[0].startswith('av'):
-                if not await uA(target, v=args[0]):
-                    await ctx.send(":x: Invalid argument")
-            elif args[0].startswith('bg'):
-                if not await uB(target, v=args[0]):
-                    await ctx.send(":x: Invalid argument")
-            elif args[0].startswith('fnt'):
-                if not await uF(target, v=args[0]):
-                    await ctx.send(":x: Invalid argument")
+            if args[av_index].startswith('av'):
+                if not await uA(target, v=args[av_index], mode=mode):
+                    await ctx.send(":x: Invalid argument"); return
+            elif args[av_index].startswith('bg'):
+                if not await uB(target, v=args[av_index], mode=mode):
+                    await ctx.send(":x: Invalid argument"); return
+            elif args[av_index].startswith('fnt'):
+                if not await uF(target, v=args[av_index], mode=mode):
+                    await ctx.send(":x: Invalid argument"); return
         except IndexError:
-            await uA(target)
-            await uB(target)
-            await uF(target)
+            await uA(target, v='full', mode=mode)
+            await uB(target, v='full', mode=mode)
+            await uF(target, v='full', mode=mode)
 
         await ctx.send(":white_check_mark:")
 
@@ -289,7 +297,7 @@ class avaAvatar(commands.Cog):
             if not partner: partner = '---------------------'
 
             #pylint: enable=unused-variable
-            guild_code, rank = await self.client.quefe(f"SELECT guild_code, rank FROM pi_guild WHERE user_id='{user_id}';")
+            guild_code, rank = await self.client.quefe(f"SELECT guild_code, `rank` FROM pi_guild WHERE user_id='{user_id}';")
 
             if guild_code != 'n/a':
                 guild_name = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{guild_code}';"); guild_name = guild_name[0]

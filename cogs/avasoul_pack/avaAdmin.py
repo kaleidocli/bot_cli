@@ -432,19 +432,44 @@ class avaAdmin(commands.Cog):
     @checks.check_author()
     @commands.cooldown(1, 5, type=BucketType.guild)
     async def countline(self, ctx, *args):
-        dir_main = os.path.dirname(os.path.realpath(__file__))
-        dirs = ['cogs', dir_main]
-        length=0
-        for dir_path in dirs:
-            for f in os.listdir(dir_path):
-                if not f.endswith(".py"):
-                    continue
-                else:
-                    with open(dir_path+"/"+f , 'r', encoding="utf8") as b:
-                        lines = b.readlines()
-                        length+=len(lines)
+        # dir_main = os.path.dirname(os.path.realpath(__file__))
+        dirs = ['cogs', 'data']
+        length = 0
+        len_img = 0
 
-        await ctx.send(f"<a:ramspin:629918889496805376> **`{length}` lines**")
+        async def walkthrough(dir_path, pack, prev=''):
+            """
+                length, len_img = pack
+            """
+            dir_path = os.path.join(prev, dir_path)
+            for f in os.listdir(dir_path):
+                await asyncio.sleep(0)
+                if '.' not in f and f not in dirs:
+                    pack = await walkthrough(f, pack, prev=dir_path)
+
+                if f.endswith(".py"):
+                    with open(os.path.join(dir_path, f), 'r', encoding="utf8") as b:
+                        lines = b.readlines()
+                        pack[0] += len(lines)
+                elif f.endswith('.png') or f.endswith('.jpg'):
+                    pack[1] += 1
+                else:
+                    continue
+            return pack
+
+        for dir_path in dirs:
+            pack = await walkthrough(dir_path, [length, len_img])
+            length, len_img = tuple(pack)
+
+        await ctx.send(f"> <a:ramspin:629918889496805376> **`{length}` lines** of code\n> <a:ramspin:629918889496805376> **`{len_img}`** image files!")
+
+    @commands.command()
+    @checks.check_author()
+    async def command_info(self, ctx, *args):
+        try:
+            await ctx.send("> Located in `{}`".format(self.client.get_command(args[0]).cog.qualified_name))
+        except IndexError: await ctx.send(":x: Missing command's name"); return
+        except AttributeError: await ctx.send(":x: Command not found!"); return
 
 
 

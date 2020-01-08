@@ -389,7 +389,7 @@ class avaTrivia(commands.Cog):
 
     @commands.command(aliases=['noti'])
     @commands.cooldown(1, 10, type=BucketType.user)
-    async def notification(self, ctx, *args):
+    async def cooldowns(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
         on_cd = []; off_cd = []; interas = []
 
@@ -407,13 +407,13 @@ class avaTrivia(commands.Cog):
             except TypeError:
                 on_cd.append(f"\n\⏱ Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
 
-        # INTERACTIONs
-        tee = await self.client.quefe(f"SELECT target_code, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND flag<>'n/a'", type='all')
-        for t in tee:
-            temp = await self.client.quefe(f"SELECT npc_code, name FROM model_npc WHERE npc_code='{t[0]}';")
-            temp2all = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE limit_flag='{t[1]}' AND entity_code='{t[0]}';", type='all')
-            for temp2 in temp2all:
-                interas.append(f"\n<:npc_question_mark:637744510109089792> NPC `{temp[0]}`| **{temp[1]}** at ||`{temp2[0]:.3f}:{temp2[1]:.3f}` ~ `{temp2[2]:.3f}:{temp2[3]:.3f}`||")
+        # # INTERACTIONs
+        # tee = await self.client.quefe(f"SELECT target_code, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND flag<>'n/a'", type='all')
+        # for t in tee:
+        #     temp = await self.client.quefe(f"SELECT npc_code, name FROM model_npc WHERE npc_code='{t[0]}';")
+        #     temp2all = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE limit_flag='{t[1]}' AND entity_code='{t[0]}';", type='all')
+        #     for temp2 in temp2all:
+        #         interas.append(f"\n<:npc_question_mark:637744510109089792> NPC `{temp[0]}`| **{temp[1]}** at ||`{temp2[0]:.3f}:{temp2[1]:.3f}` ~ `{temp2[2]:.3f}:{temp2[3]:.3f}`||")
 
         # HUNT
         try:
