@@ -450,7 +450,7 @@ class avaPersonalUtils(commands.Cog):
         # Makeembeds
         def makeembed_read(items, top, least, pages, currentpage):
             line = ''; count = 1; field_count = 0
-            reembed = discord.Embed(title=f':mailbox_with_no_mail: READ MAIL', description=line, colour = discord.Colour(0x011C3A))
+            reembed = discord.Embed(title=f':mailbox_with_no_mail: READ MAIL', description=line, colour = discord.Colour(0xA37C05))
 
             for item in items[top:least]:
                 line = line + f"""{item[0]}. {item[1]}:: {item[2][:12]}\n"""
@@ -479,7 +479,7 @@ class avaPersonalUtils(commands.Cog):
 
         def makeembed_unread(items, top, least, pages, currentpage):
             line = ''; count = 1; field_count = 0
-            reembed = discord.Embed(title=f':mailbox_with_mail: UNREAD MAIL', description=line, colour = discord.Colour(0x011C3A))
+            reembed = discord.Embed(title=f':mailbox_with_mail: UNREAD MAIL', description=line, colour = discord.Colour(0xA37C05))
 
             for item in items[top:least]:
                 line = line + f"""{item[0]}. {item[1]}:: {item[2][:12]}\n"""
@@ -508,7 +508,7 @@ class avaPersonalUtils(commands.Cog):
 
         def makeembed_pin(items, top, least, pages, currentpage):
             line = ''; count = 1; field_count = 0
-            reembed = discord.Embed(title=f':pushpin: PINNED MAIL', description=line, colour = discord.Colour(0x011C3A))
+            reembed = discord.Embed(title=f':pushpin: PINNED MAIL', description=line, colour = discord.Colour(0xA37C05))
 
             for item in items[top:least]:
                 line = line + f"""{item[0]}. {item[1]}:: {item[2][:12]}\n"""
@@ -537,7 +537,7 @@ class avaPersonalUtils(commands.Cog):
 
         def makeembed_trash(items, top, least, pages, currentpage):
             line = ''; count = 1; field_count = 0
-            reembed = discord.Embed(title=f':wastebasket: TRASH MAIL', description=line, colour = discord.Colour(0x011C3A))
+            reembed = discord.Embed(title=f':wastebasket: TRASH MAIL', description=line, colour = discord.Colour(0xA37C05))
 
             for item in items[top:least]:
                 line = line + f"""{item[0]}. {item[1]}:: {item[2][:12]}\n"""
@@ -564,10 +564,21 @@ class avaPersonalUtils(commands.Cog):
                 if not field_count: reembed.add_field(name=f"『Page』{currentpage}/{pages}", value=f"""```⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀```""")
             return reembed
 
+        def makeembed_UI(items, top, least, pages, currentpage):
+            """
+                user_name, len_of_unreadMail, tag_DM
+            """
+            line = ''
+
+            line += f":bookmark: DM-tag `{'` `'.join(items[2])}`"
+            if items[1]: line += f"\n:envelope_with_arrow: You have *{items[1]}* new mails!"
+            reembed = discord.Embed(title=f":mailbox_closed: {items[0]}'s mailbox", description=line, colour = discord.Colour(0xA37C05))
+            return reembed
+
         resp = None
         while True:
-            if not resp: resp = await self.tools.pagiMainMulti(ctx, ((makeembed_unread, unread_item, 20, False, None), (makeembed_read, read_item, 20, False, None), (makeembed_pin, pin_item, 10, False, None), (makeembed_trash, trash_item, 20, False, None)), timeout=60, extra_button=["\U000023ee", "\U00002b05", "\U00002195", "\U000027a1", "\U000023ed", "\U0001f5d1", "\U0000267b", "\U0001f441"], extra_resp={"\U0001f5d1": 'delete', "\U0000267b": 'recover', "\U0001f441": 'read'})
-            else: resp = await self.tools.pagiMainMulti(ctx, ((makeembed_unread, unread_item, 20, False, None), (makeembed_read, read_item, 20, False, None), (makeembed_pin, pin_item, 10, False, None), (makeembed_trash, trash_item, 20, False, None)), timeout=60, extra_button=["\U000023ee", "\U00002b05", "\U00002195", "\U000027a1", "\U000023ed", "\U0001f5d1", "\U0000267b", "\U0001f441"], extra_resp={"\U0001f5d1": 'delete', "\U0000267b": 'recover', "\U0001f441": 'read'}, emli=resp[1][0], cursor=resp[1][3], emli_cursor=resp[2][0])
+            if not resp: resp = await self.tools.pagiMainMulti(ctx, ((makeembed_UI, (ctx.author.name, len(pi.mailBox.unreadMail), pi.mailBox.tag), 1, False, None), (makeembed_unread, unread_item, 20, False, None), (makeembed_read, read_item, 20, False, None), (makeembed_pin, pin_item, 10, False, None), (makeembed_trash, trash_item, 20, False, None)), timeout=60, extra_button=["\U000023ee", "\U00002b05", "\U00002195", "\U000027a1", "\U000023ed", "\U0001f5d1", "\U0000267b", "\U0001f441"], extra_resp={"\U0001f5d1": 'delete', "\U0000267b": 'recover', "\U0001f441": 'read'})
+            else: resp = await self.tools.pagiMainMulti(ctx, ((makeembed_UI, (ctx.author.name, len(pi.mailBox.unreadMail), pi.mailBox.tag), 1, False, None), (makeembed_unread, unread_item, 20, False, None), (makeembed_read, read_item, 20, False, None), (makeembed_pin, pin_item, 10, False, None), (makeembed_trash, trash_item, 20, False, None)), timeout=60, extra_button=["\U000023ee", "\U00002b05", "\U00002195", "\U000027a1", "\U000023ed", "\U0001f5d1", "\U0000267b", "\U0001f441"], extra_resp={"\U0001f5d1": 'delete', "\U0000267b": 'recover', "\U0001f441": 'read'}, emli=resp[1][0], cursor=resp[1][3], emli_cursor=resp[2][0])
             try:
                 line = await self.mail_widget(ctx, pi, resp[2][1], None)
                 # Read
@@ -576,6 +587,7 @@ class avaPersonalUtils(commands.Cog):
                 elif line != False: await ctx.send(f":envelope: Done{line}!")
                 read_item, unread_item, pin_item, trash_item = await self.mail_dataGet(pi, search_kw=search_kw)
             except ValueError: continue
+            except TypeError: return
 
             await resp[0].delete()
 
@@ -601,7 +613,10 @@ class avaPersonalUtils(commands.Cog):
             if len(value) == 1:
                 try: m = await pi.mailBox.getMail(self.client, value[0])
                 except KeyError: return False
-                return discord.Embed(description=f"```{m.content}```||Tag: `{'` `'.join(m.tag)}`||", colour = discord.Colour(0x011C3A)).set_author(name=f"{m.sender}:")
+                return discord.Embed(description=f"""
+                            ```Asciidoc
+From:: {m.sender}```{m.content}\n||Tag: `{'` `'.join(m.tag)}`||
+                                                    """, colour = discord.Colour(0xA37C05))
             # Mark as read
             else:
                 f = await pi.mailBox.setRead(self.client, ctx.author.id, value)
@@ -655,11 +670,18 @@ class avaPersonalUtils(commands.Cog):
     @commands.command()
     @checks.check_author()
     async def sendmail(self, ctx, *args):
+        """
+            0: user_id
+            1: mail_code
+        """
+
         try:
-            pi = await self.client.DBC['dbcf']['dbcf_getPersonalInfo'](self, args[0])
-            await pi.mailBox.updateMail(self.client, str(ctx.author.id), args[1])
-        except ZeroDivisionError:
-            await ctx.send(":x: User's ID or mail_code not found!"); return
+            await self.client.DBC['dbcf']['dbcf_sendMail'](args[0], args[1])
+        except discordErrors.Forbidden: return
+        except KeyError:
+            await ctx.send(":x: Mail_code not found!"); return
+        except AttributeError:
+            await ctx.send(":x: User not found!"); return
 
 
 

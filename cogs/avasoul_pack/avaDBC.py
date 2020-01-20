@@ -64,9 +64,14 @@ class avaDBC(commands.Cog):
         """
             0: user_id
             1: mail_code
+
+            raise AttributeError if user_not_found
+            raise KeyError if mail_not_found
+            raise ValueError if user_id is invalid
         """
 
-        return await self.client.DBC['personal_info'][args[0]].mailBox.updateMail(self.client, args[0], args[1])
+        resp = await self.client.DBC['dbcf']['dbcf_getPersonalInfo'](self, args[0]).mailBox.updateMail(self.client, args[0], args[1])
+        if isinstance(resp, list): await self.client.get_user(int(args[0])).send(f":envelope_with_arrow: You got mail! Use command `mail` to check it out! (Tags: ||`{'` `'.join(resp)}`||)")
 
     async def dbcf_getPersonalInfo(self, user_id):
         """
@@ -297,7 +302,7 @@ class mailBox:
                 break
             await asyncio.sleep(0.5)
         try:
-            try: client.DBC['model_mail'][mail_code]
+            try: mail = client.DBC['model_mail'][mail_code]
             except KeyError:
                 self.CHANGING = False
                 print("<!> Unknown mail_code"); return False
@@ -323,7 +328,11 @@ class mailBox:
             self.unreadMail[self.mailCounter] = mail_code
             await client.quefe(f"""UPDATE pi_mailbox SET mail_unread="{' - '.join(('.'.join((str(ii) for ii in i)) for i in self.unreadMail.items()))}", mail_read="{' - '.join(('.'.join((str(ii) for ii in i)) for i in self.readMail.items()))}" WHERE user_id='{user_id}';""")
 
-            return True
+            tt = []
+            for t in mail.tag:
+                if t in self.config['DM']: tt.append(t)
+            if tt: return tt
+            else: return True
         finally: self.CHANGING = False
 
     async def setRead(self, client, user_id, orderas):

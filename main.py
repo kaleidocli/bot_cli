@@ -138,4 +138,4 @@ def exitest():
 
 if __name__ == '__main__':
     atexit.register(exitest)
-    prepformain(config.TOKEN)
+    prepformain(config)
