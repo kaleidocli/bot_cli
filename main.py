@@ -8,6 +8,7 @@ from discord.ext.commands.cooldowns import BucketType
 
 from cogs.avasoul_pack import avaThirdParty
 from cogs.configs import SConfig
+from cogs.avasoul_pack.var import varMaster
 
 
 
@@ -15,7 +16,7 @@ from cogs.configs import SConfig
 
 
 
-config = SConfig()
+dummy_config = SConfig()
 extensions = [  'jishaku',
                 'cogs.misc',
                 'cogs.audio',
@@ -47,14 +48,14 @@ extensions = [  'jishaku',
 # ================== CONFIGURATING ==================
 
 while True:
-    resp = input("| Pick a profile (default==[{}]): \n|= [{}]\n| > ".format(config.default_profile, ']\n|= ['.join(tuple(config.PROFILES.keys()))))
-    if not resp: resp = config.default_profile; break
-    try: config.PROFILES[resp]
-    except KeyError: print("| <!> Invalid profile <!>")
+    resp = input("| Pick a profile (default==[{}]): \n|= [{}]\n| > ".format(dummy_config.default_profile, ']\n|= ['.join(tuple(dummy_config.PROFILES.keys()))))
+    if not resp: continue
+    try: dummy_config.PROFILES[resp]
+    except KeyError: print("| <!> Invalid profile <!>\n===============\n"); continue
     conf = input(f"| Choosing profile [{resp}]? (y/n)\n| > ")
     if conf == 'y': break
 
-config.configProfile(resp)
+dummy_config.configProfile(resp)
 
 
 
@@ -63,16 +64,18 @@ config.configProfile(resp)
 
 # ================== INITIALIZING ==================
 
-client = commands.Bot(command_prefix=config.PREFIX)
+client = commands.Bot(command_prefix=dummy_config.PREFIX)
 
+client.myconfig = SConfig()
+client.myconfig.configProfile(resp)
 client.thp = avaThirdParty.avaThirdParty(client=client)
 
-client.myconfig = config
 client.realready = False
-client.ignore_list = [422100286656479243]
-client.owner_id = config.owner_id
+# client.IGNORE_LIST = []     # This list is not for banning! Instead, for temporary disabling command
+client.varMaster = varMaster.varMaster()
+client.owner_id = client.myconfig.owner_id
 client.owner = client.get_user(client.owner_id)
-client.support_server_invite = config.support_server_invite
+client.support_server_invite = client.myconfig.support_server_invite
 
 client.remove_command('help')
 
@@ -101,8 +104,8 @@ async def on_message(message):
     if not client.realready: return
     if message.mentions:
         if message.mentions[0] == client.user:
-            await message.channel.send(f"> {message.author.mention}, my prefix is **`{config.PREFIX[0]} `** (remember, `cli help`, not `Cli help`)"); return
-    if message.author.id in client.ignore_list: return
+            await message.channel.send(f"> {message.author.mention}, my prefix is **`{client.myconfig.PREFIX[0]} `** (remember, `cli help`, not `Cli help`)"); return
+    if message.author.id in client.varMaster.varSys.ignore_list: return      # This list is not for banning! Instead, for temporary disabling command
     await client.process_commands(message)
 
 
@@ -138,4 +141,4 @@ def exitest():
 
 if __name__ == '__main__':
     atexit.register(exitest)
-    prepformain(config)
+    prepformain(client.myconfig)
