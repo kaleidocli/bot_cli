@@ -281,7 +281,7 @@ class avaAdmin(commands.Cog):
                 elif n == 'a': temp.append('avasoul_pack'); continue
                 temp.append(n)
             name = '.'.join(temp)
-        except IndexError: await ctx.send(":x: Missing cog's name (Note: No `c.a`, only `name`)"); return
+        except IndexError: await ctx.send(":x: Missing cog's name (Note: No `c.a`, only `name` (e.g. `avaPersonal`, NOT `c.a.avaPersonal`))"); return
 
         cog = self.client.get_cog(name)
         print(name, cog)
@@ -290,6 +290,7 @@ class avaAdmin(commands.Cog):
                 await cog.cacheAll()
             else:
                 await cog.cacheMethod[args[1]]()
+        except AttributeError: await ctx.send(":x: Cog not found. (Note: No `c.a`, only `name` (e.g. `avaPersonal`, NOT `c.a.avaPersonal`))"); return
         except IndexError: await ctx.send(":x: Missing database name"); return
         except KeyError: await ctx.send(":x: DB not found"); return
         # except AttributeError: await ctx.send(":x: Unknown cog"); return

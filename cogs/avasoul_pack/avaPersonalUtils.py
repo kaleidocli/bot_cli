@@ -374,58 +374,21 @@ class avaPersonalUtils(commands.Cog):
         my_party = await self.client.quefe(f"SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}' AND role='LEADER';", type='all')
         if my_party: my_party = [a[0] for a in my_party]
         else: my_party = ['ansna']
-
-        query = f"""
-                    DELETE FROM cosmetic_preset WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_arts WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_avatars WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_backgrounds WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_fonts WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_bank WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_deck WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_degrees WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_equipment WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM environ_party WHERE party_id = (SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}' AND role='LEADER');|||
-                    DELETE FROM pi_party WHERE party_id IN ('{"' '".join(my_party[0])}') OR (user_id='{ctx.author.id}' AND role='MEMBER');|||
-                    DELETE FROM pi_guild WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_hero WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_hunt WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_inventory WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_order WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');|||
-                    DELETE FROM pi_tax WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');|||
-                    DELETE FROM pi_unit WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');|||
-                    DELETE FROM pi_land WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_mobs_collection WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_quest WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_quests WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_relationship WHERE user_id='{ctx.author.id}';|||
-                    DELETE FROM pi_rest WHERE user_id='{ctx.author.id}';
-                """
         
-        await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.author.name}, lease type `deletion confirm` to proceed.")
+        await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.author.name}, lease type `delete confirm` to proceed.")
 
-        try: await self.client.wait_for('message', timeout=15, check=lambda m: m.channel == ctx.channel and m.author == ctx.author and m.content.lower() == 'deletion confirm')
-        except asyncio.TimeoutError: await ctx.send(f"<:osit:544356212846886924> Requested time-out!"); return
+        try:
+            await self.client.wait_for('message', timeout=15, check=lambda m: m.channel == ctx.channel and m.author == ctx.author and m.content.lower() == 'delete confirm')
+        except asyncio.TimeoutError:
+            await ctx.send(f"<:osit:544356212846886924> Requested time-out!"); return
 
-        self.client.ignore_list.append(ctx.author.id)
+        self.client.varMaster.varSys.ignore_list.append(ctx.author.id)
         await ctx.send(f":white_check_mark: Deletion may take a while... Sayonara, {ctx.author.name}, thank you for your journey!")
 
-        for q in query.split('|||'):
-            await asyncio.sleep(1)
-            try: await self.client._cursor.execute(q)
-            except:
-                await self.client.owner.send(q)
-                self.client.ignore_list.remove(ctx.author.id)
-                return
-
-        # PERSONAL_INFO
-        await self.client._cursor.execute(f"""
-            UPDATE personal_info SET partner='n/a' WHERE partner='{ctx.author.id}';
-            DELETE FROM personal_info WHERE id='{ctx.author.id}';
-                                            """)
-
-        self.client.ignore_list.remove(ctx.author.id)
+        try:
+            await self.tools.character_destructor(ctx)
+        finally:
+            self.client.varMaster.varSys.ignore_list.remove(ctx.author.id)
 
     @commands.command()
     @commands.cooldown(1, 20, type=BucketType.user)

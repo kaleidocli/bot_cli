@@ -49,7 +49,11 @@ class avaAvatar(commands.Cog):
                     'bg18': 'xxx_trash',
                     'bg19': 'cc_day',
                     'bg20': 'cc_afternoon',
-                    'bg21': 'cc_night'
+                    'bg21': 'cc_night',
+                    'bg22': 'bishoujo_mangekyou',
+                    'bg23': 'urban_1',
+                    'bg24': 'misc_transparent',
+                    'bg25': 'theme_warfare'
                     }
         self.char_dict = {
                         'av0': 'Iris',
@@ -97,7 +101,31 @@ class avaAvatar(commands.Cog):
                         'av42': 'CC_Yamazoe',
                         'av43': 'CC_Kurusu',
                         'av44': 'CC_Onoe',
-                        'av45': 'CC_Hinae'
+                        'av45': 'CC_Hinae',
+                        'av46': 'CC_Erinfrei',
+                        'av47': 'CC_Shinji',
+                        'av48': 'CC_Hana',
+                        'av49': 'CC_Kunosato',
+                        'av50': 'CC_Senri',
+                        'av51': 'CC_Takuru',
+                        'av52': 'CC_Wakui',
+                        'av53': 'BM_Renge',
+                        'av54': 'BM_Hostess',
+                        'av55': 'BM_Kirie_normal',
+                        'av56': 'BM_Kirie_nsfw',
+                        'av57': 'BM_Kirie_nun',
+                        'av58': 'BM_Kirie_swimsuit',
+                        'av59': 'BM_Kirie_uniform',
+                        'av60': 'FGO_Male',
+                        'av61': 'FGO_Female',
+                        'av62': 'misc_colorfilter',
+                        'av63': 'GFL_1',
+                        'av64': 'GFL_2',
+                        'av65': 'GFL_3',
+                        'av66': 'GFL_4',
+                        'av67': 'GFL_5',
+                        'av68': 'GFL_6',
+                        'av69': 'GFL_7',
                         }
         self.font_dict = {
                         'fnt0': 'ERASLGHT.ttf',
@@ -156,6 +184,13 @@ class avaAvatar(commands.Cog):
     @commands.command()
     @checks.check_author()
     async def prote_reload(self, ctx):
+        """
+            If new images added, use this.
+            If a whole new set is added:
+                1. "Update char_dict/bg_dict/font_dict" ---> avaAdmin.megareload()
+                2. "Update DBC of model_avatar" -----------> avaAdmin.megarecache() all DBC of avaPersonal
+        """
+
         await self.prote_plugin()
 
     @commands.command()
@@ -300,10 +335,13 @@ class avaAvatar(commands.Cog):
             guild_code, rank = await self.client.quefe(f"SELECT guild_code, `rank` FROM pi_guild WHERE user_id='{user_id}';")
 
             if guild_code != 'n/a':
-                guild_name = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{guild_code}';"); guild_name = guild_name[0]
+                guild_name = await self.client.quefe(f"SELECT guild_name FROM model_guild WHERE guild_code='{guild_code}';")
+                try:
+                    guild_name = guild_name[0]
+                except TypeError:
+                    guild_code = guild_name = 'None'
             else:
-                guild_code = 'None'
-                guild_name = 'None'
+                guild_code = guild_name = 'None'
 
 
             form_img = self.prote_lib['form'][0]
@@ -539,7 +577,7 @@ class avaAvatar(commands.Cog):
                 print(f"LOOOPPPPP {obpointer} {offval}")
                 a = Image.fromarray(particle)
                 a = a.resize((800, 600), resample=Image.LANCZOS)
-                a = a.filter(ImageFilter.GaussianBlur(2.6))
+                a = a.filter(ImageFilter.GaussianBlur(blur_rate))       #prev=2.6
  
                 # PROCESS and STITCH
                 try:

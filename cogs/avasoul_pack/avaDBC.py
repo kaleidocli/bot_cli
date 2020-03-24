@@ -31,6 +31,7 @@ class avaDBC(commands.Cog):
             'model_conversation': self.cacheConversation,
             'model_mail': self.cacheMail,
             'personal_info': self.cachePersonalInfo,
+            'model_mob': self.cacheMob,
             'dbcf': self.cacheDBCF
         }
 
@@ -149,6 +150,7 @@ class avaDBC(commands.Cog):
     async def cacheAll(self):
         for v in self.cacheMethod.values():
             await v()
+        await self.cacheDBCC()
 
 
 
@@ -234,6 +236,44 @@ class avaDBC(commands.Cog):
             temp[r[1]] = c_Conversation(r)
 
         return temp
+
+    
+
+    # ================== MOB ==================
+    async def cacheMob(self):
+        self.client.DBC['model_mob'] = await self.cacheMob_tool()
+
+    async def cacheMob_tool(self):
+        temp = {}
+
+        res = await self.client.quefe("""SELECT mob_code, 
+                                                name, 
+                                                description, 
+                                                branch, 
+                                                evo,
+                                                lp, 
+                                                str, 
+                                                chain, 
+                                                speed, 
+                                                attack_type, 
+                                                defense_physic, 
+                                                defense_magic, 
+                                                au_FLAME, 
+                                                au_ICE, 
+                                                au_HOLY, 
+                                                au_DARK, 
+                                                skills, 
+                                                effect, 
+                                                lockon_max, 
+                                                rewards, 
+                                                illulink 
+                                                FROM model_converstation;""", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[1]] = c_Mob(r)
+
+        return temp
+
 
 
 
@@ -534,3 +574,18 @@ class c_Conversation:
         try: self.node_2 = self.node_2.split(' - ')
         except AttributeError: self.node_2 = []
 
+class c_Mob:
+    def __init__(self, pack):
+        self.mob_code, self.name, self.description, self.branch, self.evo, self.lp, self.str, self.chain, self.speed, self.attack_type, self.defense_physic, self.defense_magic, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.skills, effectTemp, self.lockon_max, rewardsTemp, self.illulink = pack
+
+        # Effect
+        effectTemp2 = []
+        for e in effectTemp.split(' || '):
+            effectTemp2.append(tuple(e.split(' - ')))
+        self.effect = tuple(effectTemp2)
+
+        # Rewards
+        rewardsTemp2 = []
+        for e in rewardsTemp.split(' - '):
+            rewardsTemp2.append(tuple(e.split(' - ')))
+        self.rewards = tuple(rewardsTemp2)

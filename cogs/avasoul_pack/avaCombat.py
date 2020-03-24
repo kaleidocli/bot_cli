@@ -8,6 +8,7 @@ from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import redis.exceptions as redisErrors
+import pymysql.err as mysqlError
 
 from utils import checks
 
@@ -63,10 +64,15 @@ class avaCombat(commands.Cog):
     @commands.command(aliases=['mle'])
     @commands.cooldown(1, 3, type=BucketType.user)
     async def melee(self, ctx, *args):
-        """ -avaattack [moves] [target]
+        """ 
+            -avaattack [moves] [target]
+            
             -avaattack [moves]              
+
             <!> ONE target of each creature type at a time. Mobs always come first, then user. Therefore you can't fight an user while fighting a mob
-            <!> DO NOT lock on current_enemy at the beginning. Do it at the end."""
+
+            <!> DO NOT lock on current_enemy at the beginning. Do it at the end.
+        """
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         raw = list(args); __mode = 'PVP'
@@ -170,6 +176,8 @@ class avaCombat(commands.Cog):
             except (KeyError, TypeError):
                 CE = {}
                 target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
+                if not target:
+                    await ctx.send("<:osit:544356212846886924> There aren't any mobs around you, it seems..."); return
                 target_id = target
                 __mode = 'PVE'
                 # CE - Processing/lock
@@ -253,7 +261,10 @@ class avaCombat(commands.Cog):
                     if CE['lock'] == 'n/a' or copo == CE['lock']:
                         if copo == 'boss': 
                             target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}';")
-                            target = target[0]; __mode = 'PVE'; target_id = target
+                            try:
+                                target = target[0]; __mode = 'PVE'; target_id = target
+                            except TypeError:
+                                await ctx.send("<:osit:544356212846886924> Unable to find any boss in this region..."); return
                             # CE - Processing/lock
                             CE['lock'] = target_id
                         else:
@@ -309,90 +320,6 @@ class avaCombat(commands.Cog):
             elif copo.isdigit():
                 shots = int(copo)
 
-        """
-        ### ALL ELEMENT GET     (target, coord, shots) 
-        try:
-            target = ''
-            # @User, shots provided
-            if raw[0].startswith('<@'):
-                # Get user
-                target = ctx.message.mentions[0]; target_id = str(target.id)
-                __bmode = 'DIRECT'
-                # Get shots (if available and possible)
-                try: 
-                    shots = int(raw[1])
-                    if _style == 'MAGIC':
-                        try: amount = int(raw[2])
-                        except IndexError: amount = 1
-                except IndexError: amount = 1
-                except TypeError: amount = 1
-
-            # Coord, shots provided     (if raw[0] is a mob_name, raise TypeError       |      if raw[0] provided as <shots>, but raw[1] is not provided, raise IndexError)
-            elif len(str(int(raw[0]))) <= 5 and len(raw[1]) <= 5 and _style == 'PHYSIC':
-                print("OKAI HERE")
-                X = int(raw[0])/1000; Y = int(raw[1])/1000
-
-                # Get USER from COORD. If there are many users, randomly pick one.
-                try:
-                    target_id = random.choice(await self.client.quefe(f"SELECT id FROM personal_info WHERE cur_X={X} AND cur_Y={Y} AND cur_PLACE='{cur_PLACE}';", type='all'))
-                    target_id = target_id[0]
-                    target = await self.client.get_user(int(target_id))
-                    __bmode = 'DIRECT'
-                    if not ctx.message.server.get_member(target_id): __bmode = 'INDIRECT'
-                    if not target: await ctx.send(f"There's noone at **x:`{X:.3f}` y:`{Y:.3f}`** in {cur_PLACE}!"); return
-                # E: Query's empty, since noone's at the given coord
-                except IndexError: await ctx.send(f"There's noone at **x:`{X:.3f}` y:`{Y:.3f}`** in {cur_PLACE}!"); return
-                
-                # Get shots (if available and possible)
-                try: 
-                    shots = int(raw[2])
-                except IndexError: pass
-                except TypeError: pass
-
-            # Shots AND amount given.     |      Or coords, shots (and amount) given                     --------> MAGIC
-            elif _style == 'MAGIC':
-                print('YO HERE')
-                # Coords, shots (and amount)
-                try:
-                    X = int(raw[0])/1000; Y = int(raw[1])/1000; shots = int(raw[2])
-
-                    # Get USER from COORD. If there are many users, randomly pick one.
-                    try: 
-                        target_id = random.choice(await self.client.quefe(f"SELECT id FROM personal_info WHERE cur_X={X} AND cur_Y={Y} AND cur_PLACE='{cur_PLACE}';", type='all'))
-                        target_id = target_id[0]
-                        target = await self.client.get_user(int(target_id))
-                        __bmode = 'DIRECT'
-                        if not ctx.message.server.get_member(target_id): __bmode = 'INDIRECT'
-                        if not target: await ctx.send(f"There's noone at **x:`{X:.3f}` y:`{Y:.3f}`** in {cur_PLACE}!"); return
-                    # E: Query's empty, since noone's at the given coord
-                    except (IndexError, TypeError): await ctx.send(f"There's noone at **x:`{X:.3f}` y:`{Y:.3f}`** in {cur_PLACE}!"); return
-
-                    try: amount = int(raw[3])
-                    except (IndexError, TypeError): amount = 1
-                # Shots AND amount
-                except (IndexError, TypeError):
-                    shots = int(raw[0]); amount = int(raw[1])
-                    raise IndexError
-
-        # Mob_id, shots provided
-        except (TypeError, ValueError):
-            print("HEREEE")
-            # If there's no current_enemy   |   # If there is, and the target is the current_enemy
-            if cur_MOB == 'n/a' or raw[0] == cur_MOB:
-                target = raw[0]; target_id = target
-                __mode = 'PVE'
-                # Get shots (if available and possible)
-                try: 
-                    shots = int(raw[1])
-                    # try MAGIC
-                    try: amount = int(raw[2])
-                    except IndexError: amount = 1
-                except (IndexError, TypeError): amount = 1 
-            # If there is, but the target IS NOT the current_enemy
-            elif raw[0] != cur_MOB:
-                await ctx.send(f"<:osit:544356212846886924> Please finish your current fight with `{cur_MOB}`!"); return
-        """
-
         # Target not found
         if not target:
             # Mobs first. If there's no mob in current_enemy, then randomly pick one
@@ -413,6 +340,8 @@ class avaCombat(commands.Cog):
             # E: CE not init
             except KeyError:
                 target = random.choice(await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;", type='all'))[0]
+                if not target:
+                    await ctx.send("<:osit:544356212846886924> There aren't any mobs around you, it seems..."); return
                 target_id = target
                 __mode = 'PVE'
                 # CE - Processing/lock
@@ -478,15 +407,15 @@ class avaCombat(commands.Cog):
                 if LP <= shots*w_dmg:
                     await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, please don't kill yourself..."); return
                 else:
-                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
+                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*a_dmg)).replace('user_id_here', user_id)
                     await self.client._cursor.execute(a_rlquery)
             elif w_round == 'am6':                  # STA -------------------- If kamikaze, take the rest of the STA, split it into shots. Then decrease STA
                 if STA <= shots*w_dmg:
                     w_dmg = STA//shots
-                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
+                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*a_dmg)).replace('user_id_here', user_id)
                     await self.client._cursor.execute(a_rlquery)
                 else:
-                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*w_dmg)).replace('user_id_here', user_id)
+                    a_rlquery = a_rlquery.replace('quantity_here', str(shots*a_dmg)).replace('user_id_here', user_id)
                     await self.client._cursor.execute(a_rlquery)            
             ################## PHYSIC
             else:
@@ -564,7 +493,7 @@ class avaCombat(commands.Cog):
 
         # Inform MISS (to user and target)
         if shots == 0: 
-            await ctx.send(f":interrobang: **MISS...** again, {ctx.author.mention}?")
+            await ctx.send(f":interrobang: **MISS...**")
 
             if __mode == 'PVP':
                 if __bmode == 'INDIRECT':
@@ -795,10 +724,16 @@ class avaCombat(commands.Cog):
             # Remove the old mob from DB
             await self.client._cursor.execute(f"DELETE FROM environ_mob WHERE mob_id='{target_id}';")
 
-            # Insert the mob to DB
-            await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, '{attack_type}', {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, '{lockon_max}', "{illulink}", '');""")
-            counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
-            await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
+            # Insert the mob to DB. Anti-duplicate.
+            while True:
+                counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
+                try:
+                    await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob.{int(counter_get[0])+1}', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, '{attack_type}', {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, '{lockon_max}', "{illulink}", '');""")
+                except mysqlError.IntegrityError:
+                    await asyncio.sleep(0)
+                    continue
+                break
+            # await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
 
             return branch
 
@@ -1197,10 +1132,19 @@ class avaCombat(commands.Cog):
 
     async def PVE_range(self, shots, MSG, style, aDict={}, tDict={}, uDict={}, CE=None):
 
-        """"a_dmg:          Ammo's damage
+        """
+            [MAGIC]    FINAL_DMG = (A_DMG * user_AURA / reversed_t_AURA) - t_DEFMA
+            [PHYSIC]   FINAL_DMG = A_DMG - t_DEFPY
+
+
+            a_dmg:          Ammo's damage
+
             target_id:      Mob's id
+
             t_name:         Mob's name
-            w_aura:         Weapon's aura"""
+
+            w_aura:         Weapon's aura    
+        """
 
         my_dmgdeal = round(aDict['a_dmg']*shots)
 
@@ -1221,10 +1165,11 @@ class avaCombat(commands.Cog):
             aura_dict = {'FLAME': 'au_FLAME', 'ICE': 'au_ICE', 'DARK': 'au_DARK', 'HOLY': 'au_HOLY'}        # Normal
             aura_redict = {'FLAME': 'au_ICE', 'ICE': 'au_HOLY', 'DARK': 'au_FLAME', 'HOLY': 'au_DARK'}      # Reversed
             # DMG is directional->UAura, is indirectional->reverseTAura     ||      DMG is then decreased by its oppo's parallel aura
-            try: dmgdeal = int(my_dmgdeal*uDict[aura_dict[aDict['w_aura']]]/tDict[aura_redict[aDict['w_aura']]])
-            except ZeroDivisionError: dmgdeal = int(my_dmgdeal*tDict[aura_dict[aDict['w_aura']]])
+            try: dmgdeal = round(my_dmgdeal*uDict[aura_dict[aDict['w_aura']]]/tDict[aura_redict[aDict['w_aura']]])
+            except ZeroDivisionError: dmgdeal = round(my_dmgdeal*tDict[aura_dict[aDict['w_aura']]])
 
-            # DMG re-calc (Mob's DEFPY)
+            # DMG re-calc (Mob's DEFMA)
+            print(f"DMG: {dmgdeal} ({my_dmgdeal}) ({uDict[aura_dict[aDict['w_aura']]]} >< {tDict[aura_redict[aDict['w_aura']]]})  ---   DEFMA: {tDict['t_DEFMA']}")
             dmgdeal = dmgdeal - tDict['t_DEFMA']
 
             if dmgdeal > 0: await self.client._cursor.execute(f"UPDATE environ_mob SET lp=lp-{dmgdeal} WHERE mob_id='{tDict['target_id']}'; ")

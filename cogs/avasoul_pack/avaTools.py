@@ -201,7 +201,13 @@ class avaTools:
 
 
     async def world_built(self):
-        regions = await self.client.quefe("SELECT environ_code FROM environ", type='all')
+        while True:     # Sometimes mysql.connector yielded for result before calling execute()
+            try:
+                regions = await self.client.quefe("SELECT environ_code FROM environ", type='all')
+                break
+            except mysqlError.ProgrammingError:
+                await asyncio.sleep(0.5)
+
         # print(regions)
 
         for region in regions:
@@ -523,6 +529,51 @@ class avaTools:
         re_name = await self.utils.inj_filter(raw.content)
         if re_name == 'default': re_name = ctx.author.name
         return re_name
+
+
+    async def character_destructor(self, ctx, query=None):
+        if not query:
+            query = f"""
+                        DELETE FROM cosmetic_preset WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_arts WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_avatars WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_backgrounds WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_fonts WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_bank WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_deck WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_degrees WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_dungeoncheckpoint WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_equipment WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM environ_party WHERE party_id = (SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}' AND role='LEADER');|||
+                        DELETE FROM pi_party WHERE party_id IN ('{"' '".join(my_party[0])}') OR (user_id='{ctx.author.id}' AND role='MEMBER');|||
+                        DELETE FROM pi_guild WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_hero WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_hunt WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_inventory WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_order WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');|||
+                        DELETE FROM pi_tax WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');|||
+                        DELETE FROM pi_unit WHERE land_code IN (SELECT land_code FROM pi_land WHERE user_id='{ctx.author.id}');|||
+                        DELETE FROM pi_land WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_mobs_collection WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_quest WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_quests WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_relationship WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_rest WHERE user_id='{ctx.author.id}';
+                    """
+
+        for q in query.split('|||'):
+            await asyncio.sleep(1)
+            try: await self.client._cursor.execute(q)
+            except:
+                await self.client.owner.send(q)
+                print("<!> Error at <avaTools.character_destructor> (query='{}')".format(q))
+                return
+
+        # PERSONAL_INFO
+        await self.client._cursor.execute(f"""
+            UPDATE personal_info SET partner='n/a' WHERE partner='{ctx.author.id}';
+            DELETE FROM personal_info WHERE id='{ctx.author.id}';
+                                            """)
 
 
 
@@ -853,89 +904,4 @@ class avaTools:
             emli.append(myembed)
             currentpage += 1
         return emli, pages, item_per_page
-
-
-
-
-
-
-
-
-    # Obsolete from JSON ver
-    """async def ava_manip(self, MSG, function, *args):
-        · def stt_adjust(parameter, adjustment, value)
-           · def stt_check(path)    ---    Dict only, seperate by /
-        user_id = str(MSG.author.id)
-
-        def stt_adjust(parameter, adjustment, value):
-            if adjustment == 'add': self.ava_dict[user_id][parameter] += int(value)
-            elif adjustment == 'subtract': self.ava_dict[user_id][parameter] += int(value)
-            elif adjustment == 'multiply': self.ava_dict[user_id][parameter] = int(self.ava_dict[user_id][parameter]*value)
-            elif adjustment == 'divide': self.ava_dict[user_id][parameter] = int(self.ava_dict[user_id][parameter]//value)
-
-        def stt_check(path, creation_perm, endpoint=''):
-            a = path.split('/')
-            copy = self.ava_dict[user_id][a[0]]
-            # Traverse. In case trarvesing is jammed, create the following nodes if permitted
-            for node in a[1:]:
-                try: copy = copy[node]
-                except KeyError: 
-                    if creation_perm == 1: 
-                        # Make extra node
-                        extra_node = {}; stuff = {}
-                        for minode in reversed(a[a.index(node) + 1:]):
-                            if a.index(minode) == -1: stuff = endpoint; continue
-                            # Wrap stuff inside extra_node, labeled with minode. Then make extra_node a stuff
-                            extra_node[minode] = stuff
-                            stuff = extra_node
-                        
-                        print(extra_node)
-                        print(self.ava_dict[user_id][a[0]])
-                        # Replicate old one/nối dài 
-                        old_node = {}; stuff_2 = []
-                        print(a[1:a.index(node) + 1])
-                        for minode in a[1:a.index(node) + 1]:
-                            if a.index(minode) == 1: stuff_2.append(self.ava_dict[user_id][a[0]]); print("HERERERERRRRRRRR")
-                            elif a.index(minode) == a.index(node): 
-                                print("HUUUUUUUURURUR")
-                                print(node)
-                                print(minode)
-                                #old_node = stuff_2[-1]
-                                #stuff_2.append(old_node[node])
-                                old_node = stuff_2[-1]
-                                #thing[node] = extra_node
-                                old_node[a[a.index(minode) - 1]] = {node: extra_node}
-                                stuff_2[-1] = old_node
-                            else: 
-                                print("HEEEEEEEEEEE???")
-                                old_node = stuff_2[-1]
-                                #old_node[minode] = {node: extra_node}
-                                old_node[a[a.index(minode) - 1]] = {node: extra_node}
-                                stuff_2.append(old_node) 
-
-                        print(stuff_2)
-                        somenode = ''
-                        if len(stuff_2) > 1:
-                            for binode, minode in zip(reversed(stuff_2), reversed(a[1:a.index(node) + 1])):
-                                stuff_2.reverse()
-                                prev_binode = stuff_2[stuff_2.index(binode) - 1]
-                                if not somenode: prev_binode[minode] = binode; somenode = prev_binode
-                                else:
-                                    prev_binode[minode] = somenode; somenode = prev_binode
-
-                            self.ava_dict[user_id][a[0]] = somenode                        
-                        
-                    else: raise KeyError
-                    print(self.ava_dict[user_id][a[0]])
-                    return endpoint
-            return copy
-
-        if function == 'stt_adjust': stt_adjust(args[0], args[1], float(args[2]))
-        # args[1]:Permission    args[2]:enpoint
-        elif function == 'stt_check': 
-            try: return stt_check(args[0], args[1], args[2])
-            except IndexError: 
-                try: return stt_check(args[0], args[1])
-                except IndexError: return stt_check(args[0], 0)
-    """                
 

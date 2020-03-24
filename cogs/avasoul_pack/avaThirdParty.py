@@ -11,17 +11,17 @@ class avaThirdParty:
 
     def __init__(self, client=None):
         self.client = client
-        self.configs = SConfig()
-        self.redio = redis.Redis(host=self.configs.Redis_host, port=self.configs.Redis_port)
+        self.redio = redis.Redis(host=self.client.myconfig.Redis_host, port=self.client.myconfig.Redis_port)
         self.loop = asyncio.get_event_loop()
         try: self.client.conn, self.client._cursor = self.loop.run_until_complete(self.get_CURSOR())
         except RuntimeError: pass
-        self.client.client_id = self.configs.Imgur_id
-        self.client.client_secret = self.configs.Imgur_secret
+        self.client.client_id = self.client.myconfig.Imgur_id
+        self.client.client_secret = self.client.myconfig.Imgur_secret
         self.client.imgur_client = ImgurClient(self.client.client_id, self.client.client_secret)
 
     async def get_CURSOR(self):
-        conn = await aiomysql.connect(host=self.configs.MySQL_host, user=self.configs.MySQL_user, password=self.configs.MySQL_pw, port=self.configs.MySQL_port, db=self.configs.MySQL_db, autocommit=True)
+        print("""<*> Connected DB == "{}.{}" ({})""".format(self.client.myconfig.MySQL_host, self.client.myconfig.MySQL_db, self.client.myconfig.MySQL_port))
+        conn = await aiomysql.connect(host=self.client.myconfig.MySQL_host, user=self.client.myconfig.MySQL_user, password=self.client.myconfig.MySQL_pw, port=self.client.myconfig.MySQL_port, db=self.client.myconfig.MySQL_db, autocommit=True)
         _cursor = await conn.cursor()
         return conn, _cursor
 

@@ -108,15 +108,15 @@ class avaGuild(commands.Cog):
             if money < cost: await ctx.send("<:osit:544356212846886924> Insufficient balance!"); return
 
             await self.client._cursor.execute(f"UPDATE personal_info SET money={money - cost} WHERE id='{ctx.author.id}';")
-            await self.client._cursor.execute(f"UPDATE pi_guild SET guild_code='{current_place}', deposit=deposit+{cost} WHERE user_id='{ctx.author.id}';")
+            await self.client._cursor.execute(f"UPDATE pi_guild SET guild_code='{guild_code}', deposit=deposit+{cost} WHERE user_id='{ctx.author.id}';")
             await ctx.send(f"<:guild_p:619743808959283201> Welcome, {ctx.message.author.mention}, to our big family all over Pralayr <:guild_p:619743808959283201>\nYou are no longer a lonely, nameless adventurer, but a member of `{current_place} | {guild_code}` guild, a part of **G.U.I.L.D**'s league. Please, newcomer, make yourself at home <3"); return
 
         elif args[0] == 'leave':
             # GET personal guild info
-            try: p_guild_code, deposit = await self.client.quefe(f"SELECT guild_code, deposit FROM pi_guild WHERE user_id='{ctx.author.id}' AND guild_code<>'n/a';")
+            try: guild_code, deposit, guild_name = await self.client.quefe(f"SELECT p.guild_code, p.deposit, m.guild_name FROM pi_guild p, model_guild m WHERE p.user_id='{ctx.author.id}' AND p.guild_code<>'n/a' AND m.guild_code=p.guild_code;")
             except TypeError: await ctx.send("<:osit:544356212846886924> You haven't joined any guild yet!"); return
 
-            await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, leaving `{current_place}|{guild_code}` guild? (key: `leaving confirm` | timeout=5s)")
+            await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, leaving `{guild_code}| {guild_name}` guild? (key: `leaving confirm` | timeout=5s)")
             try: await self.client.wait_for('message', timeout=5, check=lambda m: m.channel == ctx.channel and m.content == 'leaving confirm' and m.author == ctx.author)
             except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timed out!"); return
 
@@ -149,13 +149,14 @@ class avaGuild(commands.Cog):
                     if await self.client._cursor.execute(f"SELECT * FROM pi_quests WHERE user_id='{ctx.author.id}' AND quest_code='{raw[1]}';") >= 1:
                         await ctx.send("<:osit:544356212846886924> Quest has already been taken"); return
                     done_quests, qpool, qpool_guild = await self.client.quefe(f"SELECT pi_quest.`finished_quests`, pi_quest.`quest_pool`, model_guild.`quest_pool` FROM pi_quest, model_guild, pi_guild WHERE pi_quest.`user_id`='{ctx.author.id}' AND pi_guild.`user_id`=pi_quest.`user_id` AND model_guild.`guild_code`=pi_guild.`guild_code`;")
-                    done_quests = self.finQuest_coder(done_quests)
+                    try: done_quests = self.finQuest_coder(done_quests)
+                    except AttributeError: done_quests = []
                     try: qpool = qpool.split(' - ')
                     except AttributeError: qpool = []
                     try: qpool_guild = qpool_guild.split(' - ')
                     except AttributeError: qpool_guild = []
                     if raw[1] in done_quests: await ctx.send("<:osit:544356212846886924> Quest has already been finished."); return
-                    elif raw[1] not in qpool or raw[1] not in qpool_guild: await ctx.send("<:osit:544356212846886924> Quest not found."); return
+                    elif raw[1] not in qpool and raw[1] not in qpool_guild: await ctx.send("<:osit:544356212846886924> Quest not found."); return
                     if await self.client._cursor.execute(f"SELECT user_id FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats in ('ONGOING', 'FULL')") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> Your rank isn't high enough to handle more than **{sample[rank]}** quests at a time"); return
 
                     # QUEST info get
@@ -402,9 +403,11 @@ class avaGuild(commands.Cog):
 
         current_place = await self.client.quefe(f"SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'"); current_place = current_place[0]
 
-        #completed_bundle = await self.client.quefe(f"SELECT quest_code FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats='DONE' AND EXISTS (SELECT * FROM model_quest WHERE model_quest.quest_code=pi_quests.quest_code AND region='{current_place}');")
-        # completed_bundle, qpool = await self.client.quefe(f"SELECT finished_quests, quest_pool FROM pi_quest WHERE user_id='{ctx.author.id}' AND region='{current_place}';")
-        completed_bundle, qpool, qpool_guild = await self.client.quefe(f"SELECT pi_quest.`finished_quests`, pi_quest.`quest_pool`, model_guild.`quest_pool` FROM pi_quest, model_guild, pi_guild WHERE pi_quest.`user_id`='{ctx.author.id}' AND pi_guild.`user_id`=pi_quest.`user_id` AND model_guild.`guild_code`=pi_guild.`guild_code`;")
+        try:
+            completed_bundle, qpool, qpool_guild = await self.client.quefe(f"SELECT pi_quest.`finished_quests`, pi_quest.`quest_pool`, model_guild.`quest_pool` FROM pi_quest, model_guild, pi_guild WHERE pi_quest.`user_id`='{ctx.author.id}' AND pi_guild.`user_id`=pi_quest.`user_id` AND model_guild.`guild_code`=pi_guild.`guild_code`;")
+        except TypeError:
+            await self.client.quefe(f"INSERT INTO pi_quest VALUES (0, {ctx.author.id}, '{current_place}', NULL, NULL);")
+            completed_bundle, qpool, qpool_guild = await self.client.quefe(f"SELECT pi_quest.`finished_quests`, pi_quest.`quest_pool`, model_guild.`quest_pool` FROM pi_quest, model_guild, pi_guild WHERE pi_quest.`user_id`='{ctx.author.id}' AND pi_guild.`user_id`=pi_quest.`user_id` AND model_guild.`guild_code`=pi_guild.`guild_code`;")
         try:
             # completed_bundle = completed_bundle.split(' - ')
             completed_bundle = self.finQuest_coder(completed_bundle)
@@ -535,7 +538,7 @@ class avaGuild(commands.Cog):
 
                 if user.id == ctx.author.id: await ctx.send("Don't be dumb <:fufu:520602319323267082>"); return
 
-                try: 
+                try:
                     stats, cur_MOB, cur_USER = await self.client.quefe(f"SELECT stats, cur_MOB, cur_USER FROM personal_info WHERE id='{user.id}';")
                     if stats == 'DEATH': await ctx.send(f"<:osit:544356212846886924> The dead can't speak."); return
                     if cur_MOB != 'n/a' or cur_USER != 'n/a': await ctx.send(f"<:osit:544356212846886924> The player is in combat!"); return

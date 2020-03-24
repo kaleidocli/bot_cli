@@ -69,7 +69,7 @@ class avaPersonal(commands.Cog):
 
 # ================== INFO/AVATAR ==================
 
-    @commands.command(aliases=['begin', 'start'])
+    @commands.command(aliases=['create', 'start'])
     @commands.cooldown(1, 6, type=BucketType.user)
     async def incarnate(self, ctx, *args):
         id = str(ctx.author.id); name = ctx.author.name
@@ -97,14 +97,18 @@ class avaPersonal(commands.Cog):
             except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!"); return
         else: re_race = None; re_gender = None; re_name = None
 
-        bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
+        try:
+            bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
+        finally:
+            await self.tools.character_destructor(ctx)
         if not bump:
             await ctx.send(f">>> {self.utils.nixietext(f'Welcome to the Pralayer!')}")
-            await ctx.send(f">>> This bot is hard, {ctx.author.mention}! So I'll personally advise you using `tutorial 1` to at least know what to do with this bot.\nAfter that, you can check `faq` for some extra info.", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
+            await ctx.send(f">>> This bot is weird, {ctx.author.mention}. So I'll personally advise you using `tutorial 1` to at least know what to do with Cli!\nAfter that, you can check `faq` for some extra info!", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
             await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'working', ex=82800, nx=True))
         elif bump == 3:
             await ctx.send(f"<:osit:544356212846886924> You've already incarnated!"); return
-        else: await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")
+        else:
+            await ctx.send(f":white_check_mark: {ctx.author.mention} has successfully re-incarnated. **WELCOME BACK!**")
 
     @commands.command(aliases=['p'])
     @commands.cooldown(1, 4, type=BucketType.user)
@@ -202,13 +206,9 @@ class avaPersonal(commands.Cog):
         box.add_field(name=f'>>> **`EVO`** · {evo}\n**`STR`** · {STR}\n**`INT`** · {INTT}\n**`CHARM`** · {charm}', value=f"<:right_hand:521197677346553861>{right_hand}", inline=True)
         box.add_field(name='⠀', value='⠀', inline=True)
         box.add_field(name=f'>>> **`FLAME`** · {au_FLAME}\n**`ICE`** · {au_ICE}\n**`HOLY`** · {au_HOLY}\n**`DARK`** · {au_DARK}', value=f"<:left_hand:521197732162043922>{left_hand}", inline=True)
-        # box.add_field(name=f'>>> **`merit`** · {merit}{pocket_line}', value=f"{handling[combat_HANDLING]}", inline=True)
         box.set_thumbnail(url=ctx.author.avatar_url)
-        # box.set_footer(text=f'', icon_url='https://imgur.com/jkznAfT')
 
-        await ctx.send(embed=box, delete_after=10)
-        # await ctx.author.send(embed=box)
-        # await ctx.send(":incoming_envelope: **Bang!** <a:blob_snu:531060438142812190> *From Cli with love*")
+        await ctx.send(embed=box, delete_after=30)
 
     # pylint: disable=unused-variable
     @commands.command(aliases=['wb'])
