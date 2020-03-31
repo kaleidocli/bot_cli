@@ -267,10 +267,10 @@ class avaDBC(commands.Cog):
                                                 lockon_max, 
                                                 rewards, 
                                                 illulink 
-                                                FROM model_converstation;""", type='all')
+                                                FROM model_mob;""", type='all')
         for r in res:
             await asyncio.sleep(0)
-            temp[r[1]] = c_Mob(r)
+            temp[r[0]] = c_Mob(r)
 
         return temp
 
@@ -586,6 +586,6 @@ class c_Mob:
 
         # Rewards
         rewardsTemp2 = []
-        for e in rewardsTemp.split(' - '):
+        for e in rewardsTemp.split(' | '):
             rewardsTemp2.append(tuple(e.split(' - ')))
         self.rewards = tuple(rewardsTemp2)

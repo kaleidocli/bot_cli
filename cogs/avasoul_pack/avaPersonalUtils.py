@@ -337,7 +337,9 @@ class avaPersonalUtils(commands.Cog):
             current_place = await self.client.quefe(f"SELECT cur_PLACE, money FROM personal_info WHERE id='{ctx.author.id}'"); current_place = current_place[0]
 
             sample = {'iron': 3, 'bronze': 4, 'silver': 5, 'gold': 6, 'adamantite': 8, 'mithryl': 10}
-            if await self.client._cursor.execute(f"SELECT user_id FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats in ('ONGOING', 'FULL');") >= sample[rank]: await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
+            if await self.client._cursor.execute(f"SELECT user_id FROM pi_quests WHERE user_id='{ctx.author.id}' AND stats in ('ONGOING', 'FULL');") >= sample[rank]:
+                await ctx.send(f"<:osit:544356212846886924> You cannot handle more than **{sample[rank]}** quests at a time")
+                return
 
             # QUEST info get
             try: quest_code, quest_line, quest_name, snap_query, quest_sample, eval_meth, effect_query, reward_query, penalty_query, duration = await self.client.quefe(f"SELECT quest_code, quest_line, name, snap_query, sample, eval_meth, effect_query, reward_query, penalty_query, duration FROM model_quest WHERE region='{current_place}' AND quest_line='daily' ORDER BY RAND() LIMIT 1;")
@@ -370,10 +372,6 @@ class avaPersonalUtils(commands.Cog):
     @commands.command()
     @commands.cooldown(1, 360, type=BucketType.user)
     async def delete(self, ctx, *args):
-        # Get party_id
-        my_party = await self.client.quefe(f"SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}' AND role='LEADER';", type='all')
-        if my_party: my_party = [a[0] for a in my_party]
-        else: my_party = ['ansna']
         
         await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.author.name}, lease type `delete confirm` to proceed.")
 

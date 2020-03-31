@@ -41,7 +41,13 @@ class avaWorkshop(commands.Cog):
         print("|| Workshop --- RELOADED!")
 
     async def reloadSetup(self):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
         await self.cacheAll()
+
+        self.utils = avaUtils(self.client)
+        self.tools = avaTools(self.client, self.utils)
 
 
 
@@ -112,6 +118,9 @@ class avaWorkshop(commands.Cog):
     @commands.command()
     @commands.cooldown(1, 60, type=BucketType.user)
     async def merge(self, ctx, *args):
+        # DO NOT TRY TO MERGE WITH CONSUMABLE
+        # ALL ITEMS IN AN INVENTORY MUST HAVE ONLY O-N-E ENTRY
+
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
         cmd_tag = 'merge'
@@ -123,10 +132,10 @@ class avaWorkshop(commands.Cog):
         try:
             # Item's info get
             try:
-                w_name, w_evo, w_weight, w_defend, w_multiplier, w_str, w_intt, w_sta, w_speed, w_acc_randomness, w_acc_range, w_r_min, w_r_max, w_firing_rate, w_dmg, w_stealth, w_price = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, price FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{raw[0]}';")
-                t_w_name, t_w_evo, t_w_weight, t_w_defend, t_w_multiplier, t_w_str, t_w_intt, t_w_sta, t_w_speed, t_w_acc_randomness, t_w_acc_range, t_w_r_min, t_w_r_max, t_w_firing_rate, t_w_dmg, t_w_stealth, t_w_price = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, price FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{raw[1]}';")
+                w_name, w_evo, w_weight, w_defend, w_multiplier, w_str, w_intt, w_sta, w_speed, w_acc_randomness, w_acc_range, w_r_min, w_r_max, w_firing_rate, w_dmg, w_stealth, w_price = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, price FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{raw[0]}' AND tags LIKE '%inconsumable%';")
+                t_w_name, t_w_evo, t_w_weight, t_w_defend, t_w_multiplier, t_w_str, t_w_intt, t_w_sta, t_w_speed, t_w_acc_randomness, t_w_acc_range, t_w_r_min, t_w_r_max, t_w_firing_rate, t_w_dmg, t_w_stealth, t_w_price = await self.client.quefe(f"SELECT name, evo, weight, defend, multiplier, str, intt, sta, speed, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, price FROM pi_inventory WHERE existence='GOOD' AND user_id='{ctx.author.id}' AND item_id='{raw[1]}' AND tags LIKE '%inconsumable%';")
             # E: Item's not found
-            except TypeError: await ctx.send("<:osit:544356212846886924> Item's not found!"); return
+            except TypeError: await ctx.send("<:osit:544356212846886924> Item's not found! (Chec items' tags; only *inconsumable* items are allowed)"); return
             # E: Not enough args
             except IndexError: await ctx.send("<:osit:544356212846886924> You need two items in order to merge!"); return
 
@@ -140,9 +149,11 @@ class avaWorkshop(commands.Cog):
             price = ((w_evo + t_w_evo)//2*1000)//(1 + len(degrees))
             if price < 1: price = 1
 
-            await ctx.send(f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirm` | Timeout=20s)")
-            try: await self.client.wait_for('message', timeout=20, check=lambda m: m.channel == ctx.channel and m.content == 'merging confirm' and m.author == ctx.author)
-            except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timeout!"); return
+            if not await self.tools.requestConfirmationReact(ctx, f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**."): return
+
+            # await ctx.send(f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirm` | Timeout=20s)")
+            # try: await self.client.wait_for('message', timeout=20, check=lambda m: m.channel == ctx.channel and m.content == 'merging confirm' and m.author == ctx.author)
+            # except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timeout!"); return
 
             # Deduct money
             if await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{price} WHERE id = '{ctx.author.id}' AND money >= {price};") == 0:
@@ -328,6 +339,42 @@ class avaWorkshop(commands.Cog):
                 #    await ctx.send("*Nothing but dust here...*")
             
             await self.tools.pagiMain(ctx, formus, makeembed, item_per_page=12, delete_on_exit=False)
+
+    @commands.command()
+    @commands.cooldown(1, 20, type=BucketType.user)
+    async def transfuse(self, ctx, *args):
+        
+        # Getting info
+        try:
+            origin, origin_base, name = await self.client.quefe(f"SELECT origin, origin_base, name FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_id='{args[0]}' AND tags LIKE '%inconsumable%' AND existence='GOOD';")
+            t_origin, t_name, t_quantity, t_code = await self.client.quefe(f"SELECT origin, name, quantity, item_code FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_id='{args[1]}' AND existence='GOOD';")
+        # E: Item not found
+        except TypeError:
+            await ctx.send("<:osit:544356212846886924> Item not found! (Check items' tags; first item MUST BE *inconsumable* item)"); return
+        # E: Missing args
+        except IndexError:
+            await ctx.send("<:osit:544356212846886924> Require two items!"); return
+
+        # Quantity
+        try:
+            quantity = t_quantity if t_quantity < int(args[2]) else int(args[2])
+        except (IndexError, ValueError):
+            quantity = 1
+
+        # Prompt
+        if not await self.tools.requestConfirmationReact(ctx, f":tools: Transfusing <:origin:693682238277025853>`{t_origin * quantity}` into item `{args[0]}`| **{name}** (currently at <:origin:693682238277025853>`{origin}`/`{origin_base}`).\n:warning: WARNING: A transfusion will cause the *second item* to be destroyed!"): return
+
+        # TRANSFUSE
+        await self.client._cursor.execute(f"""
+                                                UPDATE pi_inventory SET origin=origin+{t_origin * quantity} WHERE item_id='{args[0]}' AND user_id='{ctx.author.id}' AND existence='GOOD';
+                                                SELECT func_i_delete('{ctx.author.id}', '{t_code}', {quantity});
+                                            """)
+
+        # Inform
+        await ctx.send(f":tools: Transfusion SUCCES! Item `{args[1]}`| **{t_name}** was destroyed.")
+
+
+
 
 
 

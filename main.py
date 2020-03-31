@@ -1,5 +1,6 @@
 import atexit
 import asyncio
+import logging
 
 import discord
 from discord.ext import commands
@@ -80,6 +81,20 @@ client.support_server_invite = client.myconfig.support_server_invite
 client.remove_command('help')
 
 
+
+
+
+
+# ================== LOGGING ==================
+
+logging.basicConfig(
+                    filename=client.myconfig.logger,
+                    filemode='a',
+                    level=logging.WARNING,
+                    format='============= %(asctime)s,%(msecs)d %(name)s %(levelname)s =============\n%(message)s\n\n\n',
+                    datefmt='%H:%M:%S',
+                    )
+client.myLog = logging.getLogger('main')
 
 
 

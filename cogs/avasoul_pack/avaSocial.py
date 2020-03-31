@@ -95,19 +95,25 @@ class avaSocial(commands.Cog):
         t_LP, t_max_LP, t_STA, t_max_STA, t_charm, t_gender, t_name, t_race = await self.client.quefe(f"SELECT LP, max_LP, STA, max_STA, charm, gender, name, race FROM personal_info WHERE id='{partner}';")
         #tar = self.client.get_user(int(partner))
         tar = await self.client.loop.run_in_executor(None, partial(self.client.get_user, int(partner)))
+        if tar:
+            tarMention = tar.mention
+            tarId = tar.id
+        else:
+            tarMention = t_name
+            tarId = partner
 
         # ================== BIRTH
         if await self.utils.percenter(charm+t_charm, total=200):
-            await ctx.send(f"||<a:RingingBell:559282950190006282> Name your child. Timeout=30s||\n<:sailu:559155210384048129> Among these dark of the age, a new life has enlighten...\n⠀⠀⠀⠀**{ctx.author.name}** and {tar.mention}, how will you christen your little?\n⠀⠀⠀⠀⠀⠀⠀⠀Won't you do, keep shut and remain silence.")
+            await ctx.send(f"||<a:RingingBell:559282950190006282> Name your child. Timeout=30s||\n<:sailu:559155210384048129> Among these dark of the age, a new life has enlighten...\n⠀⠀⠀⠀**{ctx.author.name}** and {tarMention}, how will you christen your little?\n⠀⠀⠀⠀⠀⠀⠀⠀Won't you do, keep shut and remain silence.")
 
             def UMCc_check(m):  
-                return m.channel == ctx.channel and m.author in [tar, ctx.author]
+                return m.channel == ctx.channel and m.author.id in [tarId, int(tarId), ctx.author.id]
 
             try: resp = await self.client.wait_for('message', timeout=30, check=UMCc_check)
             except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Life arrived, yet its harbor declined..."); return
 
-            if gender == 'm': father = f"{ctx.author.id}"; mother = f"{tar.id}"
-            else: father = f"{ctx.author.id}"; mother = f"{tar.id}"
+            if gender == 'm': father = f"{ctx.author.id}"; mother = f"{tarId}"
+            else: father = f"{ctx.author.id}"; mother = f"{tarId}"
 
             # In case of two children is having sex
             if father.startswith('99999999') and mother.startswith('99999999'):
@@ -138,11 +144,11 @@ class avaSocial(commands.Cog):
 
         # ================== SEX
         else:
-            try: await ctx.send(f":heart: {tar.mention}, **{ctx.author.name}** is feeling *unsure*.\nType `sure` to make {ctx.author.name} sure, 20 secs left to grab your chance!")
+            try: await ctx.send(f":heart: {tarMention}, **{ctx.author.name}** is feeling *unsure*.\nType `sure` to make {ctx.author.name} sure, 20 secs left to grab your chance!")
             except AttributeError: await ctx.send(f":heart: {t_name}, **{ctx.author.name}** is feeling *unsure*.\nType `sure` to make {ctx.author.name} sure, 20 secs left to grab your chance!")
 
             def UMCc_check(m):
-                return m.channel == ctx.channel and m.author == tar and m.content.lower() == 'sure'
+                return m.channel == ctx.channel and str(m.author.id) == str(tarId) and m.content.lower() == 'sure'
 
             try: resp = await self.client.wait_for('message', timeout=20, check=UMCc_check)
             except asyncio.TimeoutError: await ctx.send(":pray: Neither of them are sure..."); return

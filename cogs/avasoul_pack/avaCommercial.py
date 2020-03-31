@@ -141,7 +141,7 @@ class avaCommercial(commands.Cog):
         await browse()
 
     @commands.command()
-    @commands.cooldown(2, 900, type=BucketType.user)
+    @commands.cooldown(3, 180, type=BucketType.user)
     async def trader(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
@@ -156,10 +156,11 @@ class avaCommercial(commands.Cog):
         if not await self.__cd_check(ctx.message, cmd_tag, f"The storm is coming so they ran away."): return
 
         # Get cuisine
-        try: cuisine, r_name = await self.client.quefe(f"SELECT cuisine, name FROM environ WHERE environ_code='{cur_PLACE}';")
+        try:
+            cuisine, r_name = await self.client.quefe(f"SELECT cuisine, name FROM environ WHERE environ_code='{cur_PLACE}';")
         except TypeError:
             cuisine, r_name = await self.client.quefe(f"SELECT cuisine, name FROM pi_land WHERE land_code='{cur_PLACE}';")
-            if not cuisine: await ctx.send("Traders are not through here, it seems..."); return
+        if not cuisine: await ctx.send("Traders are not through here, it seems..."); return
 
         # Get menu
         menu = []
@@ -177,9 +178,9 @@ class avaCommercial(commands.Cog):
         for ig_code in menu:
             line = line + f""" `{ig_code}` <:green_ruby:520092621381697540> **{items[ig_code][0]}**\n| **`Market price`** <:36pxGold:548661444133126185>{items[ig_code][2]}\n++ `{items[ig_code][3].replace(' - ', '` `')}`\n\n"""
             
-        reembed = discord.Embed(title = f"------------- KINUKIZA's MARKET of `{cur_PLACE}`| **{r_name}** -----------", colour = discord.Colour(0x011C3A), description=line)
+        reembed = discord.Embed(title = f"------------- KINUKIZA's TRADERS of `{cur_PLACE}`| **{r_name}** -----------", colour = discord.Colour(0x011C3A), description=line)
         temp1 = await ctx.send(embed=reembed)
-        await ctx.send('<a:RingingBell:559282950190006282> Syntax: `!buy` `[item_code]` `[quantity]` |  Time out: 60s')
+        await ctx.send('<a:RingingBell:559282950190006282> Syntax: `!buy [item_code] [quantity]` |  Time out: 60s')
 
         def UMCc_check(m):
             return m.channel == ctx.channel and m.content.startswith('!buy') and m.author == ctx.author
@@ -207,11 +208,12 @@ class avaCommercial(commands.Cog):
 
         # Reconfirm
         price = int(items[ig_code][2]*random.choice([0.1, 0.2, 0.5, 1, 2, 5, 0.75, 10]))
-        deposit = (price*quantity)//5
+        deposit = (price*quantity)//7
         msgdeal = await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, please react upon accepting the following deal:\n>>> **<:36pxGold:548661444133126185>{price}** per item [`{ig_code}`| **{items[ig_code][0]}**], meaning **<:36pxGold:548661444133126185>{price*quantity}** in total.\nDeposit would be <:36pxGold:548661444133126185>**{deposit}**")
         await msgdeal.add_reaction('\U0001f44c')
         try: await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f44c' and u == ctx.author, timeout=10)
         except asyncio.TimeoutError:
+            # Deposit deduction
             await self.client._cursor.execute(f"UPDATE personal_info SET money=money-IF(money >= {deposit}, {deposit}, money) WHERE id='{ctx.author.id}';")
             await ctx.send(f"<:osit:544356212846886924> The request is declined, and you lost a deposit of <:36pxGold:548661444133126185>**{deposit}**."); return
         
@@ -228,13 +230,16 @@ class avaCommercial(commands.Cog):
                 # Deduct money
                 await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{price*quantity} WHERE id='{str(ctx.message.author.id)}';")
 
-            else: await ctx.send("<:osit:544356212846886924> Insufficience balance!"); return
+            else:
+                # Deposit deduction
+                await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{deposit} WHERE id='{ctx.author.id}';")
+                await ctx.send(f"<:osit:544356212846886924> Insufficience balance, and you lost a deposit of <:36pxGold:548661444133126185>**{deposit}**!"); return
         # E: Item_code not found
         except KeyError: await ctx.send("<:osit:544356212846886924> Item's code not found!"); return
 
 
         # Greeting, of course :)
-        await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'trading', ex=2700, nx=True))
+        await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'trading', ex=600, nx=True))
         await ctx.send(f":white_check_mark: Received **{quantity}** item [`{ig_code}`| **{items[ig_code][0]}**]. Nice trade!")
 
     @commands.command(aliases=['b'])
@@ -439,7 +444,7 @@ $ {invs:,}```"""
         try:
             # Get info
             try:
-                item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, evo, aura, illulink, price = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, evo, aura, illulink, price FROM pi_inventory WHERE existence='GOOD' AND item_id='{int(raw[0])}' AND user_id='{ctx.author.id}';""")
+                item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, evo, aura, illulink, price, origin, origin_base = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, evo, aura, illulink, price, origin, origin_base FROM pi_inventory WHERE existence='GOOD' AND item_id='{int(raw[0])}' AND user_id='{ctx.author.id}';""")
                 if evo != 0: evo_plus = f"+{evo}"
                 else: evo_plus = ''
 
@@ -449,7 +454,7 @@ $ {invs:,}```"""
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n```"{description}"```\n"""
                 
-                reembed = discord.Embed(title=f"`{item_code}`|**{' '.join([x for x in name.upper()])}** {evo_plus}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", colour = discord.Colour(0x011C3A), description=line)
+                reembed = discord.Embed(title=f"`{item_code}`| **{' '.join([x for x in name.upper()])}** {evo_plus}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", colour = discord.Colour(0x011C3A), description=line)
                 reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
 
                 try: acc_per = 10//accuracy_randomness
@@ -457,6 +462,7 @@ $ {invs:,}```"""
                 reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**-------------------**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
 
                 reembed.set_thumbnail(url=self.aui[aura])
+                reembed.set_footer(text=f"{origin} / {origin_base + evo}", icon_url="https://imgur.com/t8EJO37.png")
                 if illulink != 'n/a': reembed.set_image(url=illulink)
 
                 await ctx.send(embed=reembed, delete_after=30); return
@@ -527,19 +533,14 @@ $ {invs:,}```"""
                 for item in items[top:least]:
                     if 'melee' in item[4]:
                         icon = '<:broadsword:508214667416698882>'
-                        #line = line + f""" `{item_code}` <:broadsword:508214667416698882> **{items[item_code]['obj'].name}** | *"{items[item_code]['obj'].description}"* \n| **`Required`** STR-{items[item_code]['obj'].str}\n| **`Price`** <:36pxGold:548661444133126185>{items[item_code]['obj'].price}\n++ `{'` `'.join(items[item_code]['obj'].tags)}`\n\n"""
                     elif 'range_weapon' in item[4]:
                         icon = '<:gun_pistol:508213644375621632>'
-                        #line = line + f""" `{item_code}` <:gun_pistol:508213644375621632> **{items[item_code]['obj'].name}** | *"{items[item_code]['obj'].description}"*\n| **`Required`** **STR**-{items[item_code]['obj'].str}/shot · **STA**-{items[item_code]['obj'].sta}\n| **`Price`**<:36pxGold:548661444133126185>{items[item_code]['obj'].price}\n++ `{'` `'.join(items[item_code]['obj'].tags)}` \n\n"""
                     elif 'ammunition' in item[4]:
                         icon = '<:shotgun_slug:508217929532440586>'
-                        #line = line + f""" `{item_code}` <:shotgun_slug:508217929532440586> **{self.data['item'][item_code].name}** | *"{self.data['item'][item_code].description}"* \n| **`Price`** <:36pxGold:548661444133126185>{self.data['item'][item_code].price}\n| **`Quantity`** {items[item_code]}\n++ `{'` `'.join(self.data['item'][item_code].tags)}`\n\n"""                        
                     elif 'supply' in item[4]:
                         icon = ':small_orange_diamond:'
-                        #line = line + f""" `{item_code}` :small_orange_diamond: **{self.data['item'][item_code].name}** \n| *"{self.data['item'][item_code].description}"*\n| **`Price`** <:36pxGold:548661444133126185>{self.data['item'][item_code].price}\n| **`Quantity`** {items[item_code]}\n++ `{'` `'.join(self.data['item'][item_code].tags)}`\n\n"""
                     elif 'ingredient' in item[4]:
                         icon = '<:green_ruby:520092621381697540>'
-                        #line = line + f""" `{item_code}` <:green_ruby:520092621381697540> **{self.data['ingredient'][item_code].name}**\n| *"{self.data['ingredient'][item_code].description}"*\n| **`Price`** <:36pxGold:548661444133126185>{self.data['ingredient'][item_code].price}\n| **`Quantity`** {items[item_code]}\n++ `{'` `'.join(self.data['ingredient'][item_code].tags)}`\n\n"""                            
                     elif 'blueprint' in item[4]:
                         icon = '<:blueprint512:557713942508470272>'
                     else: icon = ':tools:'
@@ -719,7 +720,8 @@ $ {invs:,}```"""
         #if isinstance(self.data['item'][item_code], ingredient): await ctx.send(f"<:osit:544356212846886924> You cannot use this command to obtain the given item, {str(ctx.message.author.id)}. Use `-trade` instead"); return
 
         # Money check
-        if i_price*quantity > money: await ctx.send("<:osit:544356212846886924> Insufficience balance!"); return
+        if i_price*quantity > money:
+            await ctx.send("<:osit:544356212846886924> Insufficience balance!"); return
 
         # Deduct money
         await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{i_price*quantity} WHERE id='{str(ctx.message.author.id)}';")

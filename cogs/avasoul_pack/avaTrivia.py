@@ -399,13 +399,13 @@ class avaTrivia(commands.Cog):
             try:
                 # On cooldown
                 if time == None or time <= 0:
-                    off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`{cmd}`**")
+                    off_cd.append(f"<:exclamation_yellow:637744510348034058> **`{cmd}`**")
                 # Off cooldown
                 else:
-                    on_cd.append(f"\n\⏱ Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
+                    on_cd.append(f"\n\⏱ **`{cmd}`** ::: [`{timedelta(seconds=int(time))}`]")
             # Off cooldown
             except TypeError:
-                on_cd.append(f"\n\⏱ Command **`{cmd}`**: `{timedelta(seconds=int(time))}`")
+                on_cd.append(f"\n\⏱ **`{cmd}`**` ::: [{timedelta(seconds=int(time))}`]")
 
         # # INTERACTIONs
         # tee = await self.client.quefe(f"SELECT target_code, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND flag<>'n/a'", type='all')
@@ -420,13 +420,17 @@ class avaTrivia(commands.Cog):
             end_point = await self.client.quefe(f"SELECT end_point FROM pi_hunt WHERE user_id='{ctx.author.id}' AND stats='ONGOING';")
             delta = relativedelta(end_point[0], datetime.now())
             # Still in progress
-            if datetime.now() < end_point[0]: on_cd.append(f"\n:stopwatch: Command **`hunt`**: `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`")
+            if datetime.now() < end_point[0]: on_cd.append(f"\n⏱ Command **`hunt`**: `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`")
             # Done, but not collected
-            else: off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`hunt`**: Finished")
+            else: off_cd.append(f"<:exclamation_yellow:637744510348034058> **`hunt`** (Collectable)")
         except TypeError:
-            off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`hunt`**: Ready to go")
+            off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`hunt`**: (Ready to go)")
 
-        await ctx.send(f""">>> {chr(10).join(off_cd)} {' '.join(on_cd)} {' '.join(interas)}""")
+        # await ctx.send(f""">>> {chr(10).join(off_cd)} {' '.join(on_cd)} {' '.join(interas)}""")
+        temb = discord.Embed(colour=0xA37C05)
+        temb.add_field(name="════╡<:exclamation_yellow:637744510348034058>╞════", value=f"{chr(10).join(off_cd)}")
+        if on_cd: temb.add_field(name="════╡⏱╞════", value=f"{' '.join(on_cd)}")
+        await ctx.send(embed=temb)
 
 
 

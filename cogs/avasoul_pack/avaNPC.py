@@ -128,7 +128,6 @@ class avaNPC(commands.Cog):
         # E: Relationship not initiated. Init one.
         except TypeError:
             value_1 = 0; value_2 = 0; value_3 = ''
-            # await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{args[0]}', {limit_chem}, {limit_impression}, '{flag}');")
             await self.client._cursor.execute(f"SELECT func_flag_reward('{ctx.author.id}', 'intera.{npc.npc_code}', {value_1}, {value_2}, '{value_3}');")
 
         # packs = await self.client.quefe(f"SELECT limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_interaction WHERE entity_code='{args[0]}' AND limit_flag='{flag}' AND (({limit_chem}>=limit_chem AND chem_compasign='>=') OR ({limit_chem}<limit_chem AND chem_compasign='<')) AND (({limit_impression}>=limit_impression AND imp_compasign='>=') OR ({limit_impression}<limit_impression AND imp_compasign='<')) AND region='{cur_PLACE}' AND limit_Ax<={cur_X} AND {cur_X}<limit_Bx AND limit_Ay<={cur_Y} AND {cur_Y}<limit_By ORDER BY limit_Ax DESC, limit_Bx ASC, limit_Ay DESC, limit_By ASC;", type='all')
@@ -191,7 +190,7 @@ class avaNPC(commands.Cog):
         await self.tools.pagiMain(ctx, (packs, npc), makeembed_two, item_per_page=8, timeout=60, delete_on_exit=False, pair=True)
 
     @commands.command(aliases=['meet'])
-    @commands.cooldown(1, 25, type=BucketType.user)
+    @commands.cooldown(1, 15, type=BucketType.user)
     async def interact(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
 
@@ -221,15 +220,6 @@ class avaNPC(commands.Cog):
             # # E: NPC not found --> Silently ignore
             # except TypeError: await ctx.message.add_reaction('\U00002754'); return
         except IndexError: await ctx.send("<:osit:544356212846886924> Entity not found!"); return
-
-        # # Relationship's info
-        # try:
-        #     limit_chem, limit_impression, flag = await self.client.quefe(f"SELECT limit_chem, limit_impression, flag FROM pi_relationship WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}';")
-        # # E: Relationship not initiated. Init one.
-        # except TypeError:
-        #     limit_chem = 0; limit_impression = 0; flag = 'n/a'
-        #     await self.client._cursor.execute(f"INSERT INTO pi_relationship VALUES (0, '{ctx.author.id}', '{entity_code}', {limit_chem}, {limit_impression}, '{flag}');")
-
 
         # BEFORE THE RIDE
         if intera_kw:
@@ -381,6 +371,9 @@ class avaNPC(commands.Cog):
 
             Return embs ((emb, dura), (emb, dura),..)    
         """
+        print("PACKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
+        print(pack)
+        print("PACKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
         author_code, lines, illulink = pack
         embs = []
 
@@ -506,7 +499,6 @@ class avaNPC(commands.Cog):
                 await self.client.owner.send(f"<!> Corrupted conv_code `{conv_code}` in intera_kw `{intera_kw}` of NPC `{entity_code}`")
                 return
             for l in conv.line:
-                print(l, conv.line)
                 embs = embs + await self.turn_embing(l, ctx.author)
             if not embs: return
         except KeyError:
@@ -563,10 +555,11 @@ class avaNPC(commands.Cog):
             rwc = 0
         if entity_code.startswith('p'):
             if effect_query:
-                # await self.client._cursor.execute(f"UPDATE pi_relationship SET limit_chem=limit_chem+{int(rwc)}+{round(charm/50)}, limit_impression=limit_impression+{int(random.choice(r_imp.split(' | ')))} WHERE user_id='{ctx.author.id}' AND target_code='{entity_code}'; {effect_query}")
-                await self.client._cursor.execute(f"SELECT func_flag_reward('{ctx.author.id}', 'intera.{entity_code}', {int(rwc)}+{round(charm/50)}, {int(random.choice(r_imp.split(' | ')))}, ''); {effect_query}")
+                await self.client._cursor.execute(f"SELECT func_flag_reward('{ctx.author.id}', 'intera.{entity_code}', {int(rwc) + round(charm/50)}, {int(random.choice(r_imp.split(' | ')))}, ''); {effect_query}")
+                # await self.client._cursor.execute(f"UPDATE pi_flag r SET r.value_1=r.value_1+1 WHERE r.user_id='{ctx.author.id}' AND r.flag_code='intera.{entity_code}'; {effect_query}")
             else:
-                await self.client._cursor.execute(f"SELECT func_flag_reward('{ctx.author.id}', 'intera.{entity_code}', {int(rwc)}+{round(charm/50)}, {int(random.choice(r_imp.split(' | ')))}, '');")
+                await self.client._cursor.execute(f"SELECT func_flag_reward('{ctx.author.id}', 'intera.{entity_code}', {int(rwc) + round(charm/50)}, {int(random.choice(r_imp.split(' | ')))}, '');")
+                # await self.client._cursor.execute(f"UPDATE pi_flag r SET r.value_1=r.value_1+1 WHERE r.user_id='{ctx.author.id}' AND r.flag_code='intera.{entity_code}';")
         else:
             if effect_query: await self.client._cursor.execute(effect_query)
 

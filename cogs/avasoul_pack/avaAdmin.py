@@ -162,7 +162,9 @@ class avaAdmin(commands.Cog):
         codes = await self.client.quefe(f"SELECT item_code FROM pi_inventory WHERE item_code LIKE 'it%' OR item_code LIKE 'ar%' OR item_code LIKE 'am%';", type='all')
 
         for code in codes:
-            await self.client._cursor.execute(f"UPDATE pi_inventory p INNER JOIN model_item m ON m.item_code='{code[0]}' SET p.tags=m.tags, p.weight=m.weight, p.defend=m.defend, p.multiplier=p.multiplier, p.str=m.str, p.intt=m.intt, p.sta=m.sta, p.speed=m.speed, p.round=m.round, p.accuracy_randomness=m.accuracy_randomness, p.accuracy_range=m.accuracy_range, p.range_min=m.range_min, p.range_max=m.range_max, p.firing_rate=m.firing_rate, p.reload_query=m.reload_query, p.effect_query=m.effect_query, p.infuse_query=m.infuse_query, p.passive_query=m.passive_query, p.ultima_query=m.ultima_query, p.price=m.price, p.dmg=m.dmg, p.stealth=m.stealth, p.evo=m.evo, p.aura=m.aura, p.craft_value=m.craft_value, p.illulink=m.illulink WHERE p.item_code='{code[0]}';")
+            # await self.client._cursor.execute(f"UPDATE pi_inventory p INNER JOIN model_item m ON m.item_code='{code[0]}' SET p.tags=m.tags, p.weight=m.weight, p.defend=m.defend, p.multiplier=p.multiplier, p.str=m.str, p.intt=m.intt, p.sta=m.sta, p.speed=m.speed, p.round=m.round, p.accuracy_randomness=m.accuracy_randomness, p.accuracy_range=m.accuracy_range, p.range_min=m.range_min, p.range_max=m.range_max, p.firing_rate=m.firing_rate, p.reload_query=m.reload_query, p.effect_query=m.effect_query, p.infuse_query=m.infuse_query, p.passive_query=m.passive_query, p.ultima_query=m.ultima_query, p.price=m.price, p.dmg=m.dmg, p.stealth=m.stealth, p.evo=m.evo, p.aura=m.aura, p.craft_value=m.craft_value, p.illulink=m.illulink, p.origin_base=m.origin_base WHERE p.item_code='{code[0]}';")
+            # Specific
+            await self.client._cursor.execute(f"UPDATE pi_inventory p INNER JOIN model_item m ON m.item_code='{code[0]}' SET p.origin_base=m.origin_base WHERE p.item_code='{code[0]}';")
 
         await ctx.send(":white_check_mark:")
 

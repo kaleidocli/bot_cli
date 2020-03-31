@@ -212,7 +212,7 @@ class avaGuild(commands.Cog):
             elif raw[0] == 'claim':
                 # Check if the quest is ONGOING     |      Get stuff too :>
                 try: snapshot, snap_query, quest_sample, stats, eval_meth, reward_query, quest_line, quest_code, end_point = await self.client.quefe(f"SELECT snapshot, snap_query, sample, stats, eval_meth, reward_query, (SELECT quest_line FROM model_quest WHERE quest_code=pi_quests.quest_code), quest_code, end_point FROM pi_quests WHERE quest_id={raw[1]} AND user_id='{ctx.author.id}';")
-                except (TypeError, mysqlError.InternalError): await ctx.send(f"<:osit:544356212846886924> Quest not found, **{ctx.author.name}**")
+                except (TypeError, mysqlError.InternalError): await ctx.send(f"<:osit:544356212846886924> Quest not found, **{ctx.author.name}**"); return
                 snap_query = snap_query.replace('user_id_here', f'{ctx.author.id}')
                 reward_query = reward_query.replace('user_id_here', f'{ctx.author.id}')
 
@@ -235,10 +235,9 @@ class avaGuild(commands.Cog):
                 # Evaluating
                 if eval_meth == '>=':
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                        if not (a - int(b)) >= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
+                        if not (int(a) - int(b)) >= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                 elif eval_meth == '==':
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                        print(a, b, c)
                         # DIGIT
                         if c.isdigit():
                             if not (int(a) - int(b)) >= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
@@ -247,13 +246,13 @@ class avaGuild(commands.Cog):
                             if not a == c: await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                 if eval_meth == '<=':
                     for a, b, c in zip(cur_snapshot, snapshot, quest_sample):
-                        if not (a - int(b)) <= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
+                        if not (int(a) - int(b)) <= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                 elif eval_meth == '>':
                     for a, c in zip(cur_snapshot, quest_sample):
-                        if not a >= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
+                        if not int(a) >= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
                 elif eval_meth == '<':
                     for a, c in zip(cur_snapshot, quest_sample):
-                        if not a <= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
+                        if not int(a) <= int(c): await ctx.send("<:guild_p:619743808959283201> The quest has not been fulfilled yet"); return
 
                 # Reward n Affect
                 await self.client._cursor.execute(reward_query)

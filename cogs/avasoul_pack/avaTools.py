@@ -533,6 +533,11 @@ class avaTools:
 
     async def character_destructor(self, ctx, query=None):
         if not query:
+            # Get party_id
+            my_party = await self.client.quefe(f"SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}' AND role='LEADER';", type='all')
+            if my_party: my_party = [a[0] for a in my_party]
+            else: my_party = ['ansna']
+
             query = f"""
                         DELETE FROM cosmetic_preset WHERE user_id='{ctx.author.id}';|||
                         DELETE FROM pi_arts WHERE user_id='{ctx.author.id}';|||
@@ -905,3 +910,31 @@ class avaTools:
             currentpage += 1
         return emli, pages, item_per_page
 
+
+
+    # GUI =================================================================
+    async def requestConfirmationMessage(self, ctx, message, keyword, timeout=20, errMsg=None):
+        await ctx.send(f"{message}\n<a:RingingBell:559282950190006282> Proceed? (Key: `{keyword}` | Timeout={timeout}s)")
+        try:
+            await self.client.wait_for('message', timeout=timeout, check=lambda m: m.channel == ctx.channel and m.content == keyword and m.author == ctx.author)
+            return True
+        except asyncio.TimeoutError:
+            if not errMsg:
+                await ctx.send("<:osit:544356212846886924> Request timeout!")
+            else: 
+                await ctx.send(errMsg)
+            return False
+
+    async def requestConfirmationReact(self, ctx, message, timeout=20, emo='\U00002705', errMsg=None):
+        msg = await ctx.send(f"{message}\n<a:RingingBell:559282950190006282> Proceed? (Timeout={timeout}s)")
+        await msg.add_reaction(emo)
+
+        try:
+            await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == emo and u == ctx.author, timeout=timeout)
+            return True
+        except asyncio.TimeoutError:
+            if not errMsg:
+                await ctx.send("<:osit:544356212846886924> Request timeout!")
+            else: 
+                await ctx.send(errMsg)
+            return False

@@ -108,8 +108,6 @@ class avaCombat(commands.Cog):
             # PVE   |    USING MOB'S ID
             elif copo.startswith('mob.') or copo.startswith('boss'):
                 # If there's no current_enemy   |   # If there is, and the target is the current_enemy
-                # if CE:
-                # if 'lock' in CE:
                 if copo == 'boss':
                     try:
                         target = await self.client.quefe(f"SELECT mob_id FROM environ_mob WHERE branch='boss' AND region='{cur_PLACE}' AND {cur_X} > limit_Ax AND {cur_Y} > limit_Ay AND {cur_X} < limit_Bx AND {cur_Y} < limit_By;")
@@ -123,9 +121,6 @@ class avaCombat(commands.Cog):
                     # CE - Processing/lock
                     try: CE['lock'] = target_id
                     except NameError: pass
-                # If there is, but the target IS NOT the current_enemy
-                #elif copo != CE['lock']:
-                #    await ctx.send(f"<:osit:544356212846886924> Please finish your current fight with the `{CE['lock']}`!"); return
 
 
 
@@ -191,12 +186,13 @@ class avaCombat(commands.Cog):
         tCE['effect'] = self.CE_effect_encoder(tCE['effect'])
 
 
-        # TARGET CHECK =========================================
-
+        # MOVES =========================================
 
         # Checking the length of moves
         moves_to_check = await self.client.quefe(f"SELECT value FROM pi_arts WHERE user_id='{str(ctx.message.author.id)}' AND art_type='ability' AND art_code='aa0';")
-        if not raw_move: raw_move = random.choices(['b', 'q', 'a'], k=moves_to_check[0])
+        if not raw_move:
+            raw_move = random.choice(['b', 'q', 'a'])         # Single-move
+            # raw_move = random.choices(['b', 'q', 'a'], k=moves_to_check[0])         # Full-move
         if len(raw_move) > moves_to_check[0]:
             await ctx.send(f"<:osit:544356212846886924> Your current movement limit is `{len(raw_move)}`, **{ctx.message.author.name}**!"); return
 
@@ -380,9 +376,10 @@ class avaCombat(commands.Cog):
         # DISTANCE get/check
         if __mode == 'PVP':
             distance = await self.utils.distance_tools(cur_X, cur_Y, t_cur_X, t_cur_Y)
+            CE['distance'] = distance
             if distance > w_rmax or distance < w_rmin: await ctx.send(f"<:osit:544356212846886924> **{ctx.message.author.name}**, the target is out of your weapon's range!"); return
         elif __mode == 'PVE':
-            distance = 0                    # There is NO distance in a PVE battle, therefore the accuracy will always be at its lowest
+            distance = int(CE['distance'])                    # Distance are randomly generated at the initial point of CE ---> CEmaker()
 
 
 
@@ -447,10 +444,10 @@ class avaCombat(commands.Cog):
 
         # RANDOMNESS | Take HANDLING into account, then re-calc
         if combat_HANDLING == 'both':
-            w_accu_randomness = w_accu_randomness*2 + (INTT*4+w_int)//5
+            w_accu_randomness = w_accu_randomness*2 + (INTT*3+w_int*2)//5
         else:
             w_accu_randomness = w_accu_randomness + (INTT*4+w_int)//5
-        if w_accu_randomness < 1: w_accu_randomness = 1 + (INTT*4+w_int)//5
+        if w_accu_randomness < 1: w_accu_randomness = 1 + (INTT*3+w_int*2)//5
 
         # CE - Processing
         # SHOTS are evaluated with probability and user's CE (PCM:Attack) (More attack -> Less accuracy)
@@ -473,8 +470,10 @@ class avaCombat(commands.Cog):
         print(f"DEN: {denominator}")
 
         # Optimal point
-        if not distance: optimal_point = random.choice(range(round((w_rmax - w_rmin)/9*2)))        # PVE, where distance=0
-        else: optimal_point = (w_rmax - w_rmin)/9*2 - distance
+        if not distance:
+            optimal_point = random.choice(range(round((w_rmax - w_rmin)/9*2)))        # PVE, where distance=0
+        else:
+            optimal_point = (w_rmax - w_rmin)/9*2 - distance
         if optimal_point > 0: numerator += optimal_point*1.7
         print(f"OPT: {optimal_point}")
         print(f"DEN_2: {denominator}")
@@ -500,17 +499,18 @@ class avaCombat(commands.Cog):
                     await target.send(f":sos: **Someone** is trying to hurt you, {target.mention}!")
             return
 
-
-        # PVP use target, with ava_dict =================================
-
         # PVE use target_id, with environ_mob ============================
+        try:
+            if __mode == 'PVP':
+                await self.PVP_range(shots, ctx.message, _style, __mode, aDict={'a_dmg': a_dmg, 'a_weight': a_weight, 'w_aura': w_aura, 'w_speed': w_speed, 'w_stealth': w_stealth}, tDict={'target': target, 'target_id': target_id, 't_name': t_name, 't_combat_HANDLING': t_combat_HANDLING, 't_left_hand': t_left_hand, 't_right_hand': t_right_hand, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE, tCE=tCE)
+            elif __mode == 'PVE':
+                await self.PVE_range(shots, ctx.message, _style, aDict={'a_dmg': a_dmg, 'w_aura': w_aura}, tDict={'target_id': target_id, 't_name': t_name, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly, 't_speed': t_speed, 't_DEFPY': t_DEFPY, 't_DEFMA': t_DEFMA}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE)
+            else: print("<<<<< OH SHIET >>>>>>>")
+        finally:
+            # CE - OUT
+            await self.tools.redio_map(f"CE{ctx.author.id}", dict=CE, ttl=20)
 
 
-        if __mode == 'PVP':
-            await self.PVP_range(shots, ctx.message, _style, __mode, aDict={'a_dmg': a_dmg, 'a_weight': a_weight, 'w_aura': w_aura, 'w_speed': w_speed, 'w_stealth': w_stealth}, tDict={'target': target, 'target_id': target_id, 't_name': t_name, 't_combat_HANDLING': t_combat_HANDLING, 't_left_hand': t_left_hand, 't_right_hand': t_right_hand, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE, tCE=tCE)
-        elif __mode == 'PVE':
-            await self.PVE_range(shots, ctx.message, _style, aDict={'a_dmg': a_dmg, 'w_aura': w_aura}, tDict={'target_id': target_id, 't_name': t_name, 'au_FLAME': t_AFlame, 'au_ICE': t_AIce, 'au_DARK': t_ADark, 'au_HOLY': t_AHoly, 't_speed': t_speed, 't_DEFPY': t_DEFPY, 't_DEFMA': t_DEFMA}, uDict={'au_FLAME': AFlame, 'au_ICE': AIce, 'au_DARK': ADark, 'au_HOLY': AHoly}, CE=CE)
-        else: print("<<<<< OH SHIET >>>>>>>")
 
     @commands.command()
     @commands.cooldown(1, 3, type=BucketType.user)
@@ -556,7 +556,7 @@ class avaCombat(commands.Cog):
                         effect_line += self.effect_icon[e_pack[0]]
                 except KeyError: pass
                 
-                temb.add_field(name=f"╟ `Time` · {CE_ttl}", value=f"\n╟ `Lockon` · **{CE['lock']}**\n╟ `Ultimate` · **{CE['ultimate']}%**\n> {effect_line}⠀")
+                temb.add_field(name=f"╟ `Time` · {CE_ttl}", value=f"\n╟ `Lockon` · **{CE['lock']}**\n╟ `Ultimate` · **{CE['ultimate']}%**\n> {effect_line}⠀\n╟ `Distance` · **{CE['distance']}** m")
                 temb.add_field(name=f">>> {vpcm}⠀", value=f"╟ `Aggressive` · **{float(CE['aggressive']):.2f}**\n╟ `Defensive` · **{float(CE['defensive']):.2f}**\n╟ `Evasive` · **{float(CE['evasive']):.2f}**")
 
             await ctx.send(embed=temb, delete_after=10)
@@ -585,7 +585,7 @@ class avaCombat(commands.Cog):
 
 
 
-# ================== TOOLs ==================
+# ================== MODULES ==================
     # CE [effect_tag, value, percentage, strikes_to_live, time_to_live_addition]
 
     async def PVE_melee(self, MSG, target_id, raw_move, CE=None, CE_ttl=0):
@@ -600,12 +600,12 @@ class avaCombat(commands.Cog):
             w_sta += wd_weight/100
         elif combat_HANDLING == 'right':
             w_str, w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT str, defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{right_hand}' OR item_code='{right_hand}') AND user_id='{user_id}'")
-            w_speed *= 1.2
+            w_speed *= 2
             w_multiplier += 1
             w_defend *= 2
         elif combat_HANDLING == 'left':
             w_str, w_defend, w_speed, w_multiplier, w_weight, w_sta = await self.client.quefe(f"SELECT str, defend, speed, multiplier, weight, sta FROM pi_inventory WHERE existence='GOOD' AND (item_id='{left_hand}' OR item_code='{left_hand}') AND user_id='{user_id}'")
-            w_speed *= 1.2
+            w_speed *= 2
             w_multiplier += 1
             w_defend *= 2
 
@@ -638,16 +638,17 @@ class avaCombat(commands.Cog):
             # REFRESHING ===========================================
             LP, STA = await self.client.quefe(f"SELECT LP, STA FROM personal_info WHERE id='{MSG.author.id}';")
 
+            # Player DIE: Decrease mobs_collection
             if not await self.tools.ava_scan(MSG, type='life_check'):
                 # If query effect zero row
                 if await self.client._cursor.execute(f"UPDATE pi_mobs_collection SET {t_branch}={t_branch}-1 WHERE user_id='{t_branch}' AND region='{cur_PLACE}';") == 0:
                     await self.client._cursor.execute(f"INSERT INTO pi_mobs_collection (user_id, region, {t_branch}) VALUES ('{user_id}', '{cur_PLACE}', -1);")
-                return False
-            if t_lp <= 0:
-                await MSG.channel.send(f"<:tumbstone:544353849264177172> **{t_name}** is dead.")
-                
+                return (False, "")
+
+            # Mob DIE
+            if t_lp <= 0:                
                 # Add one to the collection
-                type = await vanishing()
+                type = await self.mobVanishing(MSG, target_id, (user_id, evo))
 
                 # If query effect zero row
                 if await self.client._cursor.execute(f"UPDATE pi_mobs_collection SET {type}={type}+1 WHERE user_id='{user_id}' AND region='{cur_PLACE}';") == 0:
@@ -656,86 +657,17 @@ class avaCombat(commands.Cog):
                 # Erase the current_enemy lock on off the target_id
 
                 await self.client._cursor.execute(f"UPDATE personal_info SET cur_MOB='n/a' WHERE id='{user_id}';")
-                return False
+                return (False, f"<:tumbstone:544353849264177172> **{t_name}** is dead.")
 
             # Effect display
             effect_line = ''
             try:
                 for e_pack in CE['effect']:
                     effect_line += self.effect_icon[e_pack[0]]
-                if effect_line: effect_line = "〖" + effect_line + "〗"
             except KeyError: pass
 
-            msg = f"╔═══════════\n╟:heartpulse:`{LP}` :muscle:`{STA}`⠀⠀|〖**{MSG.author.mention}**〗{effect_line}\n╟:heartpulse:`{t_lp-dmg:.0f}`⠀⠀⠀⠀⠀⠀⠀⠀|〖**{t_name}**〗\n╚═══════════"
-            return msg
-
-        async def vanishing():
-            # Looting
-            mob_code, rewards, reward_query, region, t_Ax, t_Ay, t_Bx, t_By = await self.client.quefe(f"SELECT mob_code, rewards, reward_query, region, limit_Ax, limit_Ay, limit_Bx, limit_By FROM environ_mob WHERE mob_id='{target_id}';")
-            try:
-                mems = await self.client.quefe(f"SELECT user_id FROM pi_party WHERE party_id=(SELECT party_id FROM pi_party WHERE user_id='{MSG.author.id}');", type='all')
-                if len(mems) > 1:
-                    for mem in mems:
-                        if mem[0] != str(ctx.author.id): reward_query_party = reward_query.replace('perks=perks+', f'perks=perks+(1/ABS(evo-{evo})+1)*').replace('merit=merit+', f'merit=merit+(1/ABS(evo-{evo})+1)*')
-                        else: reward_query_party = reward_query
-                        await self.client._cursor.execute(reward_query_party.replace('user_id_here', mem[0]))
-                    await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you and {len(mems) - 1} other party members received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
-                else:
-                    await self.client._cursor.execute(reward_query.replace('user_id_here', str(MSG.author.id)))
-                    await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you've received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
-            except:
-                await self.client._cursor.execute(reward_query.replace('user_id_here', str(MSG.author.id)))
-                await MSG.channel.send(f"<:chest:507096413411213312> Congrats **{MSG.author.mention}**, you've received **{rewards.replace(' | ', '** and **')}** from **「`{target_id}` | {t_name}」**!")
-
-            
-
-            # ==================================
-            # Get the <mob> prototype
-            name, branch, lp, strr, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, t_evo, description, lockon_max, illulink = await self.client.quefe(f"SELECT name, branch, lp, str, chain, speed, attack_type, defense_physic, defense_magic, rewards, au_FLAME, au_ICE, au_DARK, au_HOLY, skills, effect, evo, description, lockon_max, illulink FROM model_mob WHERE mob_code='{mob_code}';")
-            rewards = rewards.split(' | ')
-
-            # Generating rewards
-            status = []; objecto = []; bingo_list = []
-            for reward in rewards:
-                stuff = reward.split(' - ')
-                # Gacha
-                if await self.utils.percenter(int(stuff[2])):
-
-                    # Stats reward
-                    if stuff[0] in ['money', 'perks']:
-                        if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
-                        elif stuff[0] == 'perks': bingo_list.append(f"<:perk:632340885996044298>{stuff[1]}")
-
-                        status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
-                    # ... other shit
-                    else: 
-                        # Get item/weapon's info
-                        objecto.append(f"""SELECT func_it_reward("user_id_here", "{stuff[0]}", {stuff[1]}); SELECT func_ig_reward("user_id_here", "{stuff[0]}", {stuff[1]});""")
-                        bingo_list.append(f"item `{stuff[0]}`")
-
-            # Merit calc
-            merrire = t_evo - evo + 1
-            if merrire < 0: merrire = 0
-            else:
-                if target_id.startswith('boss'): merrire = int(merrire/2*10)
-            stata = f"""UPDATE personal_info SET {', '.join(status)}, merit=merit+{merrire} WHERE id="user_id_here"; """
-            rewards_query = f"{stata} {' '.join(objecto)}"
-
-            # Remove the old mob from DB
-            await self.client._cursor.execute(f"DELETE FROM environ_mob WHERE mob_id='{target_id}';")
-
-            # Insert the mob to DB. Anti-duplicate.
-            while True:
-                counter_get = await self.client.quefe("SELECT MAX(id_counter) FROM environ_mob")
-                try:
-                    await self.client._cursor.execute(f"""INSERT INTO environ_mob VALUES (0, 'mob.{int(counter_get[0])+1}', '{mob_code}', "{name}", "{description}", '{branch}', {lp}, {strr}, {chain}, {speed}, '{attack_type}', {defense_physic}, {defense_magic}, {au_FLAME}, {au_ICE}, {au_HOLY}, {au_DARK}, '{skills}', '{effect}', '{' | '.join(bingo_list)}', '{rewards_query}', '{region}', {t_Ax}, {t_Ay}, {t_Bx}, {t_By}, '{lockon_max}', "{illulink}", '');""")
-                except mysqlError.IntegrityError:
-                    await asyncio.sleep(0)
-                    continue
-                break
-            # await self.client._cursor.execute(f"UPDATE environ_mob SET mob_id='mob.{counter_get[0]}' WHERE id_counter={counter_get[0]};")
-
-            return branch
+            statusPack = (LP, STA, effect_line, t_lp-dmg)
+            return (True, statusPack)
 
         async def dmg_calc(raw_move, ttl_plus=0):
             bonus = []
@@ -907,10 +839,8 @@ class avaCombat(commands.Cog):
             try: CE['ultimate'] = float(CE['ultimate']) + m_art
             except (TypeError, KeyError): pass
 
-            # Inform
-            uEmbed = discord.Embed(color=0xCDEE6E)
-            uEmbed.add_field(name=f":dagger: **{name}**  ⋙**[{dmg}]**⋙**「`{target_id}` | {t_name}」**", value=f":dagger: {icon_sequence}")
-            await MSG.channel.send(embed=uEmbed, delete_after=20)
+            # Packing info / playerPack
+            playerPack = (name, dmg, icon_sequence)
 
 
 
@@ -954,27 +884,28 @@ class avaCombat(commands.Cog):
             # Take effect
             await self.client._cursor.execute(f"UPDATE personal_info SET LP=LP-{t_dmg}, STA=STA-{t_dmg_q} WHERE id='{user_id}';")
 
-            # Inform
+            # Packing info / targetPack
             if 'evade' in bonus:
-                tEmbed = discord.Embed(color=0xF15C4A)
+                tEmbed = discord.Embed(color=0xFFB654)
                 tEmbed.add_field(name=f"\n<:evading:615285957889097738> **{MSG.author.mention}** evaded!", value=f"⠀")
-                if t_illulink: tEmbed.set_thumbnail(url=t_illulink)
-            else:
-                #pack_1 = f"\n:dagger: **「`{target_id}` | {t_name}」** ⋙ *{t_dmg}* ⋙ **{MSG.author.mention}**"
-                tEmbed = discord.Embed(color=0xF15C4A)
-                tEmbed.add_field(name=f":dagger: **「`{target_id}` | {t_name}」**  ⋙**[{t_dmg}]**⋙**{MSG.author.name}**", value=f":dagger: {t_icon_sequence}")
-                if t_illulink: tEmbed.set_thumbnail(url=t_illulink)
+                await MSG.channel.send(embed=tEmbed)
+            targetPack = (target_id, t_name, t_dmg, t_icon_sequence, t_illulink)
 
             
-            # Conclusing
+            # Conclusing / statusPack
             pack_2 = await conclusing(dmg)
-            # Inform
-            if pack_2: await MSG.channel.send(f"{pack_2}", embed=tEmbed, delete_after=20)
-            else: return False
+
+            if pack_2[0]:
+                # Formatting Infos
+                infoEmb = await self.battleInfoFormatting(pack_2[1], playerPack, targetPack)
+                # Send
+                await MSG.channel.send(MSG.author.mention, embed=infoEmb, delete_after=15)
+            else:
+                return False
 
             # CE - OUT
             CE['effect'] = self.CE_effect_encoder(CE['effect'], mode='encode')          # Encode back to string
-            await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=CE_ttl+ttl_plus)
+            await self.tools.redio_map(f"CE{MSG.author.id}", dict=CE, ttl=round(CE_ttl+ttl_plus))
 
         await battle()
 
@@ -1272,6 +1203,128 @@ class avaCombat(commands.Cog):
 
 
 
+
+
+
+# ================== MODULES 2 ==================
+
+    async def mobLooting(self, mob_pack, user_pack, mobProto, user_mention='adventurer'):
+        """
+        Reward a player, and their party memebers (if exist)
+
+        Return an Congratulation string.
+
+        user_pack       (tuple)         (user_id, user_evo)
+
+        mob_pack        (tuple)         (mob_id, rewards, reward_query, mob_name, mob_branch)
+
+        mobProto                        Object: DBC c_Mob()
+        """
+
+        user_id, user_evo = user_pack
+        mob_id, rewards, reward_query, mob_name, mob_branch = mob_pack
+        mob_code, rewards, reward_query, mob_name, mob_branch = await self.client.quefe(f"SELECT mob_code, rewards, reward_query, name, branch FROM environ_mob WHERE mob_id='{mob_id}';")
+
+        # Merit calc
+        merrire = mobProto.evo - user_evo + 1
+        if merrire < 0: merrire = 0
+        else:
+            if mob_branch.startswith('boss'): merrire = int(merrire/2*10)
+
+        try:
+            # Party
+            mems = await self.client.quefe(f"SELECT user_id FROM pi_party WHERE party_id=(SELECT party_id FROM pi_party WHERE user_id='{user_id}');", type='all')
+            if len(mems) > 1:
+                for mem in mems:
+                    if mem[0] != str(ctx.author.id): reward_query_party = reward_query.replace('perks=perks+', f'perks=perks+(1/ABS(evo-{evo})+1)*').replace('merit=merit+', f'merit=merit+(1/ABS(evo-{evo})+1)*({merrire})')
+                    else: reward_query_party = reward_query
+                    await self.client._cursor.execute(reward_query_party.replace('user_id_here', mem[0]))
+                return f"<:chest:507096413411213312> Congrats **{user_mention}**, you and {len(mems) - 1} other party members received **{rewards.replace(' | ', '** and **')}** from **「`{mob_id}` | {mob_name}」**!"
+            else:
+                await self.client._cursor.execute(reward_query.replace('user_id_here', str(user_id)))
+                return f"<:chest:507096413411213312> Congrats **{user_mention}**, you've received **{rewards.replace(' | ', '** and **')}** from **「`{mob_id}` | {mob_name}」**!"
+        except:
+            await self.client._cursor.execute(reward_query.replace('user_id_here', str(user_id)))
+            return f"<:chest:507096413411213312> Congrats **{user_mention}**, you've received **{rewards.replace(' | ', '** and **')}** from **「`{mob_id}` | {mob_name}」**!"
+
+    async def mobResupply(self, mob_id, mobProto):
+        """
+            mob_id      (mob.xx, boss.xx)           The entity that needs to be disposed and replaced with the same kind
+
+            mobProto                        Object: DBC c_Mob()
+        """
+
+        # REWARDS ((a, b,..), (c, d,..),..) ====== 
+        status = []; objecto = []; bingo_list = []
+        for stuff in mobProto.rewards:
+            # Gacha
+            if await self.utils.percenter(int(stuff[2])):
+
+                # Stats reward
+                if stuff[0] in ['money', 'perks']:
+                    if stuff[0] == 'money': bingo_list.append(f"<:36pxGold:548661444133126185>{stuff[1]}")
+                    elif stuff[0] == 'perks': bingo_list.append(f"<:perk:632340885996044298>{stuff[1]}")
+
+                    status.append(f"{stuff[0]}={stuff[0]}+{int(stuff[1])}")
+                # ... other shit
+                else: 
+                    # Get item/weapon's info
+                    objecto.append(f"""SELECT func_it_reward("user_id_here", "{stuff[0]}", {stuff[1]}); SELECT func_ig_reward("user_id_here", "{stuff[0]}", {stuff[1]});""")
+                    bingo_list.append(f"item `{stuff[0]}`")
+
+        reward_query = f"""UPDATE personal_info SET {', '.join(status)}, merit=merit+0 WHERE id="user_id_here"; {' '.join(objecto)}"""
+        rewards = f"{' | '.join(bingo_list)}"
+
+        # Remove the old mob from DB
+        await self.client._cursor.execute(f"""SELECT func_mob_resupply("{mob_id}", '{rewards.replace("'", "''")}', '{reward_query.replace("'", "''")}');""")
+
+        return mobProto.branch
+
+    async def mobVanishing(self, MSG, mob_id, user_pack):
+        """
+            Called when a user defeat a mob.
+
+            user_pack       (tuple)         (user_id, user_evo)
+        """
+
+        mob_code, rewards, reward_query, mob_name, mob_branch = await self.client.quefe(f"SELECT mob_code, rewards, reward_query, name, branch FROM environ_mob WHERE mob_id='{mob_id}';")
+        mobProto = self.client.DBC['model_mob'][mob_code]
+        
+        # REWARD ==================
+        rewardingMessage = await self.mobLooting((mob_id, rewards, reward_query, mob_name, mob_branch), user_pack, mobProto, user_mention=MSG.author.mention)
+        await MSG.channel.send(rewardingMessage)
+
+        # RE-SUPPLY Mob ===========
+        branch = await self.mobResupply(mob_id, mobProto)
+
+        return branch
+
+    async def battleInfoFormatting(self, statusPack, playerPack, targetPack):
+        """
+        statusPack = (LP, STA, effect_line, <target_LP>)
+
+        playerPack = (name, dmg, icon_sequence)
+
+        targetPack = (target_id, t_name, t_dmg, t_icon_sequence, t_illulink)
+        """
+
+        temb = discord.Embed(description=f"""> {playerPack[2]}
+                                            {targetPack[3]}""", color=0xC6FF54)
+        # FIELD: Player (Left)
+        temb.add_field(name=f"{playerPack[0]}", value=f">>> :heartpulse:`{statusPack[0]}`\n:muscle:`{statusPack[1]}`")
+        # FIELD: Damage (Middle)
+        temb.add_field(name=f"═══〖{statusPack[2]}〗═══", value=f"**[{playerPack[1]:.1f}]** ⋙⋙⋙\n⋘⋘⋘ **[{targetPack[2]:.1f}]**")
+        # FIELD: Target (Right)
+        temb.add_field(name=f" `{targetPack[0]}`| **{targetPack[1]}**", value=f"> :heartpulse:{statusPack[3]}")
+
+        if targetPack[4]: temb.set_thumbnail(url=targetPack[4])
+
+        return temb
+
+
+
+
+
     def CE_effect_encoder(self, value, mode='decode'):
         """decode: String to List
             encode: List to String"""
@@ -1284,9 +1337,6 @@ class avaCombat(commands.Cog):
             return elist
 
         else:
-            # # Filtering
-            # try: value.remove([''])
-            # except ValueError: pass
 
             temp = []
             # print(f"Value into decoder --- {value}")
@@ -1305,8 +1355,10 @@ class avaCombat(commands.Cog):
             "aggressive": 0, "defensive": 0, "evasive": 0, "ultimate": 0, "raw_pcm": '',
             "lock": 'n/a',
             "effect": '',
+            "distance": self.ceDistanceGenerator()
         }
 
+        # Raw Passive combat movement
         count = 0
         for c in raw_pcm:
             if c == 'a': CE['aggressive'] = float(CE['aggressive']) + 1.25 + count
@@ -1316,6 +1368,15 @@ class avaCombat(commands.Cog):
             count += 0.2
         CE['raw_pcm'] = raw_pcm
         return CE
+
+    def ceDistanceGenerator(self, multiplier=10, max_addition=5):
+        a = random.choice(range(multiplier))
+        # max_addition = random.choice(range(max_addition))
+        counter = 0
+        while counter < max_addition:
+            a *= (random.choice(range(multiplier)) + 1)
+            counter += 1
+        return a
 
 
 

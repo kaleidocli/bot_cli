@@ -107,7 +107,7 @@ class avaActivity(commands.Cog):
             line = "**-------------------- oo --------------------**\n" 
             for pack in job_list[top:least]:
                 job_code, name, description, requirement, duration, reward, sta = pack
-                line = line + f"""`{job_code}` ∙ **{name.capitalize()}**\n*"{description}"*\n**<:36pxGold:548661444133126185>{reward}** | `{duration}`**s** | STA-`{sta}` | **Require:** `{requirement.replace(' - ', '` `')}`\n\n"""
+                line = line + f"""`{job_code}`| **{name.capitalize()}** ∙ *"{description}"*\n**<:36pxGold:548661444133126185>{reward}** | `{duration}`**s** | STA-`{sta}` | **Require:** `{requirement.replace(' - ', '` `')}`\n\n"""
             line = line + "**-------------------- oo --------------------**" 
 
             reembed = discord.Embed(title = f"JOBS", colour = discord.Colour(0x011C3A), description=line)
