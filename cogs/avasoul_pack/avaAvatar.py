@@ -945,6 +945,7 @@ class avaAvatar(commands.Cog):
             await asyncio.sleep(0)
             print("FORM 1")
             assdir_font = path.join('data', 'profile', 'font', self.font_dict[font[0]])
+            print(assdir_font)
             print("FORM 2")
             self.prote_lib['font'][font[0]] = {}
             print("FORM 3")
