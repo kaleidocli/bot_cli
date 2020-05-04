@@ -939,8 +939,8 @@ class avaAvatar(commands.Cog):
         fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
         fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
         fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
+        print("HERE 1")
         for font in fonts:
-            print(font)
             await asyncio.sleep(0)
             assdir_font = path.join('data', 'profile', 'font', self.font_dict[font[0]])
             # print(assdir_font)
@@ -954,27 +954,7 @@ class avaAvatar(commands.Cog):
             self.prote_lib['font'][font[0]]['guild'] = ImageFont.truetype(assdir_font, 19)   # Guild
             self.prote_lib['font'][font[0]]['rank'] = ImageFont.truetype(assdir_font, 39)    # Rank
             self.prote_lib['font'][font[0]]['money'] = ImageFont.truetype(assdir_font, 53)   # Money
-
-        """
-        def ImageGen_supporter(char, rawimg):
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/char/{char}/{rawimg}').convert('RGBA')
-            img = img.resize((int(self.prote_lib['form'][0].height/img.height*img.width), self.prote_lib['form'][0].height), resample=Image.LANCZOS)
-            self.prote_lib[prote_codes[char]].append(img)
-        """
-        """
-        def BackgroundGen_supporter(bg_name, rawimg):
-            img = Image.open(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}/{rawimg}').convert('RGBA')
-            img = img.resize((800, 600), resample=Image.LANCZOS)
-            img = img.filter(ImageFilter.GaussianBlur(2.6))
-            self.prote_lib['bg'][bg_codes[bg_name]].append(img)
-        """
-
-        """
-        def CardGen_supporter(card_code, rawimg):
-            img = Image.open(path.join('data', 'card', rawimg)).convert('RGBA')
-            img = img.resize((190, 327), resample=Image.LANCZOS)
-            self.prote_lib['card'][card_code].append(img)
-        """
+        print("HERE 2")
 
         def bg_plugin():
             """
@@ -984,38 +964,6 @@ class avaAvatar(commands.Cog):
             """
             self.prote_lib['bg_gif'] = []
             self.prote_lib['bg_deck'] = []
-
-            """"
-            for bg_name, bg_id in bg_codes.items():
-                self.prote_lib['bg'][bg_id] = []
-                for rawimg in listdir(f'C:/Users/DELL/Desktop/bot_cli/data/profile/bg/{bg_name}'):
-                    BackgroundGen_supporter(bg_name, rawimg)
-                    #await self.client.loop.run_in_executor(None, ImageGen_supporter, char_name, rawimg)
-            """
-            """
-            path.join('data', 'stock graph', 'bg_roll.png')
-            img = Image.open(path.join('data', 'stock graph', 'bg_roll.png')).convert('RGBA')
-            self.prote_lib['bg_stock'].append(img)
-            img = Image.open(path.join('data', 'stock graph', 'bar.png')).convert('RGBA')
-            self.prote_lib['stock_bar'].append(img)
-            """
-
-            # DECK =====================
-            """
-            img = Image.open(path.join('data', 'card', 'board600.png')).convert('RGBA')
-            img = img.resize((600, 355), resample=Image.LANCZOS)
-            self.prote_lib['bg_deck'].append(img)
-            """
-            """
-            particle_after = []
-            particles = imageio.mimread('C:/Users/DELL/Downloads/gif/train.gif', memtest=False)
-            for particle in particles:
-                a = Image.fromarray(particle)
-                a = a.resize((800, 600), resample=Image.LANCZOS)
-                a = a.filter(ImageFilter.GaussianBlur(2.6))
-                particle_after.append(a)
-            self.prote_lib['bg_gif'].append(particle_after)
-            """
 
         def form_plugin():
             print('FORM 1')
@@ -1042,8 +990,11 @@ class avaAvatar(commands.Cog):
 
         print('FORM 2')
         await self.client.loop.run_in_executor(None, bg_plugin)
+        print("HERE 3")
         await self.client.loop.run_in_executor(None, form_plugin)
+        print("HERE 4")
         await self.client.loop.run_in_executor(None, font_plugin)
+        print("HERE 5")
         await self.client.loop.run_in_executor(None, badge_plugin)
         print('FORM 3')
 
