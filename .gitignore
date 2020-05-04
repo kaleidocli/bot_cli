@@ -11,3 +11,4 @@ data/map
 audio
 errLog.log
 errLog_test.log
+data/dbMySql
