@@ -9,6 +9,7 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import aiohttp
 from PIL import Image
+from transliterate import translit
 
 from utils import checks
 
@@ -22,6 +23,19 @@ class misc(commands.Cog):
         self.char_dict = {'a': '\U0001f1e6', 'b': '\U0001f1e7', 'c': '\U0001f1e8', 'd': '\U0001f1e9', 'e': '\U0001f1ea', 'f': '\U0001f1eb', 'g': '\U0001f1ec', 'h': '\U0001f1ed', 'i': '\U0001f1ee', 'j': '\U0001f1ef', 'k': '\U0001f1f0',
             'l': '\U0001f1f1', 'm': '\U0001f1f2', 'n': '\U0001f1f3', 'o': '\U0001f1f4', 'p': '\U0001f1f5', 'q': '\U0001f1f6', 'r': '\U0001f1f7', 's': '\U0001f1f8', 't': '\U0001f1f9', 'u': '\U0001f1fa', 'v': '\U0001f1fb', 'w': '\U0001f1fc', 'x': '\U0001f1fd', 'y': '\U0001f1fe', 'z': '\U0001f1ff'}
         self.msg_bank = []; self.memo_mode = False; self.cur_learning = []
+        self.chrisId = 427063788546555916
+        self.chrisOwnerId = 246938839720001536
+        self.chrisGuildId = 336642139381301249
+        self.chrisAlphaSample = tuple(" abcdefghijklmnopqrstuvwxyz1234567890-+.,")
+        self.userAlphaSample = {
+            'е': 'e',
+            'с': 'c'
+        }
+        self.predictedAnswer = ''
+        self.chrisQuizPrefix = "My sentence is: "
+        self.isAntiChrisOn = False
+        self.chrisLatestQuiz = None
+        self.antiChrisMsgBank = []
 
         self.act_gif = {
                 'yay': 'https://imgur.com/dvKPLJH.gif',
@@ -45,6 +59,106 @@ class misc(commands.Cog):
                 'sad': 'https://imgur.com/ZeuaOeB.png'
                 }
 
+
+
+
+
+
+# ================== EVENTS ==================
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if self.isAntiChrisOn and message.guild.id == self.chrisGuildId:
+            # Record all message
+            self.antiChrisMsgBank.insert(0, message)
+
+            if message.author.id == self.chrisId:
+                # Answer
+                if self.predictedAnswer and message.mentions:
+                    # Get winner
+                    winner = None
+                    for u in message.mentions:
+                        if u.id not in (self.chrisId, self.chrisOwnerId):
+                            winner = u
+                            break
+                    if not winner:
+                        print("Winner not found")
+                        return
+                    # Get last message of winner
+                    ansMsg = None
+                    for msg in self.antiChrisMsgBank:
+                        if msg.author.id == winner.id:
+                            if len(msg.content) >= 25:
+                                ansMsg = msg.content
+                    if not ansMsg:
+                        print("ansMsg not found")
+                        return
+                    print(f"<!> ansMsg: {ansMsg}")
+                    await self.learnSingularity(self.chrisLatestQuiz, ansMsg)
+
+                # Quiz
+                elif message.content.startswith(self.chrisQuizPrefix):
+                    # Reset
+                    self.predictedAnswer = ''
+
+                    notAplha = []
+                    singularities = []
+                    quizContent = message.content[len(self.chrisQuizPrefix):]
+                    # Scan n Clean notAphabet chars
+                    for c in quizContent:
+                        if not c.isalpha() and c != ' ':
+                            notAplha.append(c)
+                    for n in notAplha:
+                        quizContent = quizContent.replace(n, '')
+                    
+                    # Clean singularities               # Singularity is a alphabet character that has the same looking, but different tham normal LATIN character
+                    # quizContent = translit(u"{}".format(quizContent), reversed=True)
+
+                    # Record singularities          # Singularity is a alphabet character that has the same looking, but different tham normal LATIN character
+                    print("HEREEEEE 1")
+                    self.chrisLatestQuiz = quizContent
+                    singularities = await self.scanSingularity(quizContent)
+                    print("HEREEEEE 2")
+                    quizContent = await self.fixSingularity(quizContent, singularities)
+                    self.predictedAnswer = quizContent
+
+                    await message.channel.send("**`Predicted answer`** -- {}\n**`Singularities`** -- {}".format(quizContent, ' - '.join(singularities)))
+
+    async def scanSingularity(self, s):
+        sing = []
+
+        # Record
+        for c in s:
+            if c not in self.chrisAlphaSample:
+                sing.append(c)
+        return list(set(sing))
+
+    async def fixSingularity(self, s, sings):
+        for sing in sings:
+            # Sing. is recorded
+            print("HEREEEEE 3")
+            try:
+                s = s.replace(sing, self.userAlphaSample[sing])
+            # If not, leave it be
+            except KeyError:
+                pass
+        return s
+
+    async def learnSingularity(self, quizContent, trueAnswer):
+        if not self.predictedAnswer:
+            return ()
+        for cPre, cAns, cQui in zip(self.predictedAnswer, trueAnswer, quizContent):
+            if cAns != cAns:
+                self.userAlphaSample[cQui] = cAns
+                print(f"<!> [{cPre}] wrong --- setting Sing's key [{cQui}] -> [{cAns}]")
+
+
+
+
+
+
+
+# ================== TRIVIA SYS ==================
 
 
     @commands.command()
@@ -286,12 +400,12 @@ class misc(commands.Cog):
                 if not self.cur_learning[0].cancelled():
                     self.cur_learning[0].cancel()
                     await ctx.send(":white_check_mark:")
-                    memo_mode = False; return
+                    self.memo_mode = False; return
                 else: await ctx.send(":x:"); return
         except IndexError: pass
 
         # Memo mode check
-        if memo_mode: await ctx.send("Chotto chotto, i've already been memorizing another channel!"); return
+        if self.memo_mode: await ctx.send("Chotto chotto, i've already been memorizing another channel!"); return
 
         # Channel's id      ||      Default count
         try: channel_id = int(args[0])
@@ -305,11 +419,45 @@ class misc(commands.Cog):
 
         # Init
         await ctx.send(f"Memorizing anxima {df_count} of channel **`{channel_id}`**...")
-        memo_mode = True
+        self.memo_mode = True
         self.msg_bank = []
         a = self.client.loop.create_task(self.memorizing(channel_id, df_count))
         try: self.cur_learning[0] = a
         except IndexError: self.cur_learning.append(a)
+
+
+
+    @commands.command()
+    async def suggest(self, ctx, *args):
+        await ctx.send("Your idea was submitted!")
+
+
+
+
+
+
+
+# ================== TOOLS ==================
+
+    @commands.command()
+    @checks.check_author()
+    async def anti_chris(self, ctx, *args):
+        if self.isAntiChrisOn:
+            self.isAntiChrisOn = False
+            self.antiChrisMsgBank = []
+            await ctx.send(":x:")
+        else:
+            self.isAntiChrisOn = True
+            await ctx.send(":white_check_mark:")
+
+    @commands.command()
+    @checks.check_author()
+    async def uChrisBank(self, ctx, *args):
+        try:
+            self.userAlphaSample[args[0]] = args[1]
+            await ctx.send(f"`{args[0]}` --> `{args[1]}`")
+        except KeyError:
+            pass
 
 
 

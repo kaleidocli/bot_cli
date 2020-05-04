@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
+from pymysql import err as mysqlError
 
 import asyncio
 import inspect
@@ -18,6 +19,7 @@ class avaDBC(commands.Cog):
 
         self.client = client
 
+        self.client.DBC['self'] = self
         self.client.DBC['meta'] = {}
         self.client.DBC['meta']['class'] = {}
 
@@ -26,12 +28,14 @@ class avaDBC(commands.Cog):
         self.client.DBC['dbcf'] = {}
         self.client.DBC['model_NPC'] = {}
         self.client.DBC['model_conversation'] = {}
+        self.client.DBC['model_item'] = {}
         self.cacheMethod = {
             'model_NPC': self.cacheNPC,
             'model_conversation': self.cacheConversation,
             'model_mail': self.cacheMail,
             'personal_info': self.cachePersonalInfo,
             'model_mob': self.cacheMob,
+            'model_item': self.cacheItem,
             'dbcf': self.cacheDBCF
         }
 
@@ -59,7 +63,9 @@ class avaDBC(commands.Cog):
 
 
 # ================== DBC FUNC ==================
+# <!> ATTENTION <!>
 # All DBCF must be coroutine, and take *args as arguments
+# All DBCF when called outside of avaDBC, must be called through avaTools.DBCF_executor()
 
     async def dbcf_sendMail(self, *args):
         """
@@ -74,12 +80,14 @@ class avaDBC(commands.Cog):
         resp = await self.client.DBC['dbcf']['dbcf_getPersonalInfo'](self, args[0]).mailBox.updateMail(self.client, args[0], args[1])
         if isinstance(resp, list): await self.client.get_user(int(args[0])).send(f":envelope_with_arrow: You got mail! Use command `mail` to check it out! (Tags: ||`{'` `'.join(resp)}`||)")
 
-    async def dbcf_getPersonalInfo(self, user_id):
+    async def dbcf_getPersonalInfo(self, *args):
         """
             user_id:        (str) User's ID
 
             Returning False means user's not initialized in DB
         """
+
+        user_id = args[0]
 
         # DBCF
         try:
@@ -89,54 +97,14 @@ class avaDBC(commands.Cog):
         except KeyError:
             # Personal Info
             pi_res = await self.client.quefe(f"SELECT id, name, gender, dob FROM personal_info WHERE id='{user_id}';")
-            try: p = c_PersonalInfo(pi_res)
-            except TypeError: return False
+            try:
+                p = c_PersonalInfo(pi_res)
+            except ZeroDivisionError:
+                return False
 
-            # Mailbox
-            m_res = await self.client.quefe(f"""SELECT mail_read, mail_unread, DM, trash, pin FROM pi_mailbox WHERE user_id='{user_id}';""")
-            if m_res:
-                # Caching
-                p.mailBox = mailBox(config={'DM': m_res[2].split(' - ')})
-                try:
-                    rmt = m_res[0].split(' - ')
-                    for rm in rmt:
-                        a = rm.split('.')
-                        try: p.mailBox.readMail[int(a[0])] = a[1]
-                        # E: Defective mail_code filter (Missing ordera)
-                        except IndexError: pass
-                except AttributeError: pass
-                await asyncio.sleep(0)
-                try:
-                    urmt = m_res[1].split(' - ')
-                    for urm in urmt:
-                        b = urm.split('.')
-                        try: p.mailBox.unreadMail[int(b[0])] = b[1]
-                        # E: Defective mail_code filter (Missing ordera)
-                        except IndexError: pass
-                except AttributeError: pass
-                await asyncio.sleep(0)
-                try:
-                    utt = m_res[3].split(' - ')
-                    for ut in utt:
-                        c = ut.split('.')
-                        try: p.mailBox.trash[int(c[0])] = c[1]
-                        # E: Defective mail_code filter (Missing ordera)
-                        except IndexError: pass
-                except AttributeError: pass
-                await asyncio.sleep(0)
-                try:
-                    upt = m_res[4].split(' - ')
-                    for up in upt:
-                        d = up.split('.')
-                        try: p.mailBox.trash[int(d[0])] = d[1]
-                        # E: Defective mail_code filter (Missing ordera)
-                        except IndexError: pass
-                except AttributeError: pass
-                await p.mailBox.setMailCounter()
-            else:
-                # Init
-                p.mailBox = mailBox()
-                await self.client.quefe(f"""INSERT INTO pi_mailbox VALUES ('{user_id}', '', '', '', '', '{" - ".join(p.mailBox.config["DM"])}');""")
+            # Init stuff
+            await p.initMailBox(self.client, user_id)
+            await p.initChildNick(self.client, user_id)
 
             return p
 
@@ -264,13 +232,103 @@ class avaDBC(commands.Cog):
                                                 au_DARK, 
                                                 skills, 
                                                 effect, 
-                                                lockon_max, 
+                                                lockon_max,
                                                 rewards, 
-                                                illulink 
+                                                illulink,
+                                                distance_min,
+                                                distance_max,
+                                                tags
                                                 FROM model_mob;""", type='all')
         for r in res:
             await asyncio.sleep(0)
             temp[r[0]] = c_Mob(r)
+
+        return temp
+
+    # ================== ITEM ==================
+    async def cacheItem(self):
+        self.client.DBC['model_item'] = await self.cacheItem_tool()
+
+    async def cacheItem_tool(self):
+        temp = {}
+
+        # Ingredient
+        res = await self.client.quefe("""SELECT ingredient_code,
+                                                name,
+                                                description,
+                                                tags,
+                                                weight,
+                                                defend,
+                                                multiplier,
+                                                str,
+                                                intt,
+                                                sta,
+                                                speed,
+                                                round,
+                                                accuracy_randomness,
+                                                accuracy_range,
+                                                range_min,
+                                                range_max,
+                                                firing_rate,
+                                                reload_query,
+                                                effect_query,
+                                                infuse_query,
+                                                order_query,
+                                                passive_query,
+                                                ultima_query,
+                                                quantity,
+                                                price,
+                                                dmg,
+                                                stealth,
+                                                evo,
+                                                aura,
+                                                craft_value,
+                                                origin,
+                                                origin_base,
+                                                illulink
+                                                FROM model_ingredient;""", type='all')
+        for r in res:
+            await asyncio.sleep(0)
+            temp[r[0]] = c_Item(r, rootTable='ingredient')
+
+        # Item
+        res2 = await self.client.quefe("""SELECT item_code,
+                                                name,
+                                                description,
+                                                tags,
+                                                weight,
+                                                defend,
+                                                multiplier,
+                                                str,
+                                                intt,
+                                                sta,
+                                                speed,
+                                                round,
+                                                accuracy_randomness,
+                                                accuracy_range,
+                                                range_min,
+                                                range_max,
+                                                firing_rate,
+                                                reload_query,
+                                                effect_query,
+                                                infuse_query,
+                                                order_query,
+                                                passive_query,
+                                                ultima_query,
+                                                quantity,
+                                                price,
+                                                dmg,
+                                                stealth,
+                                                evo,
+                                                aura,
+                                                craft_value,
+                                                origin,
+                                                origin_base,
+                                                illulink
+                                                FROM model_item;""", type='all')
+        for r in res2:
+            await asyncio.sleep(0)
+            temp[r[0]] = c_Item(r)
 
         return temp
 
@@ -292,6 +350,112 @@ class c_PersonalInfo:
         self.id, self.name, self.gender, self.dob = pack
 
         self.mailBox = None
+        self.childNick = {}
+
+    async def initMailBox(self, client, user_id):
+        # Mailbox
+        m_res = await client.quefe(f"""SELECT mail_read, mail_unread, DM, trash, pin FROM pi_mailbox WHERE user_id='{user_id}';""")
+        if m_res:
+            # Caching
+            self.mailBox = mailBox(config={'DM': m_res[2].split(' - ')})
+            try:
+                rmt = m_res[0].split(' - ')
+                for rm in rmt:
+                    a = rm.split('.')
+                    try: self.mailBox.readMail[int(a[0])] = a[1]
+                    # E: Defective mail_code filter (Missing ordera)
+                    except IndexError: pass
+            except AttributeError: pass
+            await asyncio.sleep(0)
+            try:
+                urmt = m_res[1].split(' - ')
+                for urm in urmt:
+                    b = urm.split('.')
+                    try: self.mailBox.unreadMail[int(b[0])] = b[1]
+                    # E: Defective mail_code filter (Missing ordera)
+                    except IndexError: pass
+            except AttributeError: pass
+            await asyncio.sleep(0)
+            try:
+                utt = m_res[3].split(' - ')
+                for ut in utt:
+                    c = ut.split('.')
+                    try: self.mailBox.trash[int(c[0])] = c[1]
+                    # E: Defective mail_code filter (Missing ordera)
+                    except IndexError: pass
+            except AttributeError: pass
+            await asyncio.sleep(0)
+            try:
+                upt = m_res[4].split(' - ')
+                for up in upt:
+                    d = up.split('.')
+                    try: self.mailBox.trash[int(d[0])] = d[1]
+                    # E: Defective mail_code filter (Missing ordera)
+                    except IndexError: pass
+            except AttributeError: pass
+            await self.mailBox.setMailCounter()
+        else:
+            # Init
+            self.mailBox = mailBox()
+            await client._cursor.execute(f"""INSERT INTO pi_mailbox VALUES ('{user_id}', '', '', '', '', '{" - ".join(self.mailBox.config["DM"])}');""")
+
+    async def initChildNick(self, client, user_id):
+        nicks = await client.quefe(f"SELECT child_id, nick FROM pi_childnick WHERE user_id='{self.id}';", type='all')
+        for n in nicks:
+            self.childNick[n[1]] = n[0]
+    
+    async def addChildNick(self, client, child_id, nick):
+        nick = nick[:16]
+
+        # DB
+        try:
+            await client._cursor.execute(f"INSERT INTO pi_childnick VALUES ('{self.id}', '{child_id}', '{nick}');")
+        # E: Child already had nick, or nick already exists --> Update child for nick
+        except mysqlError.IntegrityError:
+            try:
+                if not await client._cursor.execute(f"UPDATE pi_childnick SET child_id='{child_id}' WHERE nick='{nick}' AND user_id='{self.id}';"):
+                    await client._cursor.execute(f"UPDATE pi_childnick SET nick='{nick}' WHERE child_id='{child_id}' AND user_id='{self.id}';")
+                    del self.childNick[await self.lookupChildNick(child_id=child_id)]
+            # E: Child already had nick ---> Update nick for child
+            except mysqlError.IntegrityError:
+                await client._cursor.execute(f"UPDATE pi_childnick SET nick='{nick}' WHERE child_id='{child_id}' AND user_id='{self.id}';")
+                del self.childNick[await self.lookupChildNick(child_id=child_id)]
+
+        self.childNick[nick] = child_id
+    
+    async def removeChildNick(self, client, child_id=None, nick=None):
+
+        # Nick given
+        if nick:
+            try:
+                del self.childNick[nick]
+            except KeyError:
+                return False
+            await client._cursor.execute(f"DELETE FROM pi_childnick WHERE nick='{nick}';")
+        
+        # child_id given
+        elif child_id:
+            res = await self.lookupChildNick(child_id=child_id)
+            if not res: return False
+            del self.childNick[res]
+            await client._cursor.execute(f"DELETE FROM pi_childnick WHERE child_id='{child_id}';")
+        return True
+
+    async def lookupChildNick(self, child_id=None, nick=None):
+        if nick:
+            try:
+                return self.childNick[nick]             # Return CHILD_ID
+            except KeyError:
+                return False
+        elif child_id:
+            for k, v in self.childNick.items():
+                await asyncio.sleep(0)
+                if v == child_id:
+                    return k        # Return NICK
+
+            return False
+            
+
 
 class c_Mail:
     def __init__(self, pack):
@@ -576,7 +740,7 @@ class c_Conversation:
 
 class c_Mob:
     def __init__(self, pack):
-        self.mob_code, self.name, self.description, self.branch, self.evo, self.lp, self.str, self.chain, self.speed, self.attack_type, self.defense_physic, self.defense_magic, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.skills, effectTemp, self.lockon_max, rewardsTemp, self.illulink = pack
+        self.mob_code, self.name, self.description, self.branch, self.evo, self.lp, self.str, self.chain, self.speed, self.attack_type, self.defense_physic, self.defense_magic, self.au_FLAME, self.au_ICE, self.au_HOLY, self.au_DARK, self.skills, effectTemp, self.lockon_max, rewardsTemp, self.illulink, self.distance_min, self.distance_max, self.tags = pack
 
         # Effect
         effectTemp2 = []
@@ -584,8 +748,32 @@ class c_Mob:
             effectTemp2.append(tuple(e.split(' - ')))
         self.effect = tuple(effectTemp2)
 
-        # Rewards
+        # Rewards       # [(type/code, quantity, percentage), ..]
         rewardsTemp2 = []
         for e in rewardsTemp.split(' | '):
             rewardsTemp2.append(tuple(e.split(' - ')))
         self.rewards = tuple(rewardsTemp2)
+
+        # Tags
+        tagsTemp = []
+        for t in self.tags.split(' - '):
+            tagsTemp.append(t)
+        self.tags = tagsTemp
+
+class c_Item:
+    def __init__(self, pack, rootTable='item'):
+        self.item_code, self.name, self.description, self.tags, self.weight, \
+                        self.defend, self.multiplier, self.str, self.intt, \
+                        self.sta, self.speed, self.round, self.accuracy_randomness, \
+                        self.accuracy_range, self.range_min, self.range_max, self.firing_rate, \
+                        self.reload_query, self.effect_query, self.infuse_query, self.order_query, \
+                        self.passive_query, self.ultima_query, self.quantity, self.price, \
+                        self.dmg, self.stealth, self.evo, self.aura, \
+                        self.craft_value, self.origin, self.origin_base, self.illulink = pack
+        self.rootTable = rootTable
+
+        # Tags
+        tagsTemp = []
+        for t in self.tags.split(' - '):
+            tagsTemp.append(t)
+        self.tags = tagsTemp

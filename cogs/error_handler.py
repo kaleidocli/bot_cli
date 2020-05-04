@@ -23,17 +23,12 @@ class ErrorHandler(commands.Cog):
         """The event triggered when an error is raised while invoking a command.
         ctx   : Context
         error : Exception"""
-        print("==================================")
-        print(error)
-        print(type(error))
-        print("============= ERROR ==============")
+
         if isinstance(error, commands.errors.CheckFailure):
             await ctx.channel.send(":no_entry_sign: You wish :>")
-            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
         elif isinstance(error, commands.errors.CommandOnCooldown):
             await ctx.channel.send(f"<a:ghostcat3:531060433927536650> Take a breath, **{ctx.author.name}**. Wait `{timedelta(seconds=int(error.retry_after))}`!", delete_after=5)
-            #await ctx.channel.send(f"<:fufu:508437298808094742> Etou... **{ctx.author.name}**? Can you not shut the fuck up for **`{timedelta(seconds=int(error.retry_after))}`**.", delete_after=5)
-            # traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
             return
         elif isinstance(error, commands.errors.BadArgument):
             await ctx.channel.send(f"<a:ghostcat3:531060433927536650> {error}")
@@ -41,11 +36,15 @@ class ErrorHandler(commands.Cog):
         elif isinstance(error, commands.errors.CommandNotFound):
             # traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
             return
-        elif isinstance(error, asyncio.TimeoutError) or isinstance(error, discord.errors.Forbidden) or isinstance(error, concurrent.futures._base.TimeoutError):
+        elif isinstance(error.original, asyncio.TimeoutError) or isinstance(error, discord.errors.Forbidden) or isinstance(error.original, concurrent.futures._base.TimeoutError) or isinstance(error.original, TimeoutError):
+            return
+        elif isinstance(error, commands.errors.NoPrivateMessage):
+            await ctx.channel.send(":no_entry_sign: The bot is unable to DM you. Please check again.")
             return
         elif isinstance(error, mysqlError.OperationalError):
             self.client.myLog.debug(f"{' '.join(traceback.format_exception(type(error), error, error.__traceback__))}")
             await self.client.thp.mysqlReload()
+            return
         else:
             try:
                 try:
@@ -59,7 +58,16 @@ class ErrorHandler(commands.Cog):
                                                         {' '.join(traceback.format_exception(type(error), error, error.__traceback__))}```""")
                     self.client.myLog.error(f"{' '.join(traceback.format_exception(type(error), error, error.__traceback__))}")
             except discord.errors.HTTPException: pass
-            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr); return
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
+        self.errPrinting(error)
+
+
+    def errPrinting(self, e):
+        print("==================================")
+        print(e)
+        print(type(e))
+        print("============= ERROR ==============")
 
 
 def setup(client):

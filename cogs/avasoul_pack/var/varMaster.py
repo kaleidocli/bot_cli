@@ -1,4 +1,5 @@
 from .varSys import varSys
+from .varItem import varItem
 
 
 
@@ -7,10 +8,13 @@ class varMaster:
         """
             Each var class should have their own reload method, with two options: Single/Multiple, All.
         """
-
+    
         # varSys
         if not hasattr(varSys, 'reloader'):
             self.varSys = varSys(reloader=self.reloader)
+        # varItem
+        if not hasattr(varItem, 'reloader'):
+            self.varItem = varItem(reloader=self.reloader)
 
 
 

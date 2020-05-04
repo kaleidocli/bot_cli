@@ -177,79 +177,136 @@ class avaActivity(commands.Cog):
         except TypeError: stats = 'DONE'
 
         if stats == 'DONE':
-            raw = list(args)
 
-            STR, INTT, STA = await self.client.quefe(f"SELECT STR, INTT, STA FROM personal_info WHERE id='{ctx.author.id}';")
-
-            # Get hunt limitation
+            # Get mob's info / user's info
             try:
-                limit = int(raw[0])
-                if limit >= STA: limit = STA - 1
-            except (IndexError, ValueError): limit = STA - 1
+                mob_code, STR, STA, INT, w_str, w_mul = await self.client.quefe(f""" 
+                    SELECT m.mob_code, pi.STR, pi.STA, pi.INTT, pii.str, pii.multiplier
+                    FROM model_mob m
+                        INNER JOIN personal_info pi ON pi.id='{ctx.author.id}'
+                        INNER JOIN environ_diversity e ON e.environ_code=pi.cur_PLACE
+                        INNER JOIN pi_inventory pii ON pii.item_id=pi.right_hand
+                    WHERE m.mob_code=e.mob_code AND e.mob_code='{args[0]}'
+                    LIMIT 1;
+                """)
+            except TypeError:
+                await ctx.send(f"<:osit:544356212846886924> This mob (`{args[0]}`) is not in your current region! You can check for mob's code by using command `mobs`.")
+                return
+            except IndexError:
+                await ctx.send(f"<:osit:544356212846886924> Please provide **mob's code**! You can check for mob's code by using command `mobs`.")
+                return
 
-            if limit <= 0: await ctx.send(f"Go *get some food*, **{ctx.message.author.name}** <:fufu:605255050289348620> We cannot start a hunt with you exhausted like that."); return
+            try:
+                mobProto = self.client.DBC['model_mob'][mob_code]
+            except KeyError:
+                await ctx.send(f"<:osit:544356212846886924> Invalid **mob's code**! You can check for mob's code by using command `mobs`.")
+                return
 
-            # Get animals based on INTT
-            anis = await self.client.quefe(f"SELECT ani_code, str, sta, aggro, rewards, reward_query FROM model_animal WHERE intt<={INTT};", type='all')
+            # Check # 1
+            if mobProto.branch == 'boss':
+                await ctx.send(f"<:osit:544356212846886924> Unable to use command `hunt` on a boss! Cheeky you, eh?")
+                return
 
+            # Check # 2
+            if not STA:
+                await ctx.send(f"Go *get some food*, **{ctx.message.author.name}** <:fufu:605255050289348620> We cannot start a hunt with you exhausted like that."); return
 
-            # Reward generating
-            rewards = '\n'; reward_query = ''
-            while STA > limit:
-                # Get target
-                target = random.choice(anis)
+            # Calc hunt quantity        # staPerMob = ((STR + str) / 2) * (mul + rand(0.3, 0.7, 1.1, 1.4, 1.7, 2))
+                                        # numMob = STA / staPerMob
+                                        # if numMob > 100:                    # (max numMob = 100)
+                                        #       STA += staPerMob * (numMob - 100)
+                                        #       numMob = 100
+            staPerMob = round(mobProto.lp / (((STR+w_str)/2) * (w_mul+random.choice((0.7, 1.1, 1.4, 1.7, 2)))))
+            if staPerMob < 1:
+                staPerMob = 1
+            numMob = round(STA / staPerMob)
 
-                # Decrease STA
-                STA -= target[2]
+            if numMob > 100:
+                numMob = 100
+                staCost = round(staPerMob * numMob)
+            else:
+                staCost = STA
+            if numMob <= 0:
+                numMob = 0
 
-                # Rate calc
-                rate = STR - target[1]
-                if rate > 1: rate = target[3]//rate
-                elif rate < 1:
-                    rate = round(target[3]*abs(rate))
-                    if rate == 1: rate = 2
-                elif rate == 1: rate = target[3]
+            # Calc duration             # duraPerMob = 1800                # (30mins/mob  |  max dura = 180,000s = 50hr ~ 2.08days  |  min dura = 1.04day)
+                                        # duration = (numMob/2 * duraPerMob) + (numMob/2 * duraPerMob) / INT
+            duraPerMob = 100
+            duration = (numMob / 2 * duraPerMob) + ((numMob / 2 * duraPerMob) / INT if not (INT < 1) else (numMob / 2 * duraPerMob))
 
-                # Decide if session is success
-                try:
-                    if random.choice(range(rate)) != 0: continue
-                # E: Rate is 0
-                except IndexError: pass
+            # Reward generating         # rewardQuantity = round(rewardQuantity / 100 * randint(0, 100 + percentage))
+                                        # if rewardQuantity <= 0: ...
+            objecto = []    # Item reward
+            statuso = []     # Status reward
+            bingo_list = [] # Reward's name
+            for rw in mobProto.rewards:
+                rewardQuantity = int(rw[1])
+                rewardQuantity = round(rewardQuantity / 100 * random.randint(0, 100 + int(rw[2]))) * numMob
 
-                rewards = rewards + f"★ {target[4]}\n"
-                reward_query = reward_query + f" {target[5]}"
+                if rewardQuantity < 1:      # The following checks are hunt only, does not apply to other command like melee or range
+                    continue
+                if rw[0] in ('perks', 'merit'):
+                    continue
 
-            # Reward_query preparing
+                formattedReward = self.utils.rewardToQueryAndName((rw[0], rewardQuantity, int(rw[2])))
+                # Item
+                if formattedReward[0]:
+                    objecto.append(formattedReward[0])
+                # Status
+                if formattedReward[1]:
+                    statuso.append(formattedReward[1])
+                # Name
+                if formattedReward[2]:
+                    bingo_list.append(formattedReward[2])
+
+            # Reward's query and name
+            reward_query = ' '.join(objecto)
+            if statuso:
+                reward_query += f"""UPDATE personal_info SET {(', '.join(statuso))} WHERE id="user_id_here";"""
+            if bingo_list:
+                rewards = '\n> ··'
+                rewards += '\n> ··'.join(bingo_list)
+            else:
+                rewards = '\n> The hunt returned with empty hand :('
+
+            # Reward prep + Party reward (if available)
             if reward_query:
                 tem_que = reward_query
                 reward_query = reward_query.replace('user_id_here', f"{ctx.author.id}")
+                # Party
                 comrades = await self.client.quefe(f"SELECT user_id FROM pi_party WHERE party_id=(SELECT party_id FROM pi_party WHERE user_id='{ctx.author.id}') AND user_id <> '{ctx.author.id}';", type='all')
-                for comrade in comrades:
-                    reward_query = reward_query + tem_que.replace('user_id_here', f"{comrade[0]}")
-                if comrades: rewards = rewards + f"And **{len(comrades)}** comrades of yours will receive the same."
+                if comrades:
+                    for comrade in comrades:
+                        reward_query = reward_query + tem_que.replace('user_id_here', f"{comrade[0]}")
+                        rewards = rewards + f"\nAnd **{len(comrades)}** comrades of yours will receive the same."
 
-            # Duration calc     |      End_point calc
-            duration = 60*limit//STR
+            # Reformatting rewards
+            rewards = """**Hunted:** ({}) `{}`| **{}**\n**Reward:** {}""".format(numMob, mobProto.mob_code, mobProto.name, rewards)
+
+            # End_point calc
             end_point = datetime.now() + timedelta(seconds=duration)
             end_point = end_point.strftime('%Y-%m-%d %H:%M:%S')
 
             # Insert
-            if await self.client._cursor.execute(f"""UPDATE pi_hunt SET stats='ONGOING', end_point='{end_point}', reward_query="{reward_query}", rewards='{rewards}' WHERE user_id='{ctx.author.id}';""") == 0:
+            if await self.client._cursor.execute(f"""UPDATE pi_hunt SET stats='ONGOING', end_point='{end_point}', reward_query='{reward_query}', rewards='{rewards}' WHERE user_id='{ctx.author.id}';""") == 0:
                 await self.client._cursor.execute(f"""INSERT INTO pi_hunt VALUES ('{ctx.author.id}', '{end_point}', 'ONGOING', '{rewards}', "{reward_query}");""")
-            await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-{limit} WHERE id='{ctx.author.id}';")
-            await ctx.send(f":cowboy: Hang tight, **{ctx.author.name}**! The hunt will end after **`{timedelta(seconds=duration)}`**."); return
+            await self.client._cursor.execute(f"UPDATE personal_info SET STA=STA-{staCost} WHERE id='{ctx.author.id}';")
+            await ctx.send(f":cowboy: Hang tight, **{ctx.author.name}**! The hunt will last for **`{timedelta(seconds=duration)}`**."); return
 
         else:
 
             # Two points comparison
             delta = relativedelta(end_point, datetime.now())
-            if datetime.now() < end_point: await ctx.send(f":cowboy: Hold right there, {ctx.message.author.name}! Come back after **`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`**"); return
+
+            # Check
+            if datetime.now() < end_point:
+                await ctx.send(f":cowboy: The hunters are on their journey, **{ctx.author.name}**! Come back after **`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`**"); return
 
             # Rewarding
             if final_rq:
                 await self.client._cursor.execute(final_rq)
             await self.client._cursor.execute(f"UPDATE pi_hunt SET stats='DONE' WHERE user_id='{ctx.author.id}';")
-            await ctx.send(f":cowboy: Congrats, **{ctx.message.author.name}**. You've finished your hunt!{final_rw}"); return
+            await ctx.send(f":cowboy: Congrats on your return, **{ctx.author.mention}**!", embed=discord.Embed(description=final_rw)); return
 
     @commands.command(aliases=['sleep'])
     @commands.cooldown(3, 60, type=BucketType.user)
@@ -325,9 +382,6 @@ class avaActivity(commands.Cog):
 
         # Check if the previous course has been finished yet
         if not await self.__cd_check(ctx.message, cmd_tag, f":books: *Enlightening requires one's most persevere and patience.*"): return
-
-        def UMC_check(m):
-            return m.channel == ctx.channel and m.author == ctx.author 
 
         # MAJOR
         try:

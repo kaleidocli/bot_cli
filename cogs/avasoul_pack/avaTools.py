@@ -16,6 +16,7 @@ class avaTools:
     def __init__(self, client, utils):
         self.client = client
         self.utils = utils
+        self.isFetching = False
 
 
     # RESOURCE INTERACTION ==================================================
@@ -24,17 +25,29 @@ class avaTools:
         """args ---> tuple"""
 
         if not self.client: return
-        await asyncio.sleep(0)
+        while self.isFetching:
+            await asyncio.sleep(0)
+        self.isFetching = True
 
-        try: await self.client._cursor.execute(query, args=args)
-        except RuntimeError: return ''
-        except mysqlError.OperationalError:
-            await self.client.thp.mysqlReload()
-        #    loop.call_soon_threadsafe(loop.stop)
-        #    conn, self.client._cursor = loop.run_until_complete(geself.client._CURSOR())
-            await self.client._cursor.execute(query, args=args)
-        if type == 'all': resu = await self.client._cursor.fetchall()
-        else: resu = await self.client._cursor.fetchone()
+        try: await self.client._cursor.fetchall()    # Flush
+        except mysqlError.ProgrammingError: pass
+
+        try:
+            try:
+                await self.client._cursor.execute(query, args=args)
+            except RuntimeError:
+                return ''
+            except mysqlError.OperationalError:     # In case disconnecting
+                await self.client.thp.mysqlReload()
+                await self.client._cursor.fetchall()    # Flush
+                await self.client._cursor.execute(query, args=args)
+            if type == 'all':
+                resu = await self.client._cursor.fetchall()
+            else:
+                resu = await self.client._cursor.fetchone()
+        finally:
+            self.isFetching = False
+
         return resu
 
     async def redio_map(self, key, dict=None, mode='set', ttl=0, getttl=False):
@@ -43,7 +56,7 @@ class avaTools:
         # Set dict into key with expiration ===========
         if mode == 'set':
             await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.hmset, key, dict))
-            if ttl: await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.expire, key, ttl))
+            if ttl: await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.expire, key, round(ttl)))
             return
 
         # Get dict ====================================
@@ -82,7 +95,7 @@ class avaTools:
             # DBC-Function  (always coroutine and *args)
             if query.startswith('<dbcf>'):
                 query = query.split(args_split)     # [dbcf_code, args1, args2,..]
-                await self.client.DBC['dbcf'][query[0]](*query[1:])
+                await self.DBCF_executor(query[0], *(query[1:]))
                 continue
             # SQL-Query
             else:
@@ -94,6 +107,13 @@ class avaTools:
                 master_q += query
 
         await self.client._cursor.execute(master_q)
+
+    async def DBCF_executor(self, dbcf_name, *args):
+        """
+            DBCF_executor(dbcf_name, arg_1, arg_2,..)
+        """
+        return await self.client.DBC['dbcf'][dbcf_name](self.client.DBC['self'], *(args))
+    
 
 
     async def ava_scan(self, MSG, type='all', target_id='n/a', target_coord=(), pb_coord=[]):
@@ -178,7 +198,7 @@ class avaTools:
                 #reviq = reviq + f" UPDATE pi_inventory SET existence='BAD' WHERE user_id='{target_id}' AND item_code!='ar13';"
                 await self.client._cursor.execute(reviq)
 
-                await MSG.channel.send(f"<:tumbstone:544353849264177172> {target.mention}, you are dead. Please re-incarnate.")
+                await MSG.channel.send(f"<:tumbstone:544353849264177172> {target.mention}, you are dead. Please re-incarnate by using `incarnate`.")
                 return False
             return True
 
@@ -563,7 +583,8 @@ class avaTools:
                         DELETE FROM pi_quest WHERE user_id='{ctx.author.id}';|||
                         DELETE FROM pi_quests WHERE user_id='{ctx.author.id}';|||
                         DELETE FROM pi_relationship WHERE user_id='{ctx.author.id}';|||
-                        DELETE FROM pi_rest WHERE user_id='{ctx.author.id}';
+                        DELETE FROM pi_rest WHERE user_id='{ctx.author.id}';|||
+                        DELETE FROM pi_childnick WHERE user_id='{ctx.author.id}';
                     """
 
         for q in query.split('|||'):
@@ -601,7 +622,7 @@ class avaTools:
                 future.cancel()
 
             return fut
-        except asyncio.TimeoutError:
+        except (asyncio.TimeoutError, TimeoutError):
             for future in pending:
                 future.cancel()
             raise asyncio.TimeoutError
@@ -727,9 +748,11 @@ class avaTools:
                     return (msg, (emli, pages, item_per_page), cursor)
                 await msg.edit(embed=emli[cursor])
 
-            except concurrent.futures.TimeoutError:
+            # except concurrent.futures.TimeoutError:
+            except asyncio.TimeoutError:
                 if delete_on_exit:
-                    try: await msg.delete()
+                    try:
+                        await msg.delete()
                     except discordErrors.NotFound: pass
                 return
             # Rate-limit
@@ -913,8 +936,23 @@ class avaTools:
 
 
     # GUI =================================================================
-    async def requestConfirmationMessage(self, ctx, message, keyword, timeout=20, errMsg=None):
-        await ctx.send(f"{message}\n<a:RingingBell:559282950190006282> Proceed? (Key: `{keyword}` | Timeout={timeout}s)")
+    async def requestConfirmationMessage(self, ctx, message, keyword, timeout=20, errMsg=None, embed=None, additionWaiterMsg=None):
+        """
+            additionWaiterMsg       (Iterable)          Messages that will appeared at the waiter. Format: ".. | msg1 | msg2 | .."
+        """
+
+        # Waiter
+        addiWaiter = ''
+        if additionWaiterMsg:
+            addiWaiter = ' | ' + ' | '.join(additionWaiterMsg)
+
+        # Prompt
+        if embed:
+            await ctx.send(f"{message}\n<a:RingingBell:559282950190006282> **Proceed?** (Key: `{keyword}` | Timeout={timeout}s{addiWaiter})", embed=embed)
+        else:
+            await ctx.send(f"{message}\n<a:RingingBell:559282950190006282> **Proceed?** (Key: `{keyword}` | Timeout={timeout}s{addiWaiter})")
+
+        # Wait
         try:
             await self.client.wait_for('message', timeout=timeout, check=lambda m: m.channel == ctx.channel and m.content == keyword and m.author == ctx.author)
             return True
@@ -925,10 +963,24 @@ class avaTools:
                 await ctx.send(errMsg)
             return False
 
-    async def requestConfirmationReact(self, ctx, message, timeout=20, emo='\U00002705', errMsg=None):
-        msg = await ctx.send(f"{message}\n<a:RingingBell:559282950190006282> Proceed? (Timeout={timeout}s)")
+    async def requestConfirmationReact(self, ctx, message, timeout=20, emo='\U00002705', errMsg=None, embed=None, additionWaiterMsg=None):
+        """
+            additionWaiterMsg       (Iterable)          Messages that will appeared at the waiter. Format: ".. | msg1 | msg2 | .."
+        """
+
+        # Waiter
+        addiWaiter = ''
+        if additionWaiterMsg:
+            addiWaiter = ' | ' + ' | '.join(additionWaiterMsg)
+
+        # Prompt
+        if embed:
+            msg = await ctx.send(f"{message} \n<a:RingingBell:559282950190006282> **Proceed?** (Timeout={timeout}s{addiWaiter})", embed=embed)
+        else:
+            msg = await ctx.send(f"{message} \n<a:RingingBell:559282950190006282> **Proceed?** (Timeout={timeout}s{addiWaiter})")
         await msg.add_reaction(emo)
 
+        # Wait
         try:
             await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == emo and u == ctx.author, timeout=timeout)
             return True

@@ -12,6 +12,7 @@ from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 import pymysql.err as mysqlError
 import psutil
+from tabulate import tabulate
 
 from utils import checks
 
@@ -238,8 +239,9 @@ class avaAdmin(commands.Cog):
     @checks.check_author()
     async def megasql(self, ctx, *, args):
         if str(ctx.author.id) != '214128381762076672': await ctx.send("SHOO SHOO!"); return
-        ret = await self.client._cursor.execute(args)
-        await ctx.send(ret)
+        ret = await self.client.quefe(args, type='all')
+        await ctx.send(f"Total: {len(ret)}")
+        await ctx.send(tabulate(ret, showindex="always"))
 
     @commands.command()
     @checks.check_author()
@@ -258,8 +260,11 @@ class avaAdmin(commands.Cog):
         
         # Prep =====================
         cog = self.client.get_cog(name.split('.')[-1])
-        try: await cog.reloadSetup()
-        except AttributeError: pass
+        try:
+            await cog.reloadSetup()
+        except AttributeError:
+            await ctx.send(":x: Cog not support megareload!")    
+            return
 
         await ctx.send(":white_check_mark:")
 
@@ -342,19 +347,15 @@ class avaAdmin(commands.Cog):
         #    # fetch does not support multiple statements
         #    strategy = self.client._cursor.fetchall
         #else:
-        strategy = self.client._cursor.fetchall
+        strategy = self.client._cursor.fetchall()
 
         try:
             if not await self.client._cursor.execute(query): await ctx.send(":x: No effect")
         except mysqlError.ProgrammingError: await ctx.send(":x: Invalid syntax!"); return
-        try:
-            results = await strategy()
-        except Exception as e:
-            return await ctx.send(f'```py\n{format.format_exception(e)}\n```')
-
-        #rows = len(results)
-        #if is_multistatement or rows == 0:
-        #    return await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        # try:
+        #     results = await strategy()
+        # except Exception as e:
+        #     return await ctx.send(f'```py\n{format.format_exception(e)}\n```')
 
         #headers = list(results[0].keys())
         try: col = len(results[0])

@@ -19,12 +19,12 @@ from cogs.avasoul_pack.var import varMaster
 
 dummy_config = SConfig()
 extensions = [  'jishaku',
-                'cogs.misc',
-                'cogs.audio',
-                'cogs.pydanboo',
-                'cogs.tictactoe', 
-                'cogs.hen',
-                'cogs.guess',
+                # 'cogs.misc',
+                # 'cogs.audio',
+                # 'cogs.pydanboo',
+                # 'cogs.tictactoe', 
+                # 'cogs.hen',
+                # 'cogs.guess',
                 'cogs.dbl',
                 'cogs.avasoul',
                 'cogs.avasoul_pack.avaHelper',

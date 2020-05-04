@@ -271,20 +271,36 @@ class avaTrivia(commands.Cog):
                 pass
 
     @commands.command(aliases=['mob'])
-    @commands.cooldown(1, 2, type=BucketType.user)
+    @commands.cooldown(1, 7, type=BucketType.user)
     async def mobs(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+        MAX_MOB_TAG_SEARCH = 5
 
-        mobs = await self.client.quefe(f"SELECT mob_code, name, description, branch, evo, lp, str, chain, speed, au_FLAME, au_ICE, au_HOLY, au_DARK, illulink, effect, attack_type, defense_physic, defense_magic FROM model_mob WHERE mob_code IN (SELECT mob_code FROM environ_diversity WHERE environ_code=(SELECT cur_PLACE FROM personal_info WHERE id='{ctx.author.id}'));", type='all')
+        # Search ====
+        if len(args) > MAX_MOB_TAG_SEARCH:
+            await ctx.send(f"<:osit:544356212846886924> Maximum of **{MAX_MOB_TAG_SEARCH}** tag(s) exceeded!")
+            return
+        search_q = ''
+        for tag in args:
+            search_q += f""" AND tags LIKE '%{tag}%' """
+
+        mobs = await self.client.quefe(f"""
+            SELECT m.mob_code, m.name, m.description, m.branch, m.evo, m.lp, m.str, m.chain, m.speed, m.au_FLAME, m.au_ICE, m.au_HOLY, m.au_DARK, m.illulink, m.effect, m.attack_type, m.defense_physic, m.defense_magic, e.quantity, e.limit_Ax, e.limit_Ay, e.limit_Bx, e.limit_By, m.tags
+            FROM model_mob m INNER JOIN personal_info pi ON pi.id='{ctx.author.id}' INNER JOIN environ_diversity e ON e.environ_code=pi.cur_PLACE
+            WHERE m.mob_code=e.mob_code {search_q};
+                """, type='all')
+
         try:
             mobs = list(mobs)
             mobs.sort(key=lambda v: v[3], reverse=True)
-        except IndexError: await ctx.send(f":x: There's no mob in this region it seems..."); return
+        except IndexError:
+            await ctx.send(f":spider_web::spider_web: Empty result... :spider_web::spider_web:")
+            return
 
         def makeembed(items, top, least, pages, current_page):
             """Unique"""
 
-            items, effect_icon, mob_icon = items
+            items, effect_icon, mob_icon, smalltextFunc = items
             mob = items[top:least][0]
 
             # Visualize effects
@@ -294,16 +310,22 @@ class avaTrivia(commands.Cog):
                     ep = ep.split(' - ')
                     effect += f"{effect_icon[ep[0]]}`{ep[2]}%` "
             except (IndexError, KeyError):
-                effect = '----------------------'
+                effect = '⠀⠀⠀'
 
-            box = discord.Embed(title=f"{mob_icon[mob[3]]} `{mob[0]}`| **{mob[1]}**", description=f"```{mob[2]}```", colour = discord.Colour(0x36393F))
+            line = f"""```apache
+Tags: [{mob[23].replace(' - ', '] [')}]
+Note: {mob[2]}```
+            """
+
+            box = discord.Embed(title=f"{mob_icon[mob[3]]} `{mob[0]}`| **{mob[1]}** {smalltextFunc(str(mob[18]))}", description=line, colour = discord.Colour(0x36393F))
             box.add_field(name=f'>>> **`LP`** · {mob[5]}\n**`STR`** · {mob[6]}\n**`CHAIN`** · {mob[7]}\n**`SPEED`** · {mob[8]}\n**`DEFPY`** · {mob[16]}', value=effect)
             box.add_field(name=f'>>> **`FLAME`** · {mob[9]}\n**`ICE`** · {mob[10]}\n**`HOLY`** · {mob[11]}\n**`DARK`** · {mob[12]}\n**`DEFMA`** · {mob[17]}', value=f"> `EVO.{mob[4]}`")
+            box.set_footer(text=f"{current_page}/{pages}  |  [{mob[19]:.3f}:{mob[20]:.3f}] ▶ [{mob[21]:.3f}:{mob[22]:.3f}]", icon_url='https://imgur.com/P4KdVN0.png')
 
             if mob[12]: box.set_thumbnail(url=mob[13])
             return box
 
-        await self.tools.pagiMain(ctx, (mobs, self.effect_icon, self.mob_icon), makeembed, item_per_page=1, delete_on_exit=False, pair=True)
+        await self.tools.pagiMain(ctx, (mobs, self.effect_icon, self.mob_icon, self.utils.smalltext), makeembed, item_per_page=1, delete_on_exit=False, pair=True)
 
 
 
@@ -420,11 +442,11 @@ class avaTrivia(commands.Cog):
             end_point = await self.client.quefe(f"SELECT end_point FROM pi_hunt WHERE user_id='{ctx.author.id}' AND stats='ONGOING';")
             delta = relativedelta(end_point[0], datetime.now())
             # Still in progress
-            if datetime.now() < end_point[0]: on_cd.append(f"\n⏱ Command **`hunt`**: `{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`")
+            if datetime.now() < end_point[0]: on_cd.append(f"\n⏱ **`hunt`** ::: [`{delta.hours:02d}:{delta.minutes:02d}:{delta.seconds:02d}`]")
             # Done, but not collected
             else: off_cd.append(f"<:exclamation_yellow:637744510348034058> **`hunt`** (Collectable)")
         except TypeError:
-            off_cd.append(f"<:exclamation_yellow:637744510348034058> Command **`hunt`**: (Ready to go)")
+            off_cd.append(f"<:exclamation_yellow:637744510348034058> **`hunt`** (Ready to go)")
 
         # await ctx.send(f""">>> {chr(10).join(off_cd)} {' '.join(on_cd)} {' '.join(interas)}""")
         temb = discord.Embed(colour=0xA37C05)

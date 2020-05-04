@@ -7,19 +7,19 @@ from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 import discord.errors as discordErrors
 
-from .avaTools import avaTools
-from .avaUtils import avaUtils
-
 
 
 class avaCommercial(commands.Cog):
 
     def __init__(self, client):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
         self.client = client
         self.__cd_check = self.client.thp.cd_check
         self.utils = avaUtils(self.client)
         self.tools = avaTools(self.client, self.utils)
-        self.aui = aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
+        self.aui = {'FLAME': 'https://imgur.com/3UnIPir.png', 'ICE': 'https://imgur.com/7HsDWfj.png', 'HOLY': 'https://imgur.com/lA1qfnf.png', 'DARK': 'https://imgur.com/yEksklA.png'}
 
         print("|| Commercial --- READY!")
 
@@ -31,6 +31,12 @@ class avaCommercial(commands.Cog):
     # async def on_ready(self):
     #     print("|| Commercial --- READY!")
 
+    async def reloadSetup(self):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
+        self.utils = avaUtils(self.client)
+        self.tools = avaTools(self.client, self.utils)
 
 
 # ================== COMMERCIAL ==================
@@ -57,7 +63,7 @@ class avaCommercial(commands.Cog):
             goods = goods.replace(' - ', "', '")
             # Get info
             try:
-                item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price FROM model_item WHERE '{raw[0]}' IN ('{goods}') AND  item_code='{raw[0]}';""")
+                item_code, name, description, tags, weight, defend, multiplier, strr, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price, origin, origin_base, evo = await self.client.quefe(f"""SELECT item_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, dmg, stealth, aura, illulink, price, origin, origin_base, evo FROM model_item WHERE '{raw[0]}' IN ('{goods}') AND  item_code='{raw[0]}';""")
 
                 # Pointer
                 if 'magic' in tags: pointer = ':crystal_ball:'
@@ -65,14 +71,15 @@ class avaCommercial(commands.Cog):
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n\n```"{description}"```\n"""
                 
-                reembed = discord.Embed(title=f"`{item_code}`| **{' '.join([x for x in name.upper()])}**⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", colour = discord.Colour(0x011C3A), description=line)
-                reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
+                reembed = discord.Embed(title=f"`{item_code}`| **{' '.join([x for x in name.upper()])}**\n═════════════·═════════════", colour = discord.Colour(0x011C3A), description=line)
+                reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MUL』` ·** {multiplier}\n**`『DEF』` ·** {defend}\n**`『SPD』` ·** {speed}", inline=True)
 
                 try: acc_per = 10//accuracy_randomness
                 except ZeroDivisionError: acc_per = 0
-                reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**-------------------**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
+                reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**╞════════════════╡**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
 
                 reembed.set_thumbnail(url=self.aui[aura])
+                reembed.set_footer(text=f"{origin} / {origin_base + evo} (base={origin_base})", icon_url="https://imgur.com/t8EJO37.png")
                 if illulink != 'n/a': reembed.set_image(url=illulink)
 
                 await ctx.send(embed=reembed); return
@@ -206,17 +213,17 @@ class avaCommercial(commands.Cog):
         # ig_code check    
         if ig_code not in menu: await ctx.send("<:osit:544356212846886924> The trader does not have this item at the moment. Sorry."); return
 
-        # Reconfirm
+        # Calc
         price = int(items[ig_code][2]*random.choice([0.1, 0.2, 0.5, 1, 2, 5, 0.75, 10]))
-        deposit = (price*quantity)//7
-        msgdeal = await ctx.send(f"<a:RingingBell:559282950190006282> {ctx.message.author.mention}, please react upon accepting the following deal:\n>>> **<:36pxGold:548661444133126185>{price}** per item [`{ig_code}`| **{items[ig_code][0]}**], meaning **<:36pxGold:548661444133126185>{price*quantity}** in total.\nDeposit would be <:36pxGold:548661444133126185>**{deposit}**")
-        await msgdeal.add_reaction('\U0001f44c')
-        try: await self.client.wait_for('reaction_add', check=lambda r, u: str(r.emoji) == '\U0001f44c' and u == ctx.author, timeout=10)
-        except asyncio.TimeoutError:
+        percentDeposit = 6.5
+        deposit = (price*quantity)//percentDeposit
+
+        # Confirmation
+        if not await self.tools.requestConfirmationReact(ctx, f"Dear {ctx.author.mention}, you received the following deal from the trader:\n> __Price:__ **<:36pxGold:548661444133126185>{price}** / item\n> __Total:__ <:36pxGold:548661444133126185>**{price*quantity}** for `{quantity}` item [`{ig_code}`| **{items[ig_code][0]}**]\n:warning: *Deposit of {(100/percentDeposit):.2f}% (<:36pxGold:548661444133126185>**{deposit}**) would be lost upon declination*.", timeout=25, emo='\U0001f44c'):
             # Deposit deduction
             await self.client._cursor.execute(f"UPDATE personal_info SET money=money-IF(money >= {deposit}, {deposit}, money) WHERE id='{ctx.author.id}';")
             await ctx.send(f"<:osit:544356212846886924> The request is declined, and you lost a deposit of <:36pxGold:548661444133126185>**{deposit}**."); return
-        
+
         try:
             # Money check
             if price*quantity <= money:
@@ -228,7 +235,7 @@ class avaCommercial(commands.Cog):
                 #    await self.client._cursor.execute(f"INSERT INTO pi_inventory SELECT 0, {str(ctx.message.author.id)}, ingredient_code, name, description, tags, weight, defend, multiplier, str, intt, sta, speed, round, accuracy_randomness, accuracy_range, range_min, range_max, firing_rate, reload_query, effect_query, infuse_query, order_query, passive_query, ultima_query, {quantity}, price, dmg, stealth, evo, aura, craft_value, illulink FROM model_ingredient WHERE ingredient_code='{ig_code}';")
 
                 # Deduct money
-                await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{price*quantity} WHERE id='{str(ctx.message.author.id)}';")
+                await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{price*quantity} WHERE id='{ctx.author.id}';")
 
             else:
                 # Deposit deduction
@@ -454,15 +461,15 @@ $ {invs:,}```"""
 
                 line = f""":scroll: **`『Weight』` ·** {weight} ⠀ ⠀:scroll: **`『Price』` ·** {price}\n```"{description}"```\n"""
                 
-                reembed = discord.Embed(title=f"`{item_code}`| **{' '.join([x for x in name.upper()])}** {evo_plus}⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀", colour = discord.Colour(0x011C3A), description=line)
-                reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MULTIPLIER』` ·** {multiplier}\n**`『DEFEND』` ·** {defend}\n**`『SPEED』` ·** {speed}", inline=True)
+                reembed = discord.Embed(title=f"`{item_code}`| **{' '.join([x for x in name.upper()])}** {evo_plus}\n═════════════·═════════════", colour = discord.Colour(0x011C3A), description=line)
+                reembed.add_field(name=":scroll: Basic Status <:broadsword:508214667416698882>", value=f"**`『STR』` ·** {strr}\n**`『INT』` ·** {intt}\n**`『STA』` ·** {sta}\n**`『MUL』` ·** {multiplier}\n**`『DEF』` ·** {defend}\n**`『SPD』` ·** {speed}", inline=True)
 
                 try: acc_per = 10//accuracy_randomness
                 except ZeroDivisionError: acc_per = 0
-                reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**-------------------**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
+                reembed.add_field(name=f":scroll: Projector Status {pointer}", value=f"**`『RANGE』` ·** {range_min} - {range_max}m\n**`『STEALTH』` ·** {stealth}\n**`『FIRING-RATE』` ·** {firing_rate}\n**`『ACCURACY』` ·** {acc_per}/{accuracy_range}m\n**╞════════════════╡**\n**`『ROUND』` ·** {round} \n**`『DMG』` ·** {dmg}", inline=True)
 
                 reembed.set_thumbnail(url=self.aui[aura])
-                reembed.set_footer(text=f"{origin} / {origin_base + evo}", icon_url="https://imgur.com/t8EJO37.png")
+                reembed.set_footer(text=f"{origin} / {origin_base + evo} (base={origin_base})", icon_url="https://imgur.com/t8EJO37.png")
                 if illulink != 'n/a': reembed.set_image(url=illulink)
 
                 await ctx.send(embed=reembed, delete_after=30); return

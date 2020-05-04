@@ -27,6 +27,13 @@ class avaWorkshop(commands.Cog):
         self.cacheMethod = {
             'model_formula': self.cacheFormula
         }
+        self.modifyKeywords = {
+            'name': 'name',
+            'description': 'description',
+            'tags': 'tags',
+            'image': 'illulink'
+        }
+        self.MODIFY_MAX_TAG = 10
 
         print("|| Workshop --- READY!")
 
@@ -38,7 +45,6 @@ class avaWorkshop(commands.Cog):
     async def on_ready(self):
         await asyncio.sleep(8)
         await self.reloadSetup()
-        print("|| Workshop --- RELOADED!")
 
     async def reloadSetup(self):
         from .avaTools import avaTools
@@ -151,10 +157,6 @@ class avaWorkshop(commands.Cog):
 
             if not await self.tools.requestConfirmationReact(ctx, f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**."): return
 
-            # await ctx.send(f":tools: Merging these two items will cost you **<:36pxGold:548661444133126185>{price}**.\n<a:RingingBell:559282950190006282> Proceed? (Key: `merging confirm` | Timeout=20s)")
-            # try: await self.client.wait_for('message', timeout=20, check=lambda m: m.channel == ctx.channel and m.content == 'merging confirm' and m.author == ctx.author)
-            # except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request timeout!"); return
-
             # Deduct money
             if await self.client._cursor.execute(f"UPDATE personal_info SET money=money-{price} WHERE id = '{ctx.author.id}' AND money >= {price};") == 0:
                 await ctx.send("<:osit:544356212846886924> Insufficient balance!"); return
@@ -200,7 +202,7 @@ class avaWorkshop(commands.Cog):
 
             # Inform :>
             await ctx.send(f":white_check_mark: Merged `{raw[0]}`|**{w_name}** with `{raw[1]}`|**{t_w_name}**!")
-            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{str(ctx.message.author.id)}', 'merging', ex=7200, nx=True))
+            await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'merging', ex=7200, nx=True))
 
         # E: Not enough args
         except ZeroDivisionError: await ctx.send("<:osit:544356212846886924> How could you even merge something with its own?!"); return
@@ -341,8 +343,9 @@ class avaWorkshop(commands.Cog):
             await self.tools.pagiMain(ctx, formus, makeembed, item_per_page=12, delete_on_exit=False)
 
     @commands.command()
-    @commands.cooldown(1, 20, type=BucketType.user)
+    @commands.cooldown(1, 15, type=BucketType.user)
     async def transfuse(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
         
         # Getting info
         try:
@@ -362,16 +365,189 @@ class avaWorkshop(commands.Cog):
             quantity = 1
 
         # Prompt
-        if not await self.tools.requestConfirmationReact(ctx, f":tools: Transfusing <:origin:693682238277025853>`{t_origin * quantity}` into item `{args[0]}`| **{name}** (currently at <:origin:693682238277025853>`{origin}`/`{origin_base}`).\n:warning: WARNING: A transfusion will cause the *second item* to be destroyed!"): return
+        if not await self.tools.requestConfirmationReact(ctx, f":tools: Transfusing <:origin:693682238277025853>`{t_origin * quantity}` into item `{args[0]}`| **{name}** (currently at <:origin:693682238277025853>`{origin} / {origin_base}`).\n:warning: A transfusion will cause the *second item* to be destroyed!"):
+            return
 
         # TRANSFUSE
         await self.client._cursor.execute(f"""
-                                                UPDATE pi_inventory SET origin=origin+{t_origin * quantity} WHERE item_id='{args[0]}' AND user_id='{ctx.author.id}' AND existence='GOOD';
+                                                UPDATE pi_inventory SET origin=origin+{t_origin * quantity}, evo=evo+1 WHERE item_id='{args[0]}' AND user_id='{ctx.author.id}' AND existence='GOOD';
                                                 SELECT func_i_delete('{ctx.author.id}', '{t_code}', {quantity});
                                             """)
 
         # Inform
-        await ctx.send(f":tools: Transfusion SUCCES! Item `{args[1]}`| **{t_name}** was destroyed.")
+        await ctx.send(f":tools: Transfusion success! **`{quantity}`** item `{args[1]}`| **{t_name}** was destroyed.")
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def enhance(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        # Getting info
+        try:
+            itemId = args[0]
+            userId = ctx.author.id
+            statsChoice = args[1].lower()                                                                               # name in normal
+            statsAffected = self.client.varMaster.varItem.originStatsConversion[statsChoice]                            # name in normal
+            statsAffectedName = [a[0] for a in statsAffected]                                                           # name in normal
+            statsAffectedNameDB = [self.client.varMaster.varItem.statsNameConversion[a] for a in statsAffectedName]     # name in DB
+            statsCurrentDict = {}                                                                                       # name in normal
+            statsEnhanceDict = {}                                                                                       # name in normal
+            statsEnhanceDictDB = {}                                                                                       # name in DB
+        # E: Missing args
+        except IndexError:
+            await ctx.send(f"<:osit:544356212846886924> Syntax: **`enhance [item_id] [stats_to_enhance]`.**\n> Available stats: `{'` · `'.join(tuple(self.client.varMaster.varItem.originStatsConversion.keys()))}`")
+            return
+        # E: Stats name not found
+        except KeyError:
+            await ctx.send("<:osit:544356212846886924> Invalid stats name!\n> Available stats: `{'` · `'.join(tuple(self.client.varMaster.varItem.originStatsConversion.keys()))}`"); return
+            
+
+        # Check
+        # :: Item
+        try:
+            pack = await self.client.quefe(f"SELECT origin, origin_base, evo, {', '.join(statsAffectedNameDB)} FROM pi_inventory WHERE item_id='{itemId}' AND user_id='{userId}' AND tags LIKE '%inconsumable%' AND existence='GOOD';")
+            # Unpacking
+            # :: first three value
+            origin = pack[0]
+            origin_base = pack[1]
+            evo = pack[2]
+            # :: following stats value
+            for a, b, c, d in zip(statsAffectedName, pack[3:], statsAffectedNameDB, statsAffected):
+                statsCurrentDict[a] = b
+                statsEnhanceDict[a] = d[1]
+                statsEnhanceDictDB[c] = d[1]
+
+        except TypeError:
+            await ctx.send("<:osit:544356212846886924> Item not found!"); return
+        # :: Origin
+        if origin < (origin_base + evo):
+            await ctx.send(f"<:osit:544356212846886924> Not enough origin! (Currently at <:origin:693682238277025853>`{origin} / {origin_base + evo}`)"); return
+
+        # Stats table display gen
+        line = ''
+        for name in statsAffectedName:
+            line += f"\n> `{name.upper()}` :: {float(statsCurrentDict[name]):.2f} ▸ **{(float(statsCurrentDict[name]) + float(statsEnhanceDict[name])):.2f}** ⠀({'+' if float(statsEnhanceDict[name]) > 0 else ''}{float(statsEnhanceDict[name]):.2f})"
+
+        # Prompt
+        if not await self.tools.requestConfirmationReact(ctx, ctx.author.mention, embed=discord.Embed(title=f":tools: Enhancing `{statsChoice.upper()}`", description=line, colour=0xA37C05)):
+            return
+
+        # Partial enhancing query
+        eQuery = ''
+        for k, v in statsEnhanceDictDB.items():
+            eQuery += f"{k}={k}+{v}, "
+        # print(f"UPDATE pi_inventory SET {eQuery}, origin=origin-{(origin_base + evo)} WHERE item_id='{itemId}' AND user_id='{userId}';")
+
+        await self.client._cursor.execute(f"UPDATE pi_inventory SET {eQuery} origin=origin-{(origin_base + evo)} WHERE item_id='{itemId}' AND user_id='{userId}';")
+
+        await ctx.send(f":white_check_mark: Item `{itemId}`'s enhancement complete!")
+
+    @commands.command()
+    @commands.cooldown(1, 5, type=BucketType.user)
+    async def forge(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+        
+        cmd_tag = 'forge'
+        if not await self.__cd_check(ctx.message, cmd_tag, "Workshop currently closed!"): return
+
+        await self.client._cursor.execute(f"SELECT func_it_reward('{ctx.author.id}', 'ar21', 1);")
+
+        await ctx.send(f":tools: {ctx.author.mention}, you were given **1** `ar12`| **Empty Item**!")
+
+        await self.client.loop.run_in_executor(None, partial(self.client.thp.redio.set, f'{cmd_tag}{ctx.author.id}', 'forge', ex=86400, nx=True))
+
+    @commands.command()
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def modify(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        # Modify =====================================
+
+        # Get item ID
+        try:
+            itemID = args[0]
+        except IndexError:
+            await ctx.send(":tools: Please provide the ID of the item you wish to modify. Syntax - `modify [item_id]`")
+            return
+
+        # Check
+        try:
+            name, tags = await self.client.quefe(f"SELECT name, tags FROM pi_inventory WHERE user_id='{ctx.author.id}' AND item_id='{itemID}';")
+        except KeyError:
+            await ctx.send("<:osit:544356212846886924> You don't own this item!")
+            return
+        tags = tags.split(' - ')
+        if 'modifiable' not in tags:
+            await ctx.send(f"<:osit:544356212846886924> This item (`{itemID}`| **{name}**) does not have tag `modifiable`, so it cannot be modified.")
+            return
+        elif len(tags) > self.MODIFY_MAX_TAG:
+            await ctx.send(f"<:osit:544356212846886924> This item (`{itemID}`| **{name}**) has reached the maximum of **{self.MODIFY_MAX_TAG}** allowed.")
+            return
+
+        # Get keyword
+        try:
+            await ctx.send(":tools: {}, please type one of the following options you want to modify:\n>>> `{}`".format(ctx.author.mention, '` · `'.join(self.modifyKeywords.keys())))
+            msg = await self.client.wait_for('message', timeout=20, check=lambda m: m.channel == ctx.channel and m.author == ctx.author and m.content in self.modifyKeywords.keys())
+        except asyncio.TimeoutError:
+            await ctx.send("<:osit:544356212846886924> Request timed out!")
+            return
+        kw = self.modifyKeywords[msg.content]
+
+        # Get value
+        try:
+            await ctx.send(f":tools: {ctx.author.mention}, please provide the value to add or modify.\n> If you want to remove tag from item, add `remove` after providing the tag e.g. (`[your_tag_here] remove`)\n> If your image doesn't load, try checking if the link have extension `.png`, `.jpg`, or other formats")
+            msg = await self.client.wait_for('message', timeout=20, check=lambda m: m.channel == ctx.channel and m.author == ctx.author)
+        except asyncio.TimeoutError:
+            await ctx.send("<:osit:544356212846886924> Request timed out!")
+            return
+        value = msg.content
+
+        # Process value
+        finalVal = ''
+        ## Tag
+        if kw == 'tags':
+            forbiddenTags = ('consumable', 'inconsumable', 'blueprint', 'token')
+            value = value.split(' ')
+            try: option = value[1]
+            except IndexError: option = ''
+            value = value[0]
+            if value in forbiddenTags:
+                await ctx.send("<:osit:544356212846886924> Cannot set this tag")
+                return
+            if option == 'remove':
+                try:
+                    tags.remove(value[:21])
+                except ValueError:
+                    await ctx.send("<:osit:544356212846886924> Tag not found.")
+                    return
+            else:
+                tags.append(value[:21])
+            finalVal = ' - '.join(tags)
+        ## Name
+        elif kw == 'name':
+            finalVal = await self.utils.inj_filter(value[:41])
+        ## Description
+        elif kw == 'description':
+            finalVal = await self.utils.inj_filter(value[:301])
+        ## Illulink
+        elif kw == 'illulink':
+            if len(value) > 100:
+                await ctx.send(f"<:osit:544356212846886924> Link must not surpass 100 characters! Please consider upload your image to *imgur.com* or other image hosting service for shorter image link")
+                return
+            temp = await self.utils.illulink_check(value)
+            try:
+                await ctx.send("Image received!", embed=temp)
+            except discordErrors.HTTPException:
+                await ctx.send(f"<:osit:544356212846886924> Invalid link! Please check the end of the link if it contains `.png`, `.jpg` or other formats of image.")
+                return
+            finalVal = value
+
+        # Modify
+        await self.client._cursor.execute(f"""UPDATE pi_inventory SET {kw}="{finalVal}" WHERE item_id='{itemID}' AND user_id='{ctx.author.id}';""")
+        await ctx.send(f":tools: Successfully modified item `{itemID}`! You may use `inventory` to check again.")
+        
+
+
 
 
 

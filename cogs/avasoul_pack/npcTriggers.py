@@ -14,7 +14,9 @@ from . import avaThirdParty
 class npcTrigger:
     def __init__(self, client):
         self.client = client
-        self.client.thp = avaThirdParty.avaThirdParty(client=self.client)
+        try: 
+            self.client.thp = avaThirdParty.avaThirdParty(client=self.client)
+        except AssertionError: pass
         self.__cd_check = self.client.thp.cd_check
         self.combat = avaCombat(self.client)
         self.utils = avaUtils(self.client)
@@ -24,9 +26,9 @@ class npcTrigger:
         """pack = [ctx, data_goods, entity_code]"""
         return
 
-        await pack[0].send(f':checkered_flag: Training session **`NPC|Kaleido Cli` >< `Player|{pack[0].author.name}`** starting in 5 secs...', delete_after=5)
-        await asyncio.sleep(5)
-        await self.combat.PVE_training(pack[0], dummy_config=['p0', 'Kaleido Cli', 10, 1, 6])
+        # await pack[0].send(f':checkered_flag: Training session **`NPC|Kaleido Cli` >< `Player|{pack[0].author.name}`** starting in 5 secs...', delete_after=5)
+        # await asyncio.sleep(5)
+        # await self.combat.PVE_training(pack[0], dummy_config=['p0', 'Kaleido Cli', 10, 1, 6])
 
     async def GE_trader(self, pack):
         # [ctx, data_goods, entity_code, entity_name, illulink, line, [args]]

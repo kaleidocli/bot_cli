@@ -33,6 +33,12 @@ class avaSocial(commands.Cog):
     # async def on_ready(self):
     #     print("|| Social ---- READY!")
 
+    async def reloadSetup(self):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+
+        self.utils = avaUtils(self.client)
+        self.tools = avaTools(self.client, self.utils)
 
 
 # ================== MARRIAGE ==================
@@ -183,16 +189,34 @@ class avaSocial(commands.Cog):
         #except TypeError: await ctx.send("<:osit:544356212846886924> As if you have a partner :P"); return
         partner = list(partner); partner.append(p2[0])
 
-        def UMCc_check(m):
-            return m.channel == ctx.channel and m.author == ctx.author and m.content == "let's fcking divorce"
+        # Getting children          ||      I know, child need to be profile checked to update age, but that's a punishment for those who breed to many and don't have time to even check their children's age.
+        children = await self.client.quefe(f"SELECT id, name, gender, age FROM personal_info WHERE id IN (SELECT child_id FROM environ_hierarchy WHERE guardians LIKE '%{ctx.author.id}%');", type='all')
 
-        # NAME
-        await ctx.send(f":broken_heart: Divorce with **{partner[1]}**?\n||<a:RingingBell:559282950190006282> Timeout=15s · Key=`let's fcking divorce`||")
-        try: 
-            await self.client.wait_for('message', timeout=15, check=UMCc_check)
-        except asyncio.TimeoutError: await ctx.send("<:osit:544356212846886924> Request times out!"); return
+        # Calc price
+        underChild = 0
+        price = 0
+        pricePerChild = 1000
+        [c for c in children if int(c[3]) >= 18]
+        for c in children:
+            if int(c[3]) < 18:
+                price += pricePerChild * (18 - int(c[3]))
+                underChild += 1
 
-        await self.client._cursor.execute(f"UPDATE personal_info SET partner='n/a' WHERE id IN ('{ctx.author.id}', '{partner[0]}'); UPDATE environ_hierarchy SET guardians=REPLACE(guardians, ' ||| {ctx.author.id}', ''), guardians=REPLACE(guardians, '{ctx.author.id} ||| ', '') WHERE guardians LIKE '%{ctx.author.id}%';")
+        # Prompt
+        if not await self.tools.requestConfirmationMessage(ctx, f"""
+                                                                    :broken_heart: Upon divorcing with **{partner[1]}**:
+                                                                    > For each underage children, {partner[1]} will receive subsidity of <:36pxGold:548661444133126185>**{pricePerChild}** per year until their 18
+                                                                    > In total of **{underChild}** underages, it'll be <:36pxGold:548661444133126185>**{price}**
+                                                                    > The subsidity is charged into **{ctx.author.name}**'s bank account.
+                                                                """, 
+                                                                "let's fcking divorce"):
+            return
+
+        await self.client._cursor.execute(f"""
+                                                UPDATE personal_info SET partner='n/a' WHERE id IN ('{ctx.author.id}', '{partner[0]}'); 
+                                                UPDATE environ_hierarchy SET guardians=REPLACE(guardians, ' ||| {ctx.author.id}', ''), guardians=REPLACE(guardians, '{ctx.author.id} ||| ', '') WHERE guardians LIKE '%{ctx.author.id}%';
+                                                UPDATE pi_bank SET investment=investment-{price // 2} WHERE user_id in ('{ctx.author.id}', '{partner[0]}');
+                                            """)
         await ctx.send(":broken_heart: You are now strangers, to each other.")
 
     @commands.command()
@@ -205,17 +229,20 @@ class avaSocial(commands.Cog):
         if t_name: target_addon = f" AND guardians LIKE '%{t_id}%'"
         else: target_addon = ''
         children = await self.client.quefe(f"SELECT id, name, gender, age FROM personal_info WHERE id IN (SELECT child_id FROM environ_hierarchy WHERE guardians LIKE '%{id}%' {target_addon});", type='all')
-        gengen = {'m': 'Male', 'f': 'Female'}
+        gengen = {'f': '<:Offgirl_Heart:620029339148484611>', 'm': '<:Offboy_Heart:620029339194490912>'}
+        p = await self.tools.DBCF_executor('dbcf_getPersonalInfo', str(ctx.author.id))
 
-        def makeembed(top, least, pages, currentpage):
+        async def makeembed(top, least, pages, currentpage):
             line = '\n'
 
             for child in children[top:least]:
-                print(children, child)
-                line = line + f"""<:sailu:559155210384048129> **{child[1]}** ({child[3]}), {gengen[child[2]]}\n      ╟||`{child[0]}`||\n"""
+                line2 = await p.lookupChildNick(child_id=child[0])
+                line2 = f""" aka. *"{line2}"*""" if line2 else ''
+                line = line + f"""{gengen[child[2]]} **{child[1]}** ({child[3]}){line2}\n      ╟||`{child[0]}`||\n"""
 
             if t_name: reembed = discord.Embed(description=line, colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url).set_author(name=f"{name.capitalize()} & {t_name.capitalize()}", icon_url='https://imgur.com/jkznAfT.png')
             else: reembed = discord.Embed(description=line, colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url).set_author(name=f"{name.capitalize()}... . . .. .   .  .", icon_url='https://imgur.com/jkznAfT.png')
+            reembed.set_footer(text=f"{currentpage} / {pages} | Total: {len(children)}")
             return reembed
             #else:
             #    await ctx.send("*Nothing but dust here...*")
@@ -239,12 +266,18 @@ class avaSocial(commands.Cog):
         # pylint: disable=unused-variable
         emli = []
         for curp in range(pages):
-            myembed = makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
+            myembed = await makeembed(currentpage*4-4, currentpage*4, pages, currentpage)
             emli.append(myembed)
             currentpage += 1
         # pylint: enable=unused-variable
 
-        if not emli: await ctx.send("<:sailu:559155210384048129> No child!"); return
+        # NO CHILD
+        if not emli: 
+            if t_name: reembed = discord.Embed(colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url).set_author(name=f"{name.capitalize()} & {t_name.capitalize()}", icon_url='https://imgur.com/jkznAfT.png')
+            else: reembed = discord.Embed(colour = discord.Colour(0xFFE2FF)).set_thumbnail(url=ctx.author.avatar_url).set_author(name=f"{name.capitalize()}... . . .. .   .  .", icon_url='https://imgur.com/jkznAfT.png')
+            await ctx.send(embed=reembed)
+            return
+        # CHILD
         if pages > 1: 
             msg = await ctx.send(embed=emli[cursor])
             await attachreaction(msg)
@@ -283,28 +316,64 @@ class avaSocial(commands.Cog):
 
 # ================== CHILDREN ==================
 
-    @commands.command()
+    @commands.command(aliases=['as'])
     @commands.cooldown(1, 3, type=BucketType.user)
     async def tell(self, ctx, *args):
         if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+        isBecome = False
+
+        # Anti-stupid / Getting input / Process / Check ===============
+        try:
+            if args[1] == 'tell':
+                return
+            elif args[1].isnumeric():
+                isBecome = True
+                try:
+                    child_id = args[1]
+                except IndexError:
+                    await ctx.send("<:osit:544356212846886924> Missing child's ID!"); return
+                try:
+                    time = int(args[2])
+                except IndexError: await ctx.send("<:osit:544356212846886924> Please specify the number of seconds in range of 1 ~ 60!"); return
+                except ValueError: await ctx.send("<:osit:544356212846886924> Invalid time!"); return
+
+                if time > 60:
+                    await ctx.send("<:osit:544356212846886924> Time must be in range of 1 ~ 60!"); return
+            else:
+                child_id = args[0]
+        except IndexError:
+            await ctx.send("<:osit:544356212846886924> Missing command name!"); return
+
+        # Codename == ChildId
+        if not child_id.isnumeric():
+            p = await self.tools.DBCF_executor('dbcf_getPersonalInfo', str(ctx.author.id))
+            child_id = await p.lookupChildNick(nick=child_id)
 
         # Check if user is child's guardian
         try:
-            child_id, name = await self.client.quefe(f"SELECT child_id, (SELECT name FROM personal_info WHERE id='{args[0]}') FROM environ_hierarchy WHERE child_id='{args[0]}' AND guardians LIKE '%{ctx.author.id}%';")
+            child_id, name = await self.client.quefe(f"SELECT child_id, (SELECT name FROM personal_info WHERE id='{child_id}') FROM environ_hierarchy WHERE child_id='{child_id}' AND guardians LIKE '%{ctx.author.id}%';")
         except TypeError: await ctx.send("<:osit:544356212846886924> Unable to find *your child's* id"); return
         except IndexError: await ctx.send("<:osit:544356212846886924> Please provide your child's ID."); return
-
-        # Get command
-        try: cmd = self.client.get_command(args[1])
-        except IndexError: await ctx.send("<:osit:544356212846886924> Missing command name"); return
-        if not cmd: await ctx.send("<:osit:544356212846886924> Command not found"); return
 
         # Cache
         uname = ctx.author.name
         uid = ctx.author.id
         udis = ctx.author.discriminator
+        userMention = ctx.author.mention
         #uava = ctx.author.avatar_url
 
+        # BECOME ==============================
+        if isBecome:
+            try:
+                ctx.author._user._update({'username': name, 'id': child_id, 'discriminator': self.client.user.discriminator, 'avatar': 'n/a', 'bot': False})
+                await ctx.send(f"<:sailu:559155210384048129> {userMention}, in the next **`{time}`**, you will become your child **{name}** (`ID:{child_id}`).")
+                await asyncio.sleep(time)
+            finally:
+                ctx.author._user._update({'username': uname, 'id': uid, 'discriminator': udis, 'avatar': 'n/a', 'bot': False})
+                await ctx.send(f"<:sailu:559155210384048129> {userMention}, wake up! {time} seconds is over. You're not **{name}** anymore!")
+                return
+
+        # TELL ==============================
         # Modify ctx as child's ctx
         # ctx = ctx.author._replace(name=name)
         # ctx = ctx.author._replace(id=int(child_id))
@@ -312,11 +381,91 @@ class avaSocial(commands.Cog):
         #ctx.author._user.id = int(child_id)
         #ctx.author.id = int(child_id)
 
+        # Get command
+        cmd = self.client.get_command(args[1])
+        if not cmd: await ctx.send("<:osit:544356212846886924> Command not found"); return
+
         # Invoke
-        try: await ctx.invoke(cmd, *args[2:])
+        try:
+            await ctx.invoke(cmd, *args[2:])
         # In case it was trying to DM the child
-        except discordErrors.HTTPException: pass
-        ctx.author._user._update({'username': uname, 'id': uid, 'discriminator': udis, 'avatar': 'n/a', 'bot': False})
+        except discordErrors.HTTPException:
+            pass
+        finally:
+            ctx.author._user._update({'username': uname, 'id': uid, 'discriminator': udis, 'avatar': 'n/a', 'bot': False})
+
+    @commands.command()
+    @commands.cooldown(1, 10, type=BucketType.user)
+    async def codename(self, ctx, *args):
+        if not await self.tools.ava_scan(ctx.message, type='life_check'): return
+
+        child_id = ''
+        nick = ''
+        nick_2 = ''
+
+        p = await self.tools.DBCF_executor('dbcf_getPersonalInfo', str(ctx.author.id))
+
+        # DELETE ================
+        try:
+            if args[0] == 'delete':
+                # Get info
+                for a in args[1:]:
+                    if a.isnumeric():
+                        child_id = a
+                    else:
+                        nick = a
+                if child_id:
+                    if not await p.removeChildNick(self.client, child_id=child_id):
+                        await ctx.send(f"<:osit:544356212846886924> This child may not have an alias.")
+                elif nick:
+                    if not await p.removeChildNick(self.client, nick=nick):
+                        await ctx.send(f"<:osit:544356212846886924> This child may not have an alias.")
+                else:
+                    await ctx.send("<:osit:544356212846886924> Missing arguments (Syntax: `codename child_id name`)")        
+                return
+        except IndexError:
+            await ctx.send("<:osit:544356212846886924> Missing arguments (Syntax: `codename child_id name`)")
+            return
+
+        # Get info
+        for a in args:
+            if a.isnumeric():
+                child_id = a
+            else:
+                if not nick: nick = a
+                else: nick_2 = a
+
+        # Two name ===
+        if nick and nick_2:
+            child_id = await p.lookupChildNick(nick=nick)
+            nick = nick_2
+
+        # ADD ===================
+        if child_id and nick:
+            # Check if child exists / Get child's info
+            try:
+                child_id, name = await self.client.quefe(f"SELECT child_id, (SELECT name FROM personal_info WHERE id='{child_id}') FROM environ_hierarchy WHERE child_id='{child_id}' AND guardians LIKE '%{ctx.author.id}%';")
+            except TypeError: await ctx.send("<:osit:544356212846886924> Unable to find *your child's* id"); return
+
+            await p.addChildNick(self.client, child_id, nick)
+            await ctx.send(f"<:sailu:559155210384048129> Child **{name}** (||`ID:{child_id}`||) can now be called by **{nick}**! You may use command `family` to check.")
+            return
+
+        # LOOK-UP ================
+        else:
+            if child_id:
+                res = await p.lookupChildNick(child_id=child_id)
+                if not res:
+                    await ctx.send(f"<:sailu:559155210384048129> This child does not have codename!")
+                    return
+                await ctx.send(f"<:sailu:559155210384048129> Child ID no.`{child_id}` has codename: **{res}**")
+            else:
+                res = await p.lookupChildNick(nick=nick)
+                if not res:
+                    await ctx.send(f"<:sailu:559155210384048129> This child does not have codename!")
+                    return
+                await ctx.send(f"<:sailu:559155210384048129> Child **{nick}** has ID no.: `{res}`")
+
 
 
 

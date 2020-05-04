@@ -106,9 +106,8 @@ class avaUtils:
         if anti:
             if percent > anti_limit: percent = anti_limit
 
-        total = range(total)
-        if len(total) <= 0 or percent <= 0: return False
-        if random.choice(total) <= percent: return True
+        if total <= 0 or percent <= 0: return False
+        if random.randint(0, total) <= percent: return True
         else: return False
 
     async def space_out(self, text, space=' '):
@@ -168,10 +167,14 @@ class avaUtils:
         return int(np.mean(temp))
 
     async def illulink_check(self, illulink):
+        """
+            You need to send temp to check the embed
+        """
+
         temp = discord.Embed()
         try:
             temp.set_image(url=illulink)
-            return illulink
+            return temp
         except discord.errors.HTTPException: return False
 
     def cleanup_code(self, content):
@@ -246,79 +249,33 @@ class avaUtils:
             except AttributeError: continue
         return Em
 
+    def rewardToQueryAndName(self, reward):
+        """
+            reward     List            (type/code, quantity, percentage)
 
-    # Obsolete from JSON ver
-    """def objectize(self, dict, type, *args): 
-        if type[0] == 'weapon':
-            if type[1] == 'melee':
-                return weapon((dict['name'], dict['id'], dict['description'], dict['tags'], dict['price'], dict['weight'], dict['defend'], dict['multiplier'], dict['str'], dict['sta'], dict['speed'], dict), 'melee')
-            elif type[1] == 'range_weapon':
-                return weapon((dict['name'], dict['id'], dict['description'], dict['tags'], dict['price'], dict['weight'], dict['defend'], dict['round'], dict['str'], dict['int'], dict['sta'], dict['accuracy'], dict['range'], dict['firing_rate'], dict['stealth'], dict), 'range_weapon')
-        elif type[0] == 'ammunition':
-            return ammunition((dict['name'], dict['id'], dict['description'], dict['tags'], dict['price'], dict['dmg'], dict['speed'], dict))
-        elif type[0] == 'supply':
-            return item((dict['name'], dict['id'], dict['description'], dict['tags'], dict['price'], dict), args[0])
-        elif type[0] == 'ingredient':
-            return ingredient((dict['name'], dict['id'], dict['description'], dict['tags'], dict['price'], dict), args[0])
-    """
+            Return (itemQuery, statusSubQuery, name)
+        """
+        status = {
+            'money': '<:36pxGold:548661444133126185>',
+            'perks': '<:perk:632340885996044298>',
+            'merit': '<:merit_badge:620137704662761512>'
+        }
+        itemQuery = ''
+        statusSubQuery = ''
+        name = ''
 
-# Obsolete from JSON ver
-"""
-class mob:
-    def __init__(self, whole_pack):
-        self.name = whole_pack['name']
-        self.lp = whole_pack['lp']
-        self.str = whole_pack['str']
-        self.speed = whole_pack['speed']
-        self.drop = whole_pack['drop']
-        self.branch = whole_pack['branch']
-        self.chain = whole_pack['chain']
+        # Query / Name
+        # --- Status
+        if reward[0] in status.keys():
+            statusSubQuery += f"{reward[0]}={reward[0]}+{reward[1]}"
+            name = 'Received (**{}**) {}'.format(reward[1], status[reward[0]])
+        # --- Item
+        else:
+            protoItem = self.client.DBC['model_item'][reward[0]]
+            if protoItem.rootTable == 'item':
+                itemQuery += f"""SELECT func_it_reward("user_id_here", "{reward[0]}", {reward[1]});"""
+            else:
+                itemQuery += f"""SELECT func_ig_reward("user_id_here", "{reward[0]}", {reward[1]});"""
+            name = '· Received (**{}**) item `{}`| **{}**'.format(reward[1], protoItem.item_code, protoItem.name)
 
-    def attack(self):
-        mmoves = [random.choice(['a', 'd', 'b']) for move in range(self.chain)]
-        
-        # Decoding moves, as well as checking the moves. Get the counter_move
-        counter_mmove = []
-        for move in mmoves:
-            if move == 'a': counter_mmove.append('d')
-            elif move == 'd': counter_mmove.append('b')
-            elif move == 'b': counter_mmove.append('a')
-
-        dmg = self.str
-        return dmg, mmoves, counter_mmove
-
-    #def defend(self, )
-
-    def drop_item(self):
-        drops = []
-        for item in list(self.drop.keys()):
-            # [0]: Item's name | [1]: Quantity | [2]: Drop rate
-            ###Randoming pick
-            if random.choice(range(self.drop[item][2])) == 0:
-                ###Randoming quantity
-                drops.append([self.drop[item][0], random.choice(range(self.drop[item][1]))])
-        return drops
-            
-class item:
-    def __init__(self, package, func):
-        self.name, self.id, self.description, self.tags, self.price, self.bkdict = package
-        self.func = func
-
-class ingredient:
-    def __init__(self, package, func):
-        self.name, self.id, self.description, self.tags, self.price, self.bkdict = package
-        self.func = func
-
-class weapon:
-    def __init__(self, package, type, func=None, upgrade=None):
-        # Unpack guidance
-        if type == 'melee': self.name, self.id, self.description, self.tags, self.price, self.weight, self.defend, self.multiplier, self.str, self.sta, self.speed, self.bkdict = package
-        elif type == 'range_weapon': self.name, self.id, self.description, self.tags, self.price, self.weight, self.defend, self.round, self.str, self.int, self.sta, self.accuracy, self.range, self.firing_rate, self.stealth, self.bkdict = package
-
-        self.func = func
-        self.upgrade = upgrade
-
-class ammunition:
-    def __init__(self, package):
-        self.name, self.id, self.description, self.tags, self.price, self.dmg, self.speed, self.bkdict = package
-"""
+        return (itemQuery, statusSubQuery, name)

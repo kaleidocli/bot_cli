@@ -93,14 +93,17 @@ class avaPersonal(commands.Cog):
 
         # Prompt question
         if not resu:
+            await ctx.send(f"{ctx.author.mention}, you can click :wave: emoji to choose the option you're on!")
             try: re_race, re_gender, re_name = await self.tools.incarnateData_collect(ctx, self.aui)
             except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!"); return
         else: re_race = None; re_gender = None; re_name = None
 
         try:
             bump = await self.tools.character_generate(id, name, dob=[year, month, day, hour, minute], resu=resu, info_pack=[re_race, re_gender, re_name])
-        finally:
+        except Exception as e:
             await self.tools.character_destructor(ctx)
+            raise e
+
         if not bump:
             await ctx.send(f">>> {self.utils.nixietext(f'Welcome to the Pralayer!')}")
             await ctx.send(f">>> This bot is weird, {ctx.author.mention}. So I'll personally advise you using `tutorial 1` to at least know what to do with Cli!\nAfter that, you can check `faq` for some extra info!", embed=discord.Embed().set_image(url='https://imgur.com/e8cIazx.gif'))
@@ -789,6 +792,7 @@ class avaPersonal(commands.Cog):
     @checks.check_author()
     async def test_incarnate(self, ctx):
         try:
+            await ctx.send(f"{ctx.author.mention}, you can click :wave: emoji to choose the option you're on!")
             r, g, n = await self.tools.incarnateData_collect(ctx, self.aui)
         except TypeError: await ctx.send(f"<:osit:544356212846886924> Session is cancelled, **{ctx.author.name}**!"); return
         # await ctx.send(f"{r} {g} {n}")

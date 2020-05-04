@@ -40,6 +40,18 @@ class avaNPC(commands.Cog):
         await self.reloadSetup()
 
     async def reloadSetup(self):
+        from .avaTools import avaTools
+        from .avaUtils import avaUtils
+        from .npcTriggers import npcTrigger
+
+        self.npcTrigger = npcTrigger(self.client)
+        self.trigg = {'p0c0i0training': self.npcTrigger.p0c0i0training,
+                    'GE_trader': self.npcTrigger.GE_trader,
+                    'GE_inspect': self.npcTrigger.GE_inspect}
+
+        self.utils = avaUtils(self.client)
+        self.tools = avaTools(self.client, self.utils)
+
         # await self.cacheAll()
         print("|| NPC ---- RELOADED!")
 

@@ -25,9 +25,9 @@ class avaGuild(commands.Cog):
         self.guild_rank = {'iron': ['bronze', 20],
                             'bronze': ['silver', 100],
                             'silver': ['gold', 220],
-                            'gold': ['adamantite', 490], 
-                            'adamantite': ['mithryl', 755], 
-                            'mithryl': ['n/a', 980]}
+                            'gold': ['adamantite', 320], 
+                            'adamantite': ['mithryl', 420], 
+                            'mithryl': ['n/a', 520]}            # {'iron': 3, 'bronze': 4, 'silver': 5, 'gold': 6, 'adamantite': 8, 'mithryl': 10}
 
         self.guild_rank_image = {'iron': 'https://imgur.com/8Udallk.png',
                                 'bronze': 'https://imgur.com/9k4fYPm.png',
@@ -68,7 +68,7 @@ class avaGuild(commands.Cog):
 
             temb = discord.Embed(description=f"""```http
     {description}```""", colour=0x36393E)
-            temb.set_author(name="―――――――――――――――――――――――――――――――――――", icon_url=ctx.author.avatar_url)
+            temb.set_author(name="――――――――――――――――――――――――――", icon_url=ctx.author.avatar_url)
             temb.add_field(name=f"<:guild_p:619743808959283201> `{guild_code}`|**{guild_name}**", value=f"╟`Region` · **{region}**", inline=True)
             temb.add_field(name=f":bookmark: {ctx.author.name}'s info", value=f"╟`Quests done` · **{total_quests}**", inline=True)
             temb.set_thumbnail(url=self.guild_rank_image[rank])

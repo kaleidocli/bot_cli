@@ -86,6 +86,9 @@ Definition? Mechanism? Lore? Yaaa```
     def intoLoop(self, coro):
         self.client.loop.create_task(coro)
 
+    async def reloadSetup(self):
+        await self.prepLoad()
+
 
 
 # ================== EVENTS ==================
@@ -120,32 +123,29 @@ Definition? Mechanism? Lore? Yaaa```
 
                 cursor = 0
                 emli = temb_socket
-                pages = len(self.helper_preface)
+                pages = len(emli)
                 msg = await ctx.send(embed=emli[cursor])
                 await attachreaction(msg)
 
                 while True:
                     try:
-                        reaction, user = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
+                        reaction, _ = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
                         if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                             cursor += 1
-                            await msg.edit(embed=emli[cursor])
                         elif reaction.emoji == "\U00002b05" and cursor > 0:
                             cursor -= 1
-                            await msg.edit(embed=emli[cursor])
                         elif reaction.emoji == "\U000023ee" and cursor != 0:
                             cursor = 0
-                            await msg.edit(embed=emli[cursor])
                         elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
                             cursor = pages - 1
-                            await msg.edit(embed=emli[cursor])
+                        await msg.edit(embed=emli[cursor])
                     except asyncio.TimeoutError:
                         await msg.delete(); return
 
             await browse(); return
 
         # Search
-        try: command, aliases, syntax, description, tags, requirement = await self.client.quefe(f"SELECT command, aliases, syntax, description, tags, requirement FROM sys_command WHERE command='{raw[0]}';")
+        try: command, aliases, syntax, description, tags, requirement, illulink = await self.client.quefe(f"SELECT command, aliases, syntax, description, tags, requirement, illulink FROM sys_command WHERE command='{raw[0]}';")
         # E: No result. Instead try to search for familiar
         except TypeError:
             packs = await self.client.quefe(f"SELECT command FROM sys_command WHERE command LIKE '%{raw[0]}%' OR aliases LIKE '%{raw[0]}%';", type='all')
@@ -171,6 +171,7 @@ Definition? Mechanism? Lore? Yaaa```
         temb.add_field(name='**『Aliases』**', value=f"{aliases}\n⠀", inline=True)
         temb.add_field(name='**『Description』**', value=f"{description}", inline=False)
         temb.set_footer(text=f"<{tags.replace(' - ', '> <')}>", icon_url=random.choice(self.helper_thumbnail))
+        if illulink: temb.set_image(url=illulink)
 
         await ctx.send(embed=temb)
 
@@ -191,32 +192,30 @@ Definition? Mechanism? Lore? Yaaa```
 
                 cursor = 0
                 emli = temb_socket
-                pages = len(self.concept_preface)
+                pages = len(emli)
                 msg = await ctx.send(embed=emli[cursor])
                 await attachreaction(msg)
 
                 while True:
                     try:
-                        reaction, user = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
+                        reaction, _ = await self.tools.pagiButton(check=lambda r, u: r.message.id == msg.id and u.id == ctx.author.id, timeout=60)
                         if reaction.emoji == "\U000027a1" and cursor < pages - 1:
                             cursor += 1
-                            await msg.edit(embed=emli[cursor])
                         elif reaction.emoji == "\U00002b05" and cursor > 0:
                             cursor -= 1
-                            await msg.edit(embed=emli[cursor])
                         elif reaction.emoji == "\U000023ee" and cursor != 0:
                             cursor = 0
-                            await msg.edit(embed=emli[cursor])
                         elif reaction.emoji == "\U000023ed" and cursor != pages - 1:
                             cursor = pages - 1
-                            await msg.edit(embed=emli[cursor])
+                        await msg.edit(embed=emli[cursor])
                     except asyncio.TimeoutError:
                         await msg.delete(); return
 
             await browse(); return
 
         # Search
-        try: concept, description, tags, typee, illulink = await self.client.quefe(f"SELECT concept, description, tags, type, illulink FROM sys_concept WHERE concept='{raw[0]}';")
+        try:
+            concept, description, tags, typee, illulink = await self.client.quefe(f"SELECT concept, description, tags, type, illulink FROM sys_concept WHERE concept='{raw[0]}';")
         # E: No result. Instead try to search for familiar
         except TypeError:
             packs = await self.client.quefe(f"SELECT concept FROM sys_concept WHERE concept LIKE '%{raw[0]}%' OR tags LIKE '%{raw[0]}%';", type='all')
@@ -234,8 +233,8 @@ Definition? Mechanism? Lore? Yaaa```
                     title=f"**{concept.upper()}**⠀⠀|⠀⠀{typee}",
                     description=f'{description}',
                     colour = discord.Colour(0xB1F1FA))
-        temb.set_thumbnail(url=self.concept_thumbnail)
-        temb.set_footer(text=f"<{tags.replace(' - ', '> <')}>", icon_url='https://imgur.com/TW9dmXy.png')
+        # temb.set_thumbnail(url=self.concept_thumbnail)
+        temb.set_footer(text=f"<{tags.replace(' - ', '> <')}>", icon_url=self.concept_thumbnail)
         if illulink: temb.set_image(url=illulink)
 
         await ctx.send(embed=temb)
@@ -328,9 +327,10 @@ Definition? Mechanism? Lore? Yaaa```
     async def invite(self, ctx):
         #await ctx.send("Hey use this to invite me -> https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=238157120&scope=bot")
         temb = discord.Embed(description=f"""[===== Support Server =====]({self.client.support_server_invite})\n◈ Before inviting this bot, you must acknowledge and accept the following:\n· High-ratio shutdown session, with random length and for **no reason**.\n| Any DM-ed complaints relevant to the incident will result in a ban.\nHowever, compensation with evidences will be responsed and should be sent in *support server*.\nTrying to DM twice on the above problem will result in a ban.\nDM abusing will result in a *boop*.
-                                    \n· Buggy gameplay, low latency.\n| Any bot-abusing activities will result in a ban.\nHowever, *bot-breaking* is encouraged, and any bugs should be reported in *support server/Bug-report*
-                                    \n· Violation in data, balance and activities of the players.\n| This is a testing bot. Have fun testing this <:fufu:508437298808094742>
-                                    \n[===== Invite =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=590732609&scope=bot)""")
+                                    The permissions asked by this bot (except Voice related permission) are required in order to function.
+                                    Worry not, this bot cannot change a grain of setting or delete anything in your server!
+                                    Thank you for support Kaleido Cli!
+                                    \n[===== Invite =====](https://discordapp.com/api/oauth2/authorize?client_id=449278811369111553&permissions=34982976&scope=bot)""")
         await ctx.send(embed=temb)
 
     @commands.command()
@@ -357,7 +357,7 @@ Definition? Mechanism? Lore? Yaaa```
                 if pack[0] != cat[0]: continue
 
                 d[pack[1]] = pack[2]
-            a.append([await self.utils.space_out(cat[0].upper(), space=''), d])
+            a.append([await self.utils.space_out(cat[0].upper(), space=' '), d])
         return a
 
     async def helper_ember(self):
@@ -373,17 +373,34 @@ Definition? Mechanism? Lore? Yaaa```
         temball.set_footer(text=f"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀")
         temb_socket.append(temball)
 
-        pages = len(self.helper_preface)
+        per = 6
+        pages = 0
+        for stuff in self.helper_preface:
+            if len(stuff[1]) % per != 0:
+                if len(stuff[1]) > per:
+                    pages += (len(stuff[1]) // per) + 1
+                else:
+                    pages += 1
+            else:
+                if len(stuff[1]) > per:
+                    pages += (len(stuff[1]) // per)
+                else:
+                    pages += 1
         count = 1
-        thre = '▱'*(pages-1)
+        thre = '▱'*(pages)
         for stuff in self.helper_preface:
             lines = []
-            cur = 0; per = 6
+            cur = 0
             for k, v in stuff[1].items():
                 lines.append(f"> **`{k}`**\n╚╡{v}\n")
-            pages = int(len(lines)/per)
-            if len(lines) % per != 0: pages += 1
-            for _ in range(pages):
+            cur_pages = 1
+            if len(lines) % per != 0:
+                if len(lines) > per:
+                    cur_pages += len(lines) // per
+            else:
+                if len(lines) > per:
+                    cur_pages += (len(lines) // per) - 1
+            for _ in range(cur_pages):
                 tembeach = discord.Embed(
                     description = f"""
                     {self.utils.nixietext(stuff[0])}
@@ -425,22 +442,44 @@ Definition? Mechanism? Lore? Yaaa```
         temball.set_image(url=self.concept_banner)
         temb_socket.append(temball)
 
-        pages = len(self.concept_preface)
-        count = 1
-        thre = '▱'*(pages-1)
+        per = 10
+        pages = 0
         for stuff in self.concept_preface:
-            line = ''
+            if len(stuff[1]) % per != 0:
+                if len(stuff[1]) > per:
+                    pages += (len(stuff[1]) // per) + 1
+                else:
+                    pages += 1
+            else:
+                if len(stuff[1]) > per:
+                    pages += (len(stuff[1]) // per)
+                else:
+                    pages += 1
+        count = 1
+        thre = '▱'*(pages)
+        for stuff in self.concept_preface:
+            lines = []
+            cur = 0
             for k, v in stuff[1].items():
-                line = line + f"> **`{k}`**\n╚╡{v}\n"
-            tembeach = discord.Embed(
-                description = f"""
-                ```{stuff[0]}```
-                {line}""",
-                colour = discord.Colour(0x527D8F)
-            )
-            tembeach.set_thumbnail(url=self.concept_thumbnail)
-            tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
-            temb_socket.append(tembeach)
+                lines.append(f"> **`{k}`**\n╚╡{v}\n")
+            cur_pages = 1
+            if len(lines) % per != 0:
+                if len(lines) > per:
+                    cur_pages += len(lines) // per
+            else:
+                if len(lines) > per:
+                    cur_pages += (len(lines) // per) - 1
+            for _ in range(cur_pages):
+                tembeach = discord.Embed(
+                    description = f"""
+                    {self.utils.nixietext(stuff[0])}
+                    {''.join(lines[cur:cur+per])}""",
+                    colour = discord.Colour(0x527D8F)
+                )
+                tembeach.set_thumbnail(url=self.concept_thumbnail)
+                tembeach.set_author(name=f"\n{thre.replace('▱', '▰', count)}"); count += 1
+                temb_socket.append(tembeach)
+                cur += per
 
         return temb_socket
 
