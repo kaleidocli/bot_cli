@@ -939,33 +939,18 @@ class avaAvatar(commands.Cog):
         fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
         fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
         fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
-        print("HERE 1")
         for font in fonts:
-            print(font)
             await asyncio.sleep(0)
-            print("FORM 1")
             assdir_font = path.join('data', 'profile', 'font', self.font_dict[font[0]])
-            print(assdir_font)
-            print("FORM 2")
             self.prote_lib['font'][font[0]] = {}
-            print("FORM 3")
             self.prote_lib['font'][font[0]]['name'] = ImageFont.truetype(assdir_font, 70)    # Name
-            print("FORM 4")
             self.prote_lib['font'][font[0]]['degree'] = ImageFont.truetype(assdir_font, 14)  # Degrees
-            print("FORM 5")
             self.prote_lib['font'][font[0]]['age'] = ImageFont.truetype(assdir_font, 54)     # Age
-            print("FORM 6")
             self.prote_lib['font'][font[0]]['k/d'] = ImageFont.truetype(assdir_font, 59)    # K/D
-            print("FORM 7")
             self.prote_lib['font'][font[0]]['evo'] = ImageFont.truetype(assdir_font, 122)    # Evo
-            print("FORM 8")
             self.prote_lib['font'][font[0]]['guild'] = ImageFont.truetype(assdir_font, 19)   # Guild
-            print("FORM 9")
             self.prote_lib['font'][font[0]]['rank'] = ImageFont.truetype(assdir_font, 39)    # Rank
-            print("FORM 10")
             self.prote_lib['font'][font[0]]['money'] = ImageFont.truetype(assdir_font, 53)   # Money
-            print("FORM 11")
-        print("HERE 2")
 
         def bg_plugin():
             """
@@ -977,29 +962,31 @@ class avaAvatar(commands.Cog):
             self.prote_lib['bg_deck'] = []
 
         def form_plugin():
-            print('FORM 1')
             self.prote_lib['form'] = []
             img = Image.open(path.join('data', 'profile', 'form4.png')).convert('RGBA')
             self.prote_lib['form'].append(img)
-            try:
-                print(self.prote_lib)
-            except KeyError:
-                print('No FORM')
         
         def badge_plugin():
+            print("BADGE 1")
             ranking_badges = {'iron': 'badge_IRON.png', 'bronze': 'badge_BRONZE.png', 'silver': 'badge_SILVER.png', 'gold': 'badge_GOLD.png', 'adamantite': 'badge_ADAMANTITE.png', 'mithryl': 'badge_MITHRYL.png'}
             self.prote_lib['badge'] = {}
+            print("BADGE 2")
             for key, dir in ranking_badges.items():
+                print(dir)
                 badge_img = Image.open(path.join('data', 'profile', 'badges', dir)).convert('RGBA')
                 badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
                 self.prote_lib['badge'][key] = badge_img
+            print("BADGE 3")
 
         def font_plugin():
+            print("FONT 1")
             self.prote_lib['font']['stock_region'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 31)
+            print("FONT 2")
             self.prote_lib['font']['stock_region_bar'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 15)
+            print("FONT 3")
             self.prote_lib['font']['stock_region_name'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 62)
+            print("FONT 4")
 
-        print('FORM 2')
         await self.client.loop.run_in_executor(None, bg_plugin)
         print("HERE 3")
         await self.client.loop.run_in_executor(None, form_plugin)
@@ -1007,7 +994,7 @@ class avaAvatar(commands.Cog):
         await self.client.loop.run_in_executor(None, font_plugin)
         print("HERE 5")
         await self.client.loop.run_in_executor(None, badge_plugin)
-        print('FORM 3')
+        print('HERE 6')
 
         """
         for char_name, card_code in card_codes.items():
