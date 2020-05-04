@@ -941,19 +941,29 @@ class avaAvatar(commands.Cog):
         fonts = await self.client.quefe(f"SELECT font_id FROM model_font;", type='all')
         print("HERE 1")
         for font in fonts:
+            print(font)
             await asyncio.sleep(0)
+            print("FORM 1")
             assdir_font = path.join('data', 'profile', 'font', self.font_dict[font[0]])
-            # print(assdir_font)
-            # print(path.abspath('..'))
+            print("FORM 2")
             self.prote_lib['font'][font[0]] = {}
+            print("FORM 3")
             self.prote_lib['font'][font[0]]['name'] = ImageFont.truetype(assdir_font, 70)    # Name
+            print("FORM 4")
             self.prote_lib['font'][font[0]]['degree'] = ImageFont.truetype(assdir_font, 14)  # Degrees
+            print("FORM 5")
             self.prote_lib['font'][font[0]]['age'] = ImageFont.truetype(assdir_font, 54)     # Age
+            print("FORM 6")
             self.prote_lib['font'][font[0]]['k/d'] = ImageFont.truetype(assdir_font, 59)    # K/D
+            print("FORM 7")
             self.prote_lib['font'][font[0]]['evo'] = ImageFont.truetype(assdir_font, 122)    # Evo
+            print("FORM 8")
             self.prote_lib['font'][font[0]]['guild'] = ImageFont.truetype(assdir_font, 19)   # Guild
+            print("FORM 9")
             self.prote_lib['font'][font[0]]['rank'] = ImageFont.truetype(assdir_font, 39)    # Rank
+            print("FORM 10")
             self.prote_lib['font'][font[0]]['money'] = ImageFont.truetype(assdir_font, 53)   # Money
+            print("FORM 11")
         print("HERE 2")
 
         def bg_plugin():
