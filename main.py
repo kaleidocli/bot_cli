@@ -19,7 +19,7 @@ from cogs.avasoul_pack.var import varMaster
 
 dummy_config = SConfig()
 extensions = [  'jishaku',
-                # 'cogs.misc',
+                'cogs.misc',
                 # 'cogs.audio',
                 # 'cogs.pydanboo',
                 # 'cogs.tictactoe', 

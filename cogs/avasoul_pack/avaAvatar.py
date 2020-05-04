@@ -1018,9 +1018,14 @@ class avaAvatar(commands.Cog):
             """
 
         def form_plugin():
+            print('FORM 1')
             self.prote_lib['form'] = []
             img = Image.open(path.join('data', 'profile', 'form4.png')).convert('RGBA')
             self.prote_lib['form'].append(img)
+            try:
+                print(self.prote_lib)
+            except KeyError:
+                print('No FORM')
         
         def badge_plugin():
             ranking_badges = {'iron': 'badge_IRON.png', 'bronze': 'badge_BRONZE.png', 'silver': 'badge_SILVER.png', 'gold': 'badge_GOLD.png', 'adamantite': 'badge_ADAMANTITE.png', 'mithryl': 'badge_MITHRYL.png'}
@@ -1035,11 +1040,12 @@ class avaAvatar(commands.Cog):
             self.prote_lib['font']['stock_region_bar'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 15)
             self.prote_lib['font']['stock_region_name'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 62)
 
-        #print("HERE")
+        print('FORM 2')
         await self.client.loop.run_in_executor(None, bg_plugin)
         await self.client.loop.run_in_executor(None, form_plugin)
         await self.client.loop.run_in_executor(None, font_plugin)
         await self.client.loop.run_in_executor(None, badge_plugin)
+        print('FORM 3')
 
         """
         for char_name, card_code in card_codes.items():
