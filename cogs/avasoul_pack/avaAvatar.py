@@ -53,7 +53,9 @@ class avaAvatar(commands.Cog):
                     'bg22': 'bishoujo_mangekyou',
                     'bg23': 'urban_1',
                     'bg24': 'misc_transparent',
-                    'bg25': 'theme_warfare'
+                    'bg25': 'theme_warfare',
+                    'bg26': 'ttn_day',
+                    'bg27': 'ttn_night'
                     }
         self.char_dict = {
                         'av0': 'Iris',
@@ -126,6 +128,13 @@ class avaAvatar(commands.Cog):
                         'av67': 'GFL_5',
                         'av68': 'GFL_6',
                         'av69': 'GFL_7',
+                        'av70': 'TTN_Aoi_Face',
+                        'av71': 'TTN_Aoi_HB',
+                        'av72': 'TTN_Aoi_FB',
+                        'av73': 'TTN_Miyuki_Face',
+                        'av74': 'TTN_Miyuki_HB',
+                        'av75': 'TTN_Miyuki_FB',
+                        'av76': 'TTN_Akebono_HB'
                         }
         self.font_dict = {
                         'fnt0': 'ERASLGHT.ttf',
@@ -967,34 +976,22 @@ class avaAvatar(commands.Cog):
             self.prote_lib['form'].append(img)
         
         def badge_plugin():
-            print("BADGE 1")
             ranking_badges = {'iron': 'badge_IRON.png', 'bronze': 'badge_BRONZE.png', 'silver': 'badge_SILVER.png', 'gold': 'badge_GOLD.png', 'adamantite': 'badge_ADAMANTITE.png', 'mithryl': 'badge_MITHRYL.png'}
             self.prote_lib['badge'] = {}
-            print("BADGE 2")
             for key, dir in ranking_badges.items():
-                print(dir)
                 badge_img = Image.open(path.join('data', 'profile', 'badges', dir)).convert('RGBA')
                 badge_img = badge_img.resize((int(badge_img.width/1.5), int(badge_img.height/1.5)), resample=Image.LANCZOS)
                 self.prote_lib['badge'][key] = badge_img
-            print("BADGE 3")
 
         def font_plugin():
-            print("FONT 1")
             self.prote_lib['font']['stock_region'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 31)
-            print("FONT 2")
             self.prote_lib['font']['stock_region_bar'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 15)
-            print("FONT 3")
             self.prote_lib['font']['stock_region_name'] = ImageFont.truetype(path.join('data', 'stock graph', 'CAROBTN.ttf'), 62)
-            print("FONT 4")
 
         await self.client.loop.run_in_executor(None, bg_plugin)
-        print("HERE 3")
         await self.client.loop.run_in_executor(None, form_plugin)
-        print("HERE 4")
         await self.client.loop.run_in_executor(None, font_plugin)
-        print("HERE 5")
         await self.client.loop.run_in_executor(None, badge_plugin)
-        print('HERE 6')
 
         """
         for char_name, card_code in card_codes.items():

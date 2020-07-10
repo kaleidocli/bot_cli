@@ -2,6 +2,7 @@ import sys
 import random
 from io import BytesIO
 import asyncio
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -36,6 +37,8 @@ class misc(commands.Cog):
         self.isAntiChrisOn = False
         self.chrisLatestQuiz = None
         self.antiChrisMsgBank = []
+
+        self.guesser = []
 
         self.act_gif = {
                 'yay': 'https://imgur.com/dvKPLJH.gif',
@@ -424,6 +427,48 @@ class misc(commands.Cog):
         a = self.client.loop.create_task(self.memorizing(channel_id, df_count))
         try: self.cur_learning[0] = a
         except IndexError: self.cur_learning.append(a)
+
+    @commands.command()
+    @commands.cooldown(1, 10, type=BucketType.guild)
+    async def guessNumber(self, ctx, *args):
+        if ctx.author.id in self.guesser:
+            await ctx.send(":x: Finish your current game :>")
+            return
+
+        try:
+            limit = int(args[0])
+            if limit > 1000000000:
+                limit = 1000000000
+        except ValueError:
+            return
+        except IndexError:
+            limit = 1000000000
+
+        startPoint = datetime.now()
+        guesses = 0
+        number = random.randint(0, limit)
+        
+        await ctx.send(f"<a:question_spinning:643263711833882655> Guess a number within 0 to {limit:,}. (:arrow_double_up: means guess higher, :arrow_double_down: means guess lower)")
+        while True:
+            msg = await self.client.wait_for('message', check=lambda m: m.author == ctx.author and m.channel == ctx.channel, timeout=30)
+            if msg.content == 'quit':
+                await msg.add_reaction('\U000023f9')
+                return
+            try:
+                guess = int(msg.content)
+            except ValueError: continue
+
+            if number > guess:
+                await msg.add_reaction('\U000023eb')
+            elif number < guess:
+                await msg.add_reaction('\U000023ec')
+            else:
+                break
+
+            guesses += 1
+
+        endPoint = datetime.now()
+        await ctx.send(f":tada: **Correct!** (`{(endPoint - startPoint).total_seconds():.2f} seconds` / `[{guesses} guesses]`)")
 
 
 
