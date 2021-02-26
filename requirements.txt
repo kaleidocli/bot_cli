@@ -1,4 +1,4 @@
-aiohttp==3.6.1
+aiohttp==3.7.4
 aiomysql==0.0.19
 asyncio-redis==0.15.1
 dblpy==0.3.2
