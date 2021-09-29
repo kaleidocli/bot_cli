@@ -7,7 +7,7 @@ imageio==2.4.1
 imgurpython==1.1.7
 jishaku==1.15.0.134
 mysql-connector-python==8.0.13
-nltk==3.3
+nltk==3.6.3
 numpy==1.16.1
 oauthlib==3.0.2
 objgraph==3.4.1
