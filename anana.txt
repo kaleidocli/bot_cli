@@ -47,7 +47,7 @@ mysql-connector-python==8.0.17
 nekos.py==1.0.1
 netifaces==0.10.4
 nltk==3.4.5
-numpy==1.17.2
+numpy==1.22.0
 oauthlib==3.1.0
 objgraph==3.4.1
 PAM==0.4.2
