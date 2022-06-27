@@ -6,7 +6,7 @@ discord.py==1.2.3
 imageio==2.4.1
 imgurpython==1.1.7
 jishaku==1.15.0.134
-mysql-connector-python==8.0.13
+mysql-connector-python==8.0.14
 nltk==3.3
 numpy==1.16.1
 oauthlib==3.0.2
