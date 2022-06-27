@@ -43,7 +43,7 @@ language-selector==0.1
 MarkupSafe==1.0
 multidict==4.5.2
 mysql-connector==2.2.9
-mysql-connector-python==8.0.17
+mysql-connector-python==8.0.14
 nekos.py==1.0.1
 netifaces==0.10.4
 nltk==3.4.5
